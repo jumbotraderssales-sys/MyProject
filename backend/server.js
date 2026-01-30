@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
 const app = express();
+const PORT = process.env.PORT || 3002;
 
 // CORS Configuration - Allow all origins for development
 app.use(cors({
@@ -2228,11 +2229,26 @@ app.get('/api/debug/withdrawals', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve admin-panel.html as main page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-panel.html'));
+});
+
+// API routes if needed
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'Admin panel running', timestamp: new Date() });
+});
 
 // Start server
 const PORT = https://myproject1-d097.onrender.com;
 app.listen(PORT, () => {
   console.log('==========================================');
+  console.log(`Admin panel running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log('✅ Paper2Real Backend running on port', PORT);
   console.log('📁 Data directory: backend/data/');
   console.log('📁 Uploads directory: backend/public/uploads/');
