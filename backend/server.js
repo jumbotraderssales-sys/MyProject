@@ -7,7 +7,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const app = express();
-const PORT = process.env.PORT || 3002;
+
 // Load environment variables
 dotenv.config();
 
@@ -23,31 +23,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-// API Routes (update these based on your actual routes)
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/trades', require('./routes/trades'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/user', require('./routes/user'));
-app.use('/api/withdrawals', require('./routes/withdrawals'));
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Paper2Real Backend API',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      trades: '/api/trades',
-      payments: '/api/payments',
-      user: '/api/user',
-      health: '/api/health'
-    }
-  });
-});
 
 // Handle preflight requests
 app.options('*', cors());
 
+// Middleware
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // File paths
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
@@ -255,16 +237,6 @@ const readWithdrawals = async () => {
       await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
       return [];
     }
-    // Handle 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
     
     // Parse JSON
     const withdrawals = JSON.parse(data);
@@ -2266,25 +2238,27 @@ app.get('/api/debug/withdrawals', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// Middleware
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve admin-panel.html as main page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-panel.html'));
+// Handle 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// API routes if needed
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Admin panel running', timestamp: new Date() });
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
 });
+
+// ========== SERVER START ==========
+
+// ONLY ONE PORT DECLARATION - REMOVE THE DUPLICATE AT THE TOP
+const PORT = process.env.PORT || 3001;
 
 // Start server
-const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('==========================================');
-    console.log(`🚀 Backend server running on port ${PORT}`);
+  console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: http://localhost:${PORT}`);
   console.log(`🎯 CORS allowed origins:`, [
@@ -2293,14 +2267,11 @@ app.listen(PORT, () => {
     'http://localhost:3000',
     'http://localhost:3002'
   ]);
-});
-    console.log(`Admin panel running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log('✅ Paper2Real Backend running on port', PORT);
+  console.log(`✅ Paper2Real Backend running on port ${PORT}`);
   console.log('📁 Data directory: backend/data/');
   console.log('📁 Uploads directory: backend/public/uploads/');
-  console.log('🌐 Test endpoint: 'https://myproject1-d097.onrender.com/api/test');
-  console.log('🔍 Debug endpoint: 'https://myproject1-d097.onrender.com/api/debug/withdrawals');
+  console.log('🌐 Test endpoint: https://myproject1-d097.onrender.com/api/test');
+  console.log('🔍 Debug endpoint: https://myproject1-d097.onrender.com/api/debug/withdrawals');
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
