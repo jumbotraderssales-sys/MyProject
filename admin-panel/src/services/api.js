@@ -1,8 +1,6 @@
 // admin-panel/src/services/api.js
 import axios from 'axios';
 
-const API_BASE_URL = 'https://myproject1-d097.onrender.com/api';
-
 // Use the environment variable or fallback
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/api';
 
