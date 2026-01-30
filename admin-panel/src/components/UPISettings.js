@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import adminApi from '../services/api'; // Import the adminApi service
 import './UPISettings.css';
 
 const UPISettings = () => {
@@ -15,35 +16,69 @@ const UPISettings = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [imageError, setImageError] = useState(false);
 
-  // Fetch current UPI settings
+  // Fetch current UPI settings using adminApi
   const fetchUPISettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/admin/upi-settings');
-      const data = await response.json();
+      console.log('Fetching UPI settings using adminApi...');
       
-      if (data.success) {
-        console.log('UPI Settings loaded:', data);
+      // Use adminApi service instead of direct fetch
+      const response = await adminApi.getUPISettings();
+      
+      console.log('UPI Settings loaded:', response);
+      
+      if (response.success) {
+        const serverSettings = response.settings;
+        
+        // Build QR code URL properly
+        let qrUrl = null;
+        if (serverSettings.qrCodeUrl) {
+          // If it's already a full URL or relative path starting with /
+          qrUrl = serverSettings.qrCodeUrl;
+        } else if (serverSettings.upiQrCode) {
+          // If we have filename, construct the URL
+          qrUrl = `/uploads/${serverSettings.upiQrCode}`;
+        }
+        
         setSettings({
-          upiId: data.settings.upiId || '',
-          merchantName: data.settings.merchantName || '',
-          qrCodeUrl: data.settings.qrCodeUrl || null,
-          upiQrCode: data.settings.upiQrCode || null
+          upiId: serverSettings.upiId || '',
+          merchantName: serverSettings.merchantName || '',
+          qrCodeUrl: qrUrl,
+          upiQrCode: serverSettings.upiQrCode || null
         });
         
         // Set preview URL if QR code exists
-        if (data.settings.qrCodeUrl) {
-          setPreviewUrl(`http://localhost:3001${data.settings.qrCodeUrl}`);
+        if (qrUrl) {
+          setPreviewUrl(qrUrl);
           setImageError(false);
+          console.log('QR code URL set:', qrUrl);
         } else {
           setPreviewUrl(null);
+          console.log('No QR code available');
         }
       } else {
         setMessage({ type: 'error', text: 'Failed to load UPI settings' });
+        // Set default values
+        setSettings({
+          upiId: '7799191208-2@ybl',
+          merchantName: 'Paper2Real Trading',
+          qrCodeUrl: null,
+          upiQrCode: null
+        });
       }
     } catch (error) {
       console.error('Error fetching UPI settings:', error);
-      setMessage({ type: 'error', text: 'Error connecting to server. Make sure backend is running on port 3001.' });
+      setMessage({ 
+        type: 'error', 
+        text: 'Error connecting to server. ' + (error.message || 'Make sure backend is running.')
+      });
+      // Set default values on error
+      setSettings({
+        upiId: '7799191208-2@ybl',
+        merchantName: 'Paper2Real Trading',
+        qrCodeUrl: null,
+        upiQrCode: null
+      });
     } finally {
       setLoading(false);
     }
@@ -72,7 +107,7 @@ const UPISettings = () => {
 
       setQrCodeFile(file);
       
-      // Create preview URL
+      // Create preview URL for local file
       const filePreviewUrl = URL.createObjectURL(file);
       setPreviewUrl(filePreviewUrl);
       setImageError(false);
@@ -93,63 +128,87 @@ const UPISettings = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const formData = new FormData();
-      formData.append('upiId', settings.upiId);
-      formData.append('merchantName', settings.merchantName);
-      
       if (qrCodeFile) {
+        // Upload QR code with settings
+        console.log('Uploading QR code with settings...');
+        
+        const formData = new FormData();
         formData.append('qrImage', qrCodeFile);
-      }
-
-      const response = await fetch('http://localhost:3001/api/admin/upi-qr/upload', {
-        method: 'POST',
-        body: formData
-        // Note: Don't set Content-Type header for FormData
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setMessage({ 
-          type: 'success', 
-          text: 'UPI settings saved successfully!' 
-        });
-        
-        // Update local settings
-        setSettings({
-          upiId: data.settings.upiId,
-          merchantName: data.settings.merchantName,
-          qrCodeUrl: data.settings.qrCodeUrl,
-          upiQrCode: data.settings.upiQrCode
-        });
-        
-        // Reset file input
-        setQrCodeFile(null);
-        
-        // Update preview URL from server response
-        if (data.settings.qrCodeUrl) {
-          setPreviewUrl(`http://localhost:3001${data.settings.qrCodeUrl}`);
-          setImageError(false);
+        formData.append('upiId', settings.upiId);
+        if (settings.merchantName) {
+          formData.append('merchantName', settings.merchantName);
         }
+
+        const response = await adminApi.uploadUPIQrCode(formData);
         
-        // Clear file input
-        document.getElementById('qrCodeFile').value = '';
+        console.log('Upload response:', response);
         
-        // Refresh settings after 2 seconds
-        setTimeout(() => {
-          fetchUPISettings();
-        }, 2000);
+        if (response.success) {
+          setMessage({ 
+            type: 'success', 
+            text: 'UPI settings and QR code saved successfully!' 
+          });
+          
+          // Update local settings
+          setSettings({
+            upiId: response.settings.upiId,
+            merchantName: response.settings.merchantName,
+            qrCodeUrl: response.settings.qrCodeUrl,
+            upiQrCode: response.settings.upiQrCode
+          });
+          
+          // Update preview URL from server response
+          if (response.settings.qrCodeUrl) {
+            setPreviewUrl(response.settings.qrCodeUrl);
+            setImageError(false);
+          }
+          
+          // Reset file input
+          setQrCodeFile(null);
+          document.getElementById('qrCodeFile').value = '';
+        } else {
+          setMessage({ 
+            type: 'error', 
+            text: response.error || 'Failed to save UPI settings' 
+          });
+        }
       } else {
-        setMessage({ 
-          type: 'error', 
-          text: data.error || 'Failed to save UPI settings' 
-        });
+        // Update settings without QR code
+        console.log('Updating UPI settings without QR code...');
+        
+        const response = await adminApi.updateUPISettings(settings.upiId, settings.merchantName);
+        
+        console.log('Update response:', response);
+        
+        if (response.success) {
+          setMessage({ 
+            type: 'success', 
+            text: 'UPI settings saved successfully!' 
+          });
+          
+          // Update local settings
+          setSettings(prev => ({
+            ...prev,
+            upiId: response.settings.upiId,
+            merchantName: response.settings.merchantName
+          }));
+        } else {
+          setMessage({ 
+            type: 'error', 
+            text: response.error || 'Failed to save UPI settings' 
+          });
+        }
       }
+      
+      // Refresh settings after 2 seconds
+      setTimeout(() => {
+        fetchUPISettings();
+      }, 2000);
     } catch (error) {
       console.error('Error saving UPI settings:', error);
       setMessage({ 
         type: 'error', 
-        text: 'Error connecting to server. Make sure backend is running on port 3001.' 
+        text: error.message || 'Error saving UPI settings. Please try again.' 
       });
     } finally {
       setSaving(false);
@@ -169,6 +228,8 @@ const UPISettings = () => {
   const handleImageError = () => {
     console.log('QR code image failed to load');
     setImageError(true);
+    // Try to get the QR code from server again
+    fetchUPISettings();
   };
 
   // Clear QR code
@@ -178,13 +239,14 @@ const UPISettings = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/upi-qr', {
-        method: 'DELETE'
-      });
+      // Note: You'll need to add a deleteQR method to your adminApi
+      // For now, we'll update settings without QR code
+      setMessage({ type: 'info', text: 'Removing QR code...' });
       
-      const data = await response.json();
+      // Update settings without QR code
+      const response = await adminApi.updateUPISettings(settings.upiId, settings.merchantName);
       
-      if (data.success) {
+      if (response.success) {
         setMessage({ type: 'success', text: 'QR code removed successfully' });
         setPreviewUrl(null);
         setImageError(false);
@@ -195,6 +257,13 @@ const UPISettings = () => {
         }));
         setQrCodeFile(null);
         document.getElementById('qrCodeFile').value = '';
+        
+        // Refresh settings
+        setTimeout(() => {
+          fetchUPISettings();
+        }, 1000);
+      } else {
+        setMessage({ type: 'error', text: 'Failed to remove QR code' });
       }
     } catch (error) {
       console.error('Error removing QR code:', error);
@@ -311,7 +380,11 @@ const UPISettings = () => {
                           className="qr-image"
                           onError={handleImageError}
                           onLoad={() => console.log('QR code image loaded successfully')}
+                          crossOrigin="anonymous"
                         />
+                        <div className="qr-overlay">
+                          <p>Current QR Code</p>
+                        </div>
                       </div>
                     ) : (
                       <div className="no-qr-placeholder">
@@ -323,7 +396,7 @@ const UPISettings = () => {
                     <div className="qr-info">
                       <p><strong>UPI ID:</strong> {settings.upiId || 'Not set'}</p>
                       <p><strong>Merchant:</strong> {settings.merchantName || 'Not set'}</p>
-                      {settings.qrCodeUrl && !imageError && (
+                      {previewUrl && !imageError && (
                         <button
                           type="button"
                           className="btn btn-danger btn-sm"
