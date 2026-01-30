@@ -553,7 +553,7 @@ const loadUserPayments = async () => {
     const token = localStorage.getItem('token');
     
     // Try to load from backend API first
-    const response = await fetch('http://localhost:3001/api/payments', {
+    const response = await fetch('https://myproject1-d097.onrender.com/api/payments', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -583,7 +583,7 @@ const loadUserPayments = async () => {
 };
       
       // Try to load from backend API first
-      const response = await fetch('http://localhost:3001/api/payments', {
+      const response = await fetch('https://myproject1-d097.onrender.com/api/payments', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -625,7 +625,7 @@ const loadUserPayments = async () => {
   const loadUserData = async (token) => {
     try {
       // Load positions
-      const positionsResponse = await fetch('http://localhost:3001/api/trades/positions', {
+      const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -639,7 +639,7 @@ const loadUserPayments = async () => {
       }
       
       // Load order history
-      const ordersResponse = await fetch('http://localhost:3001/api/trades/history', {
+      const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -663,7 +663,7 @@ const loadUserPayments = async () => {
   // Function to load UPI QR code
   const loadUpiQrCode = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/upi-qr');
+      const response = await fetch('https://myproject1-d097.onrender.com/api/upi-qr');
       
       if (response.ok) {
         const data = await response.json();
@@ -792,7 +792,7 @@ const loadUserPayments = async () => {
         // Update backend if available
         const token = localStorage.getItem('token');
         if (token) {
-          fetch('http://localhost:3001/api/payments/' + paymentId + '/status', {
+          fetch('https://myproject1-d097.onrender.com/api/payments/' + paymentId + '/status', {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -818,7 +818,7 @@ const loadUserPayments = async () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:3001/api/payments/request', {
+      const response = await fetch('https://myproject1-d097.onrender.com/api/payments/request', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -852,7 +852,7 @@ const loadUserPayments = async () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/payments', {
+      const response = await fetch('https://myproject1-d097.onrender.com/api/payments', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -905,7 +905,7 @@ const loadUserPayments = async () => {
     }
     
     try {
-        const response = await fetch('http://localhost:3001/api/register', {
+        const response = await fetch('https://myproject1-d097.onrender.com/api/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -967,7 +967,7 @@ const loadUserPayments = async () => {
     e.preventDefault();
     
     try {
-        const response = await fetch('http://localhost:3001/api/login', {
+        const response = await fetch('https://myproject1-d097.onrender.com//api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1044,7 +1044,7 @@ const loadUserPayments = async () => {
             takeProfit: parseFloat(tp) || 0
         };
         
-        const response = await fetch('http://localhost:3001/api/trades', {
+        const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -1123,7 +1123,7 @@ const loadUserPayments = async () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/trades/${orderId}/cancel`, {
+      const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${orderId}/cancel`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1181,7 +1181,7 @@ const loadUserPayments = async () => {
       
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3001/api/trades/${positionId}/close`, {
+        const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1246,7 +1246,7 @@ const loadUserPayments = async () => {
   const updatePositionSLTP = async (positionId, sl, tp) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/trades/${positionId}/update-sltp`, {
+      const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/update-sltp`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1294,7 +1294,7 @@ const loadUserPayments = async () => {
   const updateOrderSLTP = async (orderId, sl, tp) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/trades/${orderId}/update-sltp`, {
+      const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${orderId}/update-sltp`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1619,7 +1619,7 @@ const loadUserPayments = async () => {
         const token = localStorage.getItem('token');
         if (token) {
           try {
-            await fetch(`http://localhost:3001/api/payments/${paymentId}/status`, {
+            await fetch(`https://myproject1-d097.onrender.com/api/payments/${paymentId}/status`, {
               method: 'PUT',
               headers: {
                 'Authorization': `Bearer ${token}`,
