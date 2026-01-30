@@ -38,7 +38,7 @@
       "react-app/jest"
     ],
     "rules": {
-      "react-hooks/exhaustive-deps": "warn" // Change to warn instead of error
+      "react-hooks/exhaustive-deps": "warn"
     }
   },
   "browserslist": {
