@@ -3,14 +3,15 @@ import axios from 'axios';
 
 const API_BASE_URL = 'https://myproject1-d097.onrender.com/api';
 
-// Create axios instance with defaults
-const apiClient = axios.create({
+// Use the environment variable or fallback
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/api';
+
+const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
+  },
+  timeout: 10000, // 10 second timeout
 });
 
 // Add token interceptor to all requests
