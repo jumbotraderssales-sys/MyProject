@@ -543,44 +543,6 @@ const syncUserWallet = async () => {
     
     try {
       const token = localStorage.getItem('token');
-      // Function to load user payments
-const loadUserPayments = async () => {
-  if (!isLoggedIn) return;
-  
-  setLoadingPayments(true);
-  
-  try {
-    const token = localStorage.getItem('token');
-    
-    // Try to load from backend API first
-    const response = await fetch('https://myproject1-d097.onrender.com/api/payments', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && data.payments) {
-        setPayments(data.payments);
-        localStorage.setItem('userPayments', JSON.stringify(data.payments));
-        calculatePaymentStats(data.payments);
-        setLoadingPayments(false);
-        
-        // ADD THIS ONE LINE:
-        await syncUserWallet(); // <-- ADD THIS
-        
-        return;
-      }
-    }
-    
-    // ... rest of the existing code
-  } catch (error) {
-    // ... rest of the existing code
-  } finally {
-    setLoadingPayments(false);
-  }
-};
       
       // Try to load from backend API first
       const response = await fetch('https://myproject1-d097.onrender.com/api/payments', {
@@ -596,6 +558,10 @@ const loadUserPayments = async () => {
           localStorage.setItem('userPayments', JSON.stringify(data.payments));
           calculatePaymentStats(data.payments);
           setLoadingPayments(false);
+          
+          // ADD THIS ONE LINE:
+          await syncUserWallet(); // <-- ADD THIS
+          
           return;
         }
       }
@@ -895,7 +861,7 @@ const loadUserPayments = async () => {
     }
   };
 
-  // Handle registration
+  // Handle registration with improved error handling
   const handleRegister = async (e) => {
     e.preventDefault();
     
@@ -958,11 +924,11 @@ const loadUserPayments = async () => {
         }
     } catch (error) {
         console.error('Registration error:', error);
-        alert('Registration failed. Please check if backend server is running on port 3001.');
+        alert('Registration failed. Please check if backend server is running.');
     }
   };
 
-  // Handle login
+  // Handle login with improved error handling
   const handleLogin = async (e) => {
     e.preventDefault();
     
@@ -970,10 +936,16 @@ const loadUserPayments = async () => {
         const response = await fetch('https://myproject1-d097.onrender.com/api/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(loginData)
         });
+        
+        // Check if response is ok
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
         
@@ -998,7 +970,6 @@ const loadUserPayments = async () => {
             
             alert('Login successful!');
             
-            
             // If user has no plan, show plan options
             if (!data.user.currentPlan) {
                 setActiveDashboard('Home');
@@ -1008,7 +979,7 @@ const loadUserPayments = async () => {
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed. Please check if backend server is running on port 3001.');
+        alert(`Login failed: ${error.message}. Please check if backend server is running and CORS is configured.`);
     }
     
     setLoginData({ email: '', password: '' });
@@ -1846,39 +1817,38 @@ const loadUserPayments = async () => {
               }}>
                 <span className="tab-text">PROFILE</span>
               </div>
+              {/* NEW WITHDRAWAL TAB */}
+              <div className={`nav-tab ${activeDashboard === 'Withdraw' ? 'active' : ''}`} onClick={() => {
+                if (!isLoggedIn) {
+                  alert('Please login to access withdrawals');
+                  setShowLogin(true);
+                } else if (!userAccount.currentPlan) {
+                  alert('Please purchase a plan to make withdrawals');
+                  setActiveDashboard('Home');
+                } else {
+                  setActiveDashboard('Withdraw');
+                }
+              }}>
+                <span className="tab-text">WITHDRAW</span>
+              </div>
+              
+              {/* ADMIN TAB (only for admin users) */}
+              {userAccount.role === 'admin' && (
+                <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
+                  if (!isLoggedIn) {
+                    alert('Please login as admin');
+                    setShowLogin(true);
+                  } else if (userAccount.role !== 'admin') {
+                    alert('Admin access only');
+                  } else {
+                    setActiveDashboard('AdminPanel');
+                  }
+                }}>
+                  <span className="tab-text">ADMIN</span>
+                </div>
+              )}
             </div>
           </div>
-              {/* NEW WITHDRAWAL TAB */}
-    <div className={`nav-tab ${activeDashboard === 'Withdraw' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to access withdrawals');
-        setShowLogin(true);
-      } else if (!userAccount.currentPlan) {
-        alert('Please purchase a plan to make withdrawals');
-        setActiveDashboard('Home');
-      } else {
-        setActiveDashboard('Withdraw');
-      }
-    }}>
-      <span className="tab-text">WITHDRAW</span>
-    </div>
-    
-    {/* ADMIN TAB (only for admin users) */}
-    {userAccount.role === 'admin' && (
-      <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
-        if (!isLoggedIn) {
-          alert('Please login as admin');
-          setShowLogin(true);
-        } else if (userAccount.role !== 'admin') {
-          alert('Admin access only');
-        } else {
-          setActiveDashboard('AdminPanel');
-        }
-      }}>
-        <span className="tab-text">ADMIN</span>
-      </div>
-    )}
-          
 
           {/* MAIN HEADER */}
           <header className="advanced-header">
@@ -3468,48 +3438,6 @@ const loadUserPayments = async () => {
                     ))}
                   </div>
                 </div>
-                {/* TOP HORIZONTAL NAVIGATION - BOLD TABS */}
-<div className="top-horizontal-nav">
-  <div className="nav-tabs-container">
-    <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
-      <span className="tab-text">HOME</span>
-    </div>
-    <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to view market');
-        setShowLogin(true);
-      } else {
-        setActiveDashboard('Market');
-      }
-    }}>
-      <span className="tab-text">MARKET</span>
-    </div>
-    <div className={`nav-tab ${activeDashboard === 'Trading' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to trade');
-        setShowLogin(true);
-      } else if (!canTrade) {
-        alert('Please purchase a plan to start trading');
-        setActiveDashboard('Home');
-      } else {
-        setActiveDashboard('Trading');
-      }
-    }}>
-      <span className="tab-text">TRADING</span>
-    </div>
-    <div className={`nav-tab ${activeDashboard === 'Profile' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to view profile');
-        setShowLogin(true);
-      } else {
-        setActiveDashboard('Profile');
-      }
-    }}>
-      <span className="tab-text">PROFILE</span>
-    </div>
-  </div>
-</div>
-                
                 {/* FIXED SL/TP SECTION - COMPACT DESIGN */}
                 <div className="sl-tp-section-adjusted" style={{ 
                   display: 'flex', 
