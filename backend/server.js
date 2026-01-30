@@ -2270,8 +2270,8 @@ app.listen(PORT, () => {
   console.log(`✅ Paper2Real Backend running on port ${PORT}`);
   console.log('📁 Data directory: backend/data/');
   console.log('📁 Uploads directory: backend/public/uploads/');
-  console.log('🌐 Test endpoint: https://myproject1-d097.onrender.com/api/test');
-  console.log('🔍 Debug endpoint: https://myproject1-d097.onrender.com/api/debug/withdrawals');
+  console.log('🌐 Test endpoint: https://https://myproject-frontend1.onrender.com/api/test');
+  console.log('🔍 Debug endpoint: https://https://myproject-frontend1.onrender.com/api/debug/withdrawals');
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
