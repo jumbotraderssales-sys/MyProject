@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from './services/api';
 import './AdminWithdrawalPanel.css';
 
@@ -11,90 +11,90 @@ const AdminWithdrawalPanel = ({ userAccount }) => {
   const [transactionId, setTransactionId] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
-  useEffect(() => {
-    
-    fetchWithdrawalRequests();
-  }, [filter]);
-
-  const fetchWithdrawalRequests = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    console.log('🔍 Fetching withdrawals with filter:', filter);
-    
-    // Use adminApi service instead of axios directly
-    const withdrawals = await adminApi.getAllWithdrawals(filter === 'all' ? '' : filter);
-    
-    console.log('📊 Raw API response:', withdrawals);
-    console.log('🔍 First withdrawal:', withdrawals[0]);
-    
-    // Ensure withdrawals is an array
-    if (!Array.isArray(withdrawals)) {
-      console.error('❌ Invalid response format, not an array:', withdrawals);
-      throw new Error('Invalid response format: Expected array of withdrawals');
-    }
-    
-    // Map the API response to the expected format
-    const requests = withdrawals.map(req => {
-      console.log('📝 Processing withdrawal ID:', req.id, 'Type:', req.currency ? 'crypto' : 'bank');
+  const fetchWithdrawalRequests = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
       
-      // Check if it's crypto format or bank format
-      if (req.currency) {
-        // Crypto format (from your test data)
-        return {
-          id: req.id?.toString() || `WD${Date.now()}`,
-          userId: req.userId?.toString() || 'UNKNOWN',
-          userName: req.userName || 'Unknown User',
-          userEmail: req.userEmail || `user${req.userId}@example.com`,
-          amount: req.amount || 0,
-          status: req.status || 'pending',
-          // Map crypto fields to bank fields for display
-          accountNumber: req.address || 'Crypto Address',
-          bankName: req.method || 'Crypto Transfer',
-          accountHolderName: req.userName || 'Not provided',
-          ifscCode: req.currency || 'N/A',
-          requestedAt: req.requestedAt || req.date || req.approvedAt || new Date().toISOString(),
-          transactionId: req.transactionId,
-          processedAt: req.processedAt || req.approvedAt,
-          rejectionReason: req.rejectionReason,
-          // Keep original for reference
-          originalData: req,
-          type: 'crypto'
-        };
-      } else {
-        // Bank format (from real user requests)
-        return {
-          id: req.id?.toString() || `WD${Date.now()}`,
-          userId: req.userId?.toString() || 'UNKNOWN',
-          userName: req.userName || 'Unknown User',
-          userEmail: req.userEmail || `user${req.userId}@example.com`,
-          amount: req.amount || 0,
-          status: req.status || 'pending',
-          accountNumber: req.accountNumber || 'Not provided',
-          bankName: req.bankName || 'Not provided',
-          accountHolderName: req.accountHolderName || req.userName || 'Not provided',
-          ifscCode: req.ifscCode || 'Not provided',
-          requestedAt: req.requestedAt || new Date().toISOString(),
-          transactionId: req.transactionId,
-          processedAt: req.processedAt,
-          rejectionReason: req.rejectionReason,
-          originalData: req,
-          type: 'bank'
-        };
+      console.log('🔍 Fetching withdrawals with filter:', filter);
+      
+      // Use adminApi service instead of axios directly
+      const withdrawals = await adminApi.getAllWithdrawals(filter === 'all' ? '' : filter);
+      
+      console.log('📊 Raw API response:', withdrawals);
+      console.log('🔍 First withdrawal:', withdrawals[0]);
+      
+      // Ensure withdrawals is an array
+      if (!Array.isArray(withdrawals)) {
+        console.error('❌ Invalid response format, not an array:', withdrawals);
+        throw new Error('Invalid response format: Expected array of withdrawals');
       }
-    });
-    
-    console.log(`✅ Processed ${requests.length} withdrawal requests`);
-    setRequests(requests);
-  } catch (error) {
-    console.error('❌ Error fetching withdrawal requests:', error);
-    setError(error.message || 'Failed to load withdrawal requests');
-    setRequests([]); // Set empty array on error
-  } finally {
-    setLoading(false);
-  }
-};
+      
+      // Map the API response to the expected format
+      const requests = withdrawals.map(req => {
+        console.log('📝 Processing withdrawal ID:', req.id, 'Type:', req.currency ? 'crypto' : 'bank');
+        
+        // Check if it's crypto format or bank format
+        if (req.currency) {
+          // Crypto format (from your test data)
+          return {
+            id: req.id?.toString() || `WD${Date.now()}`,
+            userId: req.userId?.toString() || 'UNKNOWN',
+            userName: req.userName || 'Unknown User',
+            userEmail: req.userEmail || `user${req.userId}@example.com`,
+            amount: req.amount || 0,
+            status: req.status || 'pending',
+            // Map crypto fields to bank fields for display
+            accountNumber: req.address || 'Crypto Address',
+            bankName: req.method || 'Crypto Transfer',
+            accountHolderName: req.userName || 'Not provided',
+            ifscCode: req.currency || 'N/A',
+            requestedAt: req.requestedAt || req.date || req.approvedAt || new Date().toISOString(),
+            transactionId: req.transactionId,
+            processedAt: req.processedAt || req.approvedAt,
+            rejectionReason: req.rejectionReason,
+            // Keep original for reference
+            originalData: req,
+            type: 'crypto'
+          };
+        } else {
+          // Bank format (from real user requests)
+          return {
+            id: req.id?.toString() || `WD${Date.now()}`,
+            userId: req.userId?.toString() || 'UNKNOWN',
+            userName: req.userName || 'Unknown User',
+            userEmail: req.userEmail || `user${req.userId}@example.com`,
+            amount: req.amount || 0,
+            status: req.status || 'pending',
+            accountNumber: req.accountNumber || 'Not provided',
+            bankName: req.bankName || 'Not provided',
+            accountHolderName: req.accountHolderName || req.userName || 'Not provided',
+            ifscCode: req.ifscCode || 'Not provided',
+            requestedAt: req.requestedAt || new Date().toISOString(),
+            transactionId: req.transactionId,
+            processedAt: req.processedAt,
+            rejectionReason: req.rejectionReason,
+            originalData: req,
+            type: 'bank'
+          };
+        }
+      });
+      
+      console.log(`✅ Processed ${requests.length} withdrawal requests`);
+      setRequests(requests);
+    } catch (error) {
+      console.error('❌ Error fetching withdrawal requests:', error);
+      setError(error.message || 'Failed to load withdrawal requests');
+      setRequests([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]); // Added filter as dependency
+
+  useEffect(() => {
+    fetchWithdrawalRequests();
+  }, [fetchWithdrawalRequests]); // Now includes fetchWithdrawalRequests in dependencies
+
   const handleApprove = async (requestId) => {
     if (!transactionId.trim()) {
       alert('Please enter transaction ID');
@@ -211,17 +211,17 @@ const AdminWithdrawalPanel = ({ userAccount }) => {
 
       <div className="requests-table">
         <table>
-         <thead>
-  <tr>
-    <th>Request ID</th>
-    <th>User</th>
-    <th>Amount</th>
-    <th>Payment Details</th>
-    <th>Requested On</th>
-    <th>Status</th>
-    <th>Actions</th>
-  </tr>
-</thead>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>User</th>
+              <th>Amount</th>
+              <th>Payment Details</th>
+              <th>Requested On</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody>
             {requests.length === 0 ? (
               <tr>
@@ -241,27 +241,27 @@ const AdminWithdrawalPanel = ({ userAccount }) => {
                   </td>
                   <td>₹{request.amount?.toLocaleString()}</td>
                   <td>
-  <div className="account-info">
-    <div><strong>{request.accountHolderName}</strong></div>
-    
-    {request.type === 'crypto' ? (
-      <>
-        <div><strong>Method:</strong> {request.bankName}</div>
-        <div><strong>Address:</strong> {request.accountNumber}</div>
-        <div><strong>Currency:</strong> {request.ifscCode}</div>
-        {request.originalData?.date && (
-          <div><small>Date: {request.originalData.date}</small></div>
-        )}
-      </>
-    ) : (
-      <>
-        <div><strong>Bank:</strong> {request.bankName}</div>
-        <div><strong>A/C:</strong> {request.accountNumber}</div>
-        <div><strong>IFSC:</strong> {request.ifscCode}</div>
-      </>
-    )}
-  </div>
-</td>
+                    <div className="account-info">
+                      <div><strong>{request.accountHolderName}</strong></div>
+                      
+                      {request.type === 'crypto' ? (
+                        <>
+                          <div><strong>Method:</strong> {request.bankName}</div>
+                          <div><strong>Address:</strong> {request.accountNumber}</div>
+                          <div><strong>Currency:</strong> {request.ifscCode}</div>
+                          {request.originalData?.date && (
+                            <div><small>Date: {request.originalData.date}</small></div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div><strong>Bank:</strong> {request.bankName}</div>
+                          <div><strong>A/C:</strong> {request.accountNumber}</div>
+                          <div><strong>IFSC:</strong> {request.ifscCode}</div>
+                        </>
+                      )}
+                    </div>
+                  </td>
                   <td>{formatDate(request.requestedAt)}</td>
                   <td>
                     <span className={`status-badge status-${request.status}`}>
@@ -301,33 +301,33 @@ const AdminWithdrawalPanel = ({ userAccount }) => {
             
             <div className="request-details">
               <div className="detail-row">
-  <span>Bank/Method:</span>
-  <span>{selectedRequest.bankName}</span>
-</div>
+                <span>Bank/Method:</span>
+                <span>{selectedRequest.bankName}</span>
+              </div>
 
-{selectedRequest.type === 'crypto' ? (
-  <>
-    <div className="detail-row">
-      <span>Address:</span>
-      <span>{selectedRequest.accountNumber}</span>
-    </div>
-    <div className="detail-row">
-      <span>Currency:</span>
-      <span>{selectedRequest.ifscCode}</span>
-    </div>
-  </>
-) : (
-  <>
-    <div className="detail-row">
-      <span>Account:</span>
-      <span>{selectedRequest.accountHolderName} - {selectedRequest.accountNumber}</span>
-    </div>
-    <div className="detail-row">
-      <span>IFSC:</span>
-      <span>{selectedRequest.ifscCode}</span>
-    </div>
-  </>
-)}
+              {selectedRequest.type === 'crypto' ? (
+                <>
+                  <div className="detail-row">
+                    <span>Address:</span>
+                    <span>{selectedRequest.accountNumber}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span>Currency:</span>
+                    <span>{selectedRequest.ifscCode}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="detail-row">
+                    <span>Account:</span>
+                    <span>{selectedRequest.accountHolderName} - {selectedRequest.accountNumber}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span>IFSC:</span>
+                    <span>{selectedRequest.ifscCode}</span>
+                  </div>
+                </>
+              )}
               
               {/* Show different details based on withdrawal type */}
               {selectedRequest.originalData?.address && (
@@ -354,7 +354,7 @@ const AdminWithdrawalPanel = ({ userAccount }) => {
               {selectedRequest.originalData?.ifscCode && selectedRequest.originalData.ifscCode !== 'Not provided' && (
                 <div className="detail-row">
                   <span>IFSC Code:</span>
-                  <span>{selectedRequest.originalData.ifscCode}</span>
+                    <span>{selectedRequest.originalData.ifscCode}</span>
                 </div>
               )}
               
