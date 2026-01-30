@@ -8,12 +8,17 @@ const multer = require('multer');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// CORS Configuration - Allow all origins for development
+// CORS Configuration - UPDATE THIS
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: [
+    'https://myproject-frontend1.onrender.com',
+    'https://myproject-admin1.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Handle preflight requests
