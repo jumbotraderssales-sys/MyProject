@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '../services/api';
 
 const Dashboard = () => {
@@ -29,17 +29,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadDashboardData();
-    // Poll for updates every 30 seconds
-    const interval = setInterval(() => {
-      loadDashboardData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const testConnection = async () => {
+  const testConnection = useCallback(async () => {
     try {
       await adminApi.testConnection();
       setConnectionStatus({
@@ -55,9 +45,9 @@ const Dashboard = () => {
       });
       return false;
     }
-  };
+  }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -210,7 +200,17 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testConnection]);
+
+  useEffect(() => {
+    loadDashboardData();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(() => {
+      loadDashboardData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [loadDashboardData]);
 
   // Helper function to safely format numbers
   const formatNumber = (num, defaultValue = 0) => {
