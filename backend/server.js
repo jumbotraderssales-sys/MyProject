@@ -2230,14 +2230,14 @@ app.get('/api/debug/withdrawals', async (req, res) => {
 });
 
 // Start server
-const PORT = 3001;
+const PORT = https://myproject1-d097.onrender.com;
 app.listen(PORT, () => {
   console.log('==========================================');
   console.log('✅ Paper2Real Backend running on port', PORT);
   console.log('📁 Data directory: backend/data/');
   console.log('📁 Uploads directory: backend/public/uploads/');
-  console.log('🌐 Test endpoint: http://localhost:3001/api/test');
-  console.log('🔍 Debug endpoint: http://localhost:3001/api/debug/withdrawals');
+  console.log('🌐 Test endpoint: https://myproject1-d097.onrender.com/api/test');
+  console.log('🔍 Debug endpoint: https://myproject1-d097.onrender.com/api/debug/withdrawals');
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
