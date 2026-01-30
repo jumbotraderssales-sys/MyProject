@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '../services/api';
 
 const PaymentsPage = () => {
@@ -14,16 +14,42 @@ const PaymentsPage = () => {
     totalRevenue: 0
   });
 
-  useEffect(() => {
-    console.log('PaymentsPage: Component mounted, loading payments...');
-    loadPayments();
+  const calculateStats = useCallback((paymentsData) => {
+    const total = paymentsData.length;
+    const pending = paymentsData.filter(p => p.status === 'pending').length;
+    const approved = paymentsData.filter(p => p.status === 'approved').length;
+    const rejected = paymentsData.filter(p => p.status === 'rejected').length;
+    
+    const totalRevenue = paymentsData
+      .filter(p => p.status === 'approved')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    
+    console.log('📊 Payment Stats:', {
+      total,
+      pending,
+      approved,
+      rejected,
+      totalRevenue
+    });
+    
+    setStats({
+      total,
+      pending,
+      approved,
+      rejected,
+      totalRevenue
+    });
   }, []);
 
-  useEffect(() => {
-    filterPayments();
+  const filterPayments = useCallback(() => {
+    if (filterStatus === 'all') {
+      setFilteredPayments(payments);
+    } else {
+      setFilteredPayments(payments.filter(p => p.status === filterStatus));
+    }
   }, [payments, filterStatus]);
 
-  const loadPayments = async () => {
+  const loadPayments = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 PaymentsPage: Loading payments from API...');
@@ -85,42 +111,16 @@ const PaymentsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [calculateStats]);
 
-  const calculateStats = (paymentsData) => {
-    const total = paymentsData.length;
-    const pending = paymentsData.filter(p => p.status === 'pending').length;
-    const approved = paymentsData.filter(p => p.status === 'approved').length;
-    const rejected = paymentsData.filter(p => p.status === 'rejected').length;
-    
-    const totalRevenue = paymentsData
-      .filter(p => p.status === 'approved')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    
-    console.log('📊 Payment Stats:', {
-      total,
-      pending,
-      approved,
-      rejected,
-      totalRevenue
-    });
-    
-    setStats({
-      total,
-      pending,
-      approved,
-      rejected,
-      totalRevenue
-    });
-  };
+  useEffect(() => {
+    console.log('PaymentsPage: Component mounted, loading payments...');
+    loadPayments();
+  }, [loadPayments]);
 
-  const filterPayments = () => {
-    if (filterStatus === 'all') {
-      setFilteredPayments(payments);
-    } else {
-      setFilteredPayments(payments.filter(p => p.status === filterStatus));
-    }
-  };
+  useEffect(() => {
+    filterPayments();
+  }, [filterPayments]);
 
   const updatePaymentStatus = async (paymentId, status) => {
     if (!window.confirm(`Are you sure you want to ${status} this payment?`)) {
