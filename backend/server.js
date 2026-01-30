@@ -12,9 +12,13 @@ const app = express();
 dotenv.config();
 
 // CORS Configuration - UPDATE THIS
+// CORS Configuration - UPDATED
 app.use(cors({
   origin: [
     'https://myproject-frontend1.onrender.com',
+    'https://myproject-admin1.onrender.com', // ← ADD THIS
+    'http://localhost:3000',
+    'http://localhost:3002'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
