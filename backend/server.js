@@ -15,9 +15,6 @@ dotenv.config();
 app.use(cors({
   origin: [
     'https://myproject-frontend1.onrender.com',
-    'https://myproject-admin1.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:3002'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
