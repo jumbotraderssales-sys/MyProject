@@ -4,9 +4,12 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const cors = require('cors');
+const dotenv = require('dotenv');
 const multer = require('multer');
 const app = express();
 const PORT = process.env.PORT || 3002;
+// Load environment variables
+dotenv.config();
 
 // CORS Configuration - UPDATE THIS
 app.use(cors({
@@ -20,6 +23,26 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+// API Routes (update these based on your actual routes)
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/trades', require('./routes/trades'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/user', require('./routes/user'));
+app.use('/api/withdrawals', require('./routes/withdrawals'));
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Paper2Real Backend API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      trades: '/api/trades',
+      payments: '/api/payments',
+      user: '/api/user',
+      health: '/api/health'
+    }
+  });
+});
 
 // Handle preflight requests
 app.options('*', cors());
@@ -232,6 +255,16 @@ const readWithdrawals = async () => {
       await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
       return [];
     }
+    // Handle 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
     
     // Parse JSON
     const withdrawals = JSON.parse(data);
@@ -2174,11 +2207,10 @@ app.get('/api/test', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    service: 'Paper2Real Trading Platform'
+  res.json({ 
+    status: 'Backend is running',
+    timestamp: new Date(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -2249,16 +2281,26 @@ app.get('/api/health', (req, res) => {
 });
 
 // Start server
-const PORT = https://myproject1-d097.onrender.com;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('==========================================');
-  console.log(`Admin panel running on port ${PORT}`);
+    console.log(`🚀 Backend server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 API URL: http://localhost:${PORT}`);
+  console.log(`🎯 CORS allowed origins:`, [
+    'https://myproject-frontend1.onrender.com',
+    'https://myproject-admin1.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ]);
+});
+    console.log(`Admin panel running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log('✅ Paper2Real Backend running on port', PORT);
   console.log('📁 Data directory: backend/data/');
   console.log('📁 Uploads directory: backend/public/uploads/');
-  console.log('🌐 Test endpoint: https://myproject1-d097.onrender.com/api/test');
-  console.log('🔍 Debug endpoint: https://myproject1-d097.onrender.com/api/debug/withdrawals');
+  console.log('🌐 Test endpoint: 'https://myproject1-d097.onrender.com/api/test');
+  console.log('🔍 Debug endpoint: 'https://myproject1-d097.onrender.com/api/debug/withdrawals');
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
