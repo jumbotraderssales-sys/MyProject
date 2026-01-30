@@ -1,10 +1,17 @@
-type: web
-    name: paper2real-admin
-    env: node
-    buildCommand: cd admin-panel && npm install
-    startCommand: cd admin-panel && npm start
-    envVars:
-      - key: PORT
-        value: 3002
-      - key: NODE_ENV
-        value: production
+# Server Configuration
+PORT=3002
+NODE_ENV=production
+
+# Backend API URL (Update after deploying backend)
+REACT_APP_API_URL=https://myproject1-d097.onrender.com/api
+VITE_API_URL=https://myproject1-d097.onrender.com/api
+
+# Frontend URL
+REACT_APP_FRONTEND_URL=https://myproject-frontend1.onrender.com
+
+# Admin Security
+ADMIN_SECRET_KEY=your-admin-secret-key-12345
+SESSION_SECRET=your-session-secret-67890
+
+# CORS Configuration
+CORS_ORIGIN=https://myproject-frontend1.onrender.com,https://myproject-admin1.onrender.com
