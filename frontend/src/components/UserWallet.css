@@ -1,0 +1,334 @@
+/* User Wallet Styles */
+.user-wallet {
+  padding: 1rem;
+  background: #1a1f2e;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.breach-banner {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.breach-banner.critical {
+  background: rgba(220, 38, 38, 0.2);
+  border: 2px solid #dc2626;
+  color: #dc2626;
+  animation: pulse 2s infinite;
+}
+
+.breach-banner.warning {
+  background: rgba(245, 158, 11, 0.2);
+  border: 2px solid #f59e0b;
+  color: #f59e0b;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.wallet-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.balance-card {
+  background: #1e293b;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #334155;
+  text-align: center;
+}
+
+.balance-card h3 {
+  margin: 0 0 1rem 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.balance-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.balance-amount.positive {
+  color: #10b981;
+}
+
+.balance-amount.negative {
+  color: #ef4444;
+}
+
+.balance-subtext {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.deposit-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.deposit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Plan Conditions */
+.plan-conditions {
+  margin-bottom: 2rem;
+}
+
+.plan-conditions h3 {
+  margin-bottom: 1rem;
+  color: #e2e8f0;
+}
+
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.condition-card {
+  background: #1e293b;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid #334155;
+}
+
+.condition-card.critical {
+  border-color: #ef4444;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.condition-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.condition-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+}
+
+.condition-progress {
+  height: 6px;
+  background: #334155;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Warnings */
+.warnings-section {
+  margin-bottom: 2rem;
+}
+
+.warnings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.warning-item {
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.warning-item.critical {
+  background: rgba(220, 38, 38, 0.1);
+  border-left: 4px solid #dc2626;
+  color: #dc2626;
+}
+
+.warning-item.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 4px solid #f59e0b;
+  color: #f59e0b;
+}
+
+/* Notifications */
+.notifications-section {
+  margin-bottom: 2rem;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notification-item {
+  background: #1e293b;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.notification-item.unread {
+  background: rgba(59, 130, 246, 0.1);
+  border-left-color: #3b82f6;
+}
+
+.notification-item.read {
+  opacity: 0.7;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.notification-type {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.notification-date {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 0.25rem;
+}
+
+.notification-message {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+/* Transaction History */
+.transaction-history {
+  background: #1a1f2e;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.transactions-table {
+  overflow-x: auto;
+}
+
+.transactions-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transactions-table th {
+  padding: 1rem;
+  text-align: left;
+  background: #1e293b;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.transactions-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #334155;
+  color: #e2e8f0;
+}
+
+.transaction-type {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.transaction-type.deposit {
+  background: rgba(22, 163, 74, 0.2);
+  color: #16a34a;
+}
+
+.transaction-type.withdrawal {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+}
+
+.transaction-type.plan_purchase {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.amount {
+  font-weight: 600;
+}
+
+.amount.deposit {
+  color: #16a34a;
+}
+
+.amount.withdrawal {
+  color: #dc2626;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status.completed {
+  background: rgba(22, 163, 74, 0.2);
+  color: #16a34a;
+}
+
+.status.pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.status.failed {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .wallet-overview,
+  .conditions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .wallet-overview,
+  .conditions-grid {
+    grid-template-columns: 1fr;
+  }
+}

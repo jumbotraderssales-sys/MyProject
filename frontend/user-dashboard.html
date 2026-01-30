@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .trade-form { background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        input, select { padding: 10px; margin: 5px; width: 200px; }
+        button { background: #007bff; color: white; padding: 12px 20px; border: none; cursor: pointer; }
+        .user-info { background: #e9f7fe; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>📈 Trading Dashboard</h1>
+    
+    <div class="user-info">
+        <h3>User Information</h3>
+        <div id="userDetails">Not logged in</div>
+        <div>Balance: $<span id="userBalance">0</span></div>
+        <button onclick="loginTestUser()">Login as Test User</button>
+    </div>
+    
+    <div class="trade-form">
+        <h3>Place Trade Order</h3>
+        <select id="asset">
+            <option value="BTC">Bitcoin (BTC)</option>
+            <option value="ETH">Ethereum (ETH)</option>
+            <option value="USDT">Tether (USDT)</option>
+        </select>
+        
+        <select id="type">
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+        </select>
+        
+        <input type="number" id="amount" placeholder="Amount" step="0.001" value="0.1">
+        <input type="number" id="price" placeholder="Price (USD)" step="0.01" value="45000">
+        
+        <button onclick="placeTrade()">Place Order</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        // API Base URL - MUST match your backend
+        const API_BASE = 'http://localhost:3001/api';
+        
+        // Current logged in user
+        let currentUser = null;
+        
+        // Initialize: Try to get user from localStorage
+        function init() {
+            const savedUser = localStorage.getItem('tradingUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUserInfo();
+            }
+        }
+        
+        // Login as a test user (using existing user from backend)
+        async function loginTestUser() {
+            try {
+                // First, get list of users from backend
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+                
+                if (data.success && data.users.length > 0) {
+                    // Use the first regular user (not admin)
+                    const regularUser = data.users.find(u => u.role === 'user') || data.users[1];
+                    
+                    if (regularUser) {
+                        // Login with this user
+                        const loginResponse = await fetch(`${API_BASE}/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: regularUser.email,
+                                password: 'password123' // Default password for sample users
+                            })
+                        });
+                        
+                        const loginData = await loginResponse.json();
+                        
+                        if (loginData.success) {
+                            currentUser = loginData.user;
+                            localStorage.setItem('tradingUser', JSON.stringify(currentUser));
+                            localStorage.setItem('token', loginData.token);
+                            updateUserInfo();
+                            
+                            document.getElementById('result').innerHTML = `
+                                <div style="color: green; background: #d4edda; padding: 10px; margin: 10px 0;">
+                                    ✅ Logged in as: ${currentUser.name} (${currentUser.email})
+                                </div>
+                            `;
+                        } else {
+                            alert('Login failed: ' + loginData.error);
+                        }
+                    }
+                } else {
+                    // If no users, create a test user
+                    await createTestUser();
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Cannot connect to backend. Make sure server.js is running on port 3001');
+            }
+        }
+        
+        // Create a test user if none exists
+        async function createTestUser() {
+            try {
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test Trader',
+                        email: 'trader@test.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('tradingUser', JSON.stringify(currentUser));
+                    localStorage.setItem('token', data.token);
+                    updateUserInfo();
+                    
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: green; background: #d4edda; padding: 10px; margin: 10px 0;">
+                            ✅ Created and logged in as: ${currentUser.name}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Create user error:', error);
+            }
+        }
+        
+        // Update user info display
+        function updateUserInfo() {
+            if (currentUser) {
+                document.getElementById('userDetails').innerHTML = `
+                    ${currentUser.name} (${currentUser.email}) - ${currentUser.role}
+                `;
+                document.getElementById('userBalance').textContent = currentUser.realBalance;
+            }
+        }
+        
+        // Place a trade order
+        async function placeTrade() {
+            if (!currentUser) {
+                alert('Please login first!');
+                return;
+            }
+            
+            const tradeData = {
+                userId: currentUser.id, // ← THIS IS THE CRITICAL PART
+                asset: document.getElementById('asset').value,
+                type: document.getElementById('type').value,
+                amount: document.getElementById('amount').value,
+                price: document.getElementById('price').value
+            };
+            
+            console.log('Placing trade with data:', tradeData);
+            
+            try {
+                const response = await fetch(`${API_BASE}/trades`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(tradeData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: green; background: #d4edda; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                            <h3>✅ Trade Order Successful!</h3>
+                            <p><strong>Order ID:</strong> ${result.order.id}</p>
+                            <p><strong>Asset:</strong> ${result.order.asset}</p>
+                            <p><strong>Type:</strong> ${result.order.type}</p>
+                            <p><strong>Amount:</strong> ${result.order.amount}</p>
+                            <p><strong>Price:</strong> $${result.order.price}</p>
+                            <p><strong>Status:</strong> ${result.order.status}</p>
+                            <p style="margin-top: 10px; font-style: italic;">
+                                This order will appear in the Admin Panel under "Manage Orders"
+                            </p>
+                        </div>
+                    `;
+                    
+                    // Clear form
+                    document.getElementById('amount').value = '';
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: red; background: #f8d7da; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                            <h3>❌ Trade Failed</h3>
+                            <p>Error: ${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Trade error:', error);
+                document.getElementById('result').innerHTML = `
+                    <div style="color: red; background: #f8d7da; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                        <h3>❌ Connection Error</h3>
+                        <p>Cannot connect to server. Make sure backend is running.</p>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

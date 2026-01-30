@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crypto Trading Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #1a1a2e; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .nav { display: flex; justify-content: space-between; align-items: center; }
+        .balance-card { background: #2d3250; padding: 20px; border-radius: 10px; margin: 10px 0; }
+        .trade-form { background: white; padding: 30px; border-radius: 10px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input, select, button { padding: 12px; margin: 8px 0; width: 100%; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-secondary { background: #6c757d; }
+        .trades-list { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .status-completed { color: #28a745; }
+        .status-pending { color: #ffc107; }
+        .status-cancelled { color: #dc3545; }
+        .login-form { max-width: 400px; margin: 50px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .show { display: block; }
+        .alert { padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .alert-info { background: #cce5ff; color: #004085; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login/Register Screen -->
+        <div id="auth-screen">
+            <div class="login-form">
+                <h2 style="text-align: center; margin-bottom: 30px;">Crypto Trading Platform</h2>
+                
+                <div id="auth-tabs">
+                    <button onclick="showTab('login')" class="btn-secondary">Login</button>
+                    <button onclick="showTab('register')" class="btn-secondary">Register</button>
+                </div>
+                
+                <!-- Login Form -->
+                <div id="login-form" class="auth-tab">
+                    <h3>Login</h3>
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button onclick="login()" class="btn-success">Login</button>
+                </div>
+                
+                <!-- Register Form -->
+                <div id="register-form" class="auth-tab hidden">
+                    <h3>Register</h3>
+                    <input type="text" id="register-name" placeholder="Full Name" required>
+                    <input type="email" id="register-email" placeholder="Email" required>
+                    <input type="password" id="register-password" placeholder="Password (min. 6 characters)" required>
+                    <button onclick="register()" class="btn-primary">Register</button>
+                    <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                        Note: First registered user becomes ADMIN with special privileges.
+                    </p>
+                </div>
+                
+                <div id="auth-message"></div>
+            </div>
+        </div>
+        
+        <!-- Trading Dashboard (Hidden until login) -->
+        <div id="dashboard" class="hidden">
+            <header>
+                <div class="nav">
+                    <h1>📈 Trading Dashboard</h1>
+                    <div>
+                        <span id="user-greeting"></span>
+                        <button onclick="logout()" class="btn-danger" style="margin-left: 20px;">Logout</button>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <h3>Account Balance</h3>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <div>
+                            <h4>Real Money</h4>
+                            <h2 id="real-balance">$0.00</h2>
+                        </div>
+                        <div>
+                            <h4>Paper Trading</h4>
+                            <h2 id="paper-balance">$0.00</h2>
+                        </div>
+                        <div>
+                            <button onclick="showDepositModal()" class="btn-success">Deposit</button>
+                            <button onclick="showWithdrawModal()" class="btn-secondary" style="margin-top: 10px;">Withdraw</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Trade Form -->
+            <div class="trade-form">
+                <h2>Place Trade Order</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                    <div>
+                        <label>Asset</label>
+                        <select id="trade-asset">
+                            <option value="BTC">Bitcoin (BTC)</option>
+                            <option value="ETH">Ethereum (ETH)</option>
+                            <option value="SOL">Solana (SOL)</option>
+                            <option value="ADA">Cardano (ADA)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Type</label>
+                        <select id="trade-type">
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Amount</label>
+                        <input type="number" id="trade-amount" placeholder="0.00" step="0.001" min="0">
+                    </div>
+                    <div>
+                        <label>Price ($)</label>
+                        <input type="number" id="trade-price" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                </div>
+                <button onclick="placeTrade()" class="btn-primary" style="width: 200px;">Place Order</button>
+                <div id="trade-result" style="margin-top: 20px;"></div>
+            </div>
+            
+            <!-- My Trades -->
+            <div class="trades-list">
+                <h2>My Trade History</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Asset</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trades-table">
+                        <tr><td colspan="7" style="text-align: center;">No trades yet</td></tr>
+                    </tbody>
+                </table>
+                <button onclick="loadMyTrades()" class="btn-secondary" style="margin-top: 20px;">Refresh</button>
+            </div>
+        </div>
+        
+        <!-- Deposit Modal -->
+        <div id="deposit-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 30px; border-radius: 10px; width: 400px;">
+                <h2>Deposit Funds</h2>
+                <input type="number" id="deposit-amount" placeholder="Amount ($)" min="10" step="0.01">
+                <select id="deposit-method">
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Crypto">Cryptocurrency</option>
+                </select>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="makeDeposit()" class="btn-success">Deposit</button>
+                    <button onclick="hideDepositModal()" class="btn-danger">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        let currentUser = null;
+        let authToken = null;
+        
+        // Show/hide auth tabs
+        function showTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.add('hidden'));
+            document.getElementById(`${tab}-form`).classList.remove('hidden');
+        }
+        
+        // Register new user
+        async function register() {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            if (!name || !email || !password) {
+                showAuthMessage('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAuthMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAuthMessage(data.message, 'success');
+                    // Auto login after registration
+                    setTimeout(() => {
+                        document.getElementById('login-email').value = email;
+                        document.getElementById('login-password').value = password;
+                        login();
+                    }, 1500);
+                } else {
+                    showAuthMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showAuthMessage('Registration failed. Check backend connection.', 'error');
+            }
+        }
+        
+        // Login user
+        async function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    authToken = data.token;
+                    
+                    // Store in localStorage
+                    localStorage.setItem('tradingUser', JSON.stringify(data.user));
+                    localStorage.setItem('tradingToken', data.token);
+                    
+                    // Show dashboard
+                    showDashboard();
+                } else {
+                    showAuthMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showAuthMessage('Login failed. Check backend connection.', 'error');
+            }
+        }
+        
+        // Show dashboard after login
+        function showDashboard() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            // Update user info
+            document.getElementById('user-greeting').innerHTML = `
+                Welcome, <strong>${currentUser.name}</strong> (${currentUser.role})
+            `;
+            
+            // Update balance
+            updateBalance();
+            
+            // Load user's trades
+            loadMyTrades();
+        }
+        
+        // Update balance display
+        function updateBalance() {
+            if (currentUser) {
+                document.getElementById('real-balance').textContent = `$${currentUser.realBalance.toFixed(2)}`;
+                document.getElementById('paper-balance').textContent = `$${currentUser.paperBalance.toFixed(2)}`;
+            }
+        }
+        
+        // Place a trade
+        async function placeTrade() {
+            if (!currentUser) return;
+            
+            const asset = document.getElementById('trade-asset').value;
+            const type = document.getElementById('trade-type').value;
+            const amount = document.getElementById('trade-amount').value;
+            const price = document.getElementById('trade-price').value;
+            
+            if (!amount || !price || parseFloat(amount) <= 0 || parseFloat(price) <= 0) {
+                showTradeMessage('Please enter valid amount and price', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/trades`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ asset, type, amount, price })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showTradeMessage(`
+                        ✅ Trade placed successfully!<br>
+                        Order ID: ${data.order.id}<br>
+                        New Balance: $${data.newBalance.toFixed(2)}
+                    `, 'success');
+                    
+                    // Update user balance
+                    currentUser.realBalance = data.newBalance;
+                    localStorage.setItem('tradingUser', JSON.stringify(currentUser));
+                    updateBalance();
+                    
+                    // Clear form
+                    document.getElementById('trade-amount').value = '';
+                    document.getElementById('trade-price').value = '';
+                    
+                    // Refresh trades
+                    loadMyTrades();
+                } else {
+                    showTradeMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showTradeMessage('Trade failed. Check connection.', 'error');
+            }
+        }
+        
+        // Load user's trades
+        async function loadMyTrades() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/user/trades`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('trades-table');
+                    
+                    if (data.trades.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No trades yet</td></tr>';
+                    } else {
+                        tbody.innerHTML = data.trades.map(trade => `
+                            <tr>
+                                <td>${new Date(trade.createdAt).toLocaleString()}</td>
+                                <td>${trade.asset}</td>
+                                <td><strong style="color: ${trade.type === 'buy' ? '#28a745' : '#dc3545'}">
+                                    ${trade.type.toUpperCase()}
+                                </strong></td>
+                                <td>${trade.amount}</td>
+                                <td>$${trade.price.toFixed(2)}</td>
+                                <td>$${trade.totalValue.toFixed(2)}</td>
+                                <td class="status-${trade.status}">${trade.status}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading trades:', error);
+            }
+        }
+        
+        // Deposit functions
+        function showDepositModal() {
+            document.getElementById('deposit-modal').classList.remove('hidden');
+        }
+        
+        function hideDepositModal() {
+            document.getElementById('deposit-modal').classList.add('hidden');
+            document.getElementById('deposit-amount').value = '';
+        }
+        
+        async function makeDeposit() {
+            const amount = document.getElementById('deposit-amount').value;
+            const method = document.getElementById('deposit-method').value;
+            
+            if (!amount || parseFloat(amount) < 10) {
+                alert('Minimum deposit is $10');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/user/deposit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ amount, method })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ Deposit successful! New balance: $${data.newBalance.toFixed(2)}`);
+                    
+                    // Update user balance
+                    currentUser.realBalance = data.newBalance;
+                    localStorage.setItem('tradingUser', JSON.stringify(currentUser));
+                    updateBalance();
+                    
+                    hideDepositModal();
+                } else {
+                    alert(`Deposit failed: ${data.error}`);
+                }
+            } catch (error) {
+                alert('Deposit failed. Please try again.');
+            }
+        }
+        
+        function showWithdrawModal() {
+            alert('Withdrawal feature coming soon!');
+        }
+        
+        // Logout
+        function logout() {
+            currentUser = null;
+            authToken = null;
+            localStorage.removeItem('tradingUser');
+            localStorage.removeItem('tradingToken');
+            
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            
+            // Clear forms
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('register-name').value = '';
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-password').value = '';
+        }
+        
+        // Utility functions
+        function showAuthMessage(message, type) {
+            const div = document.getElementById('auth-message');
+            div.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => div.innerHTML = '', 5000);
+        }
+        
+        function showTradeMessage(message, type) {
+            const div = document.getElementById('trade-result');
+            div.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => div.innerHTML = '', 5000);
+        }
+        
+        // Check if user is already logged in
+        function checkExistingLogin() {
+            const savedUser = localStorage.getItem('tradingUser');
+            const savedToken = localStorage.getItem('tradingToken');
+            
+            if (savedUser && savedToken) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    authToken = savedToken;
+                    
+                    // Verify token is still valid
+                    fetch(`${API_BASE}/user/profile`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            showDashboard();
+                        } else {
+                            logout(); // Token expired
+                        }
+                    })
+                    .catch(() => logout());
+                } catch (error) {
+                    logout();
+                }
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkExistingLogin();
+            showTab('login');
+        });
+    </script>
+</body>
+</html>

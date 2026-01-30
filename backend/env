@@ -1,0 +1,3 @@
+MONGODB_URI=mongodb://127.0.0.1:27017/paper2real
+JWT_SECRET=paper2real_secret_key_2024_change_this_in_production
+PORT=3001

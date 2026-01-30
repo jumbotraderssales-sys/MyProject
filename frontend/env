@@ -1,0 +1,19 @@
+# React/Vite Configuration
+PORT=3000
+REACT_APP_PORT=3000
+VITE_PORT=3000
+
+# API Configuration (This is the key - will update to Render URL)
+REACT_APP_API_URL=http://localhost:3001/api
+VITE_API_URL=http://localhost:3001/api
+
+# Application Configuration
+REACT_APP_BASE_URL=http://localhost:3000
+REACT_APP_ENVIRONMENT=production
+
+# Feature Flags
+REACT_APP_ENABLE_ANALYTICS=true
+REACT_APP_DEBUG=false
+
+# Admin Panel URL
+REACT_APP_ADMIN_URL=http://localhost:3002

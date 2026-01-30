@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+        
+        .sidebar h2 {
+            color: #007bff;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .nav-section {
+            margin-bottom: 30px;
+        }
+        
+        .nav-section h3 {
+            color: #aaa;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .nav-links {
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+        
+        .nav-links a {
+            color: #ddd;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav-links a:hover {
+            background: #2a2a2a;
+            color: white;
+        }
+        
+        .nav-links a.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .header h1 {
+            color: #333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-change {
+            font-size: 14px;
+            color: #28a745;
+        }
+        
+        .stat-change.negative {
+            color: #dc3545;
+        }
+        
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .price-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .price-card .symbol {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .price-card .price {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .price-card .change {
+            font-size: 14px;
+            color: #28a745;
+        }
+        
+        .price-card .change.negative {
+            color: #dc3545;
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-inactive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        
+        .status-approved {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-completed {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-cancelled {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .status-rejected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        /* MODAL STYLES */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .action-btn {
+            padding: 5px 12px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-add-funds {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>Admin Panel</h2>
+            
+            <div class="nav-section">
+                <h3>Management</h3>
+                <ul class="nav-links">
+                    <li><a href="#" class="active" data-section="dashboard">Dashboard</a></li>
+                    <li><a href="#" data-section="users">Manage Users</a></li>
+                    <li><a href="#" data-section="orders">Manage Orders</a></li>
+                    <li><a href="#" data-section="p2p">Manage P2P</a></li>
+                    <li><a href="#" data-section="currency">Manage Currency</a></li>
+                    <li><a href="#" data-section="market">Manage Market</a></li>
+                </ul>
+            </div>
+            
+            <div class="nav-section">
+                <h3>Transactions</h3>
+                <ul class="nav-links">
+                    <li><a href="#" data-section="deposits">📥 Deposits</a></li>
+                    <li><a href="#" data-section="withdrawals">📤 Withdrawals</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1 id="page-title">Dashboard</h1>
+                <button class="refresh-btn" id="refresh-dashboard">
+                    🔄 Refresh
+                </button>
+            </div>
+            
+            <div class="success-message">
+                ✅ Backend is working! All API endpoints are responding correctly.
+            </div>
+            
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section active">
+                <!-- Stats Grid -->
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <div class="stat-value" id="total-users">Loading...</div>
+                        <div class="stat-change">↑ 12.5% from last month</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Revenue Today</h3>
+                        <div class="stat-value" id="revenue-today">Loading...</div>
+                        <div class="stat-change negative">↓ 2.1% from yesterday</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Active Trades</h3>
+                        <div class="stat-value" id="active-trades">Loading...</div>
+                        <div class="stat-change">↑ 8.3% from yesterday</div>
+                    </div>
+                </div>
+                
+                <!-- Crypto Prices -->
+                <h3>Live Crypto Prices</h3>
+                <div class="price-grid" id="price-grid">
+                    <div class="price-card">
+                        <div class="symbol">BTC</div>
+                        <div class="price" id="btc-price">Loading...</div>
+                        <div class="change" id="btc-change">-</div>
+                    </div>
+                    <div class="price-card">
+                        <div class="symbol">ETH</div>
+                        <div class="price" id="eth-price">Loading...</div>
+                        <div class="change" id="eth-change">-</div>
+                    </div>
+                    <div class="price-card">
+                        <div class="symbol">SOL</div>
+                        <div class="price" id="sol-price">Loading...</div>
+                        <div class="change" id="sol-change">-</div>
+                    </div>
+                    <div class="price-card">
+                        <div class="symbol">ADA</div>
+                        <div class="price" id="ada-price">Loading...</div>
+                        <div class="change" id="ada-change">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Section -->
+            <div id="users-section" class="content-section">
+                <div class="header">
+                    <h1>Manage Users</h1>
+                    <button class="refresh-btn" id="refresh-users">
+                        🔄 Refresh Users
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Balance</th>
+                                <th>Join Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align: center;">Loading users...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Orders Section -->
+            <div id="orders-section" class="content-section">
+                <div class="header">
+                    <h1>Manage Orders</h1>
+                    <button class="refresh-btn" id="refresh-orders">
+                        🔄 Refresh Orders
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>User</th>
+                                <th>Pair</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <tr>
+                                <td colspan="9" style="text-align: center;">Loading orders...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Deposits Section -->
+            <div id="deposits-section" class="content-section">
+                <div class="header">
+                    <h1>Deposits Management</h1>
+                    <div>
+                        <span class="badge" style="background:#ffc107; color:#000; padding:5px 10px; border-radius:5px;">
+                            Pending: <span id="pending-deposits">0</span>
+                        </span>
+                        <button class="refresh-btn" onclick="loadDeposits()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="deposits-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Tx Hash</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deposits-table-body">
+                            <tr>
+                                <td colspan="8" style="text-align: center;">Loading deposits...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Withdrawals Section -->
+            <div id="withdrawals-section" class="content-section">
+                <div class="header">
+                    <h1>Withdrawals Management</h1>
+                    <div>
+                        <span class="badge" style="background:#ffc107; color:#000; padding:5px 10px; border-radius:5px;">
+                            Pending: <span id="pending-withdrawals">0</span>
+                        </span>
+                        <button class="refresh-btn" onclick="loadWithdrawals()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="withdrawals-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Amount</th>
+                                <th>To Address</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawals-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align: center;">Loading withdrawals...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- P2P Section -->
+            <div id="p2p-section" class="content-section">
+                <div class="header">
+                    <h1>Manage P2P</h1>
+                </div>
+                <div class="table-container">
+                    <p>P2P management coming soon...</p>
+                </div>
+            </div>
+            
+            <!-- Currency Section -->
+            <div id="currency-section" class="content-section">
+                <div class="header">
+                    <h1>Manage Currency</h1>
+                </div>
+                <div class="table-container">
+                    <p>Currency management coming soon...</p>
+                </div>
+            </div>
+            
+            <!-- Market Section -->
+            <div id="market-section" class="content-section">
+                <div class="header">
+                    <h1>Manage Market</h1>
+                </div>
+                <div class="table-container">
+                    <p>Market management coming soon...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="add-funds-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Add Funds to User</h2>
+            <form id="add-funds-form">
+                <div class="form-group">
+                    <label for="user-select">Select User:</label>
+                    <select id="user-select" class="form-control" required>
+                        <option value="">Select a user</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" class="form-control" step="0.01" min="0.01" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="currency">Currency:</label>
+                    <select id="currency" class="form-control" required>
+                        <option value="USDT">USDT</option>
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" class="form-control" rows="3" placeholder="Optional description..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Add Funds</button>
+                    <button type="button" class="btn-secondary close-modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="transaction-result"></div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Admin Panel Loaded');
+            setupNavigation();
+            setupRefreshButtons();
+            setupModals();
+            loadDashboard();
+        });
+        
+        function setupNavigation() {
+            const links = document.querySelectorAll('.nav-links a');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    links.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    showSection(this.getAttribute('data-section'));
+                });
+            });
+        }
+        
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            const section = document.getElementById(`${sectionId}-section`);
+            if (section) {
+                section.classList.add('active');
+                document.getElementById('page-title').textContent = 
+                    sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+                loadSectionData(sectionId);
+            }
+        }
+        
+        function loadSectionData(sectionId) {
+            switch(sectionId) {
+                case 'dashboard': loadDashboard(); break;
+                case 'users': loadUsers(); break;
+                case 'orders': loadOrders(); break;
+                case 'deposits': loadDeposits(); break;
+                case 'withdrawals': loadWithdrawals(); break;
+            }
+        }
+        
+        function setupRefreshButtons() {
+            document.getElementById('refresh-dashboard').addEventListener('click', loadDashboard);
+            document.getElementById('refresh-users').addEventListener('click', loadUsers);
+            document.getElementById('refresh-orders').addEventListener('click', loadOrders);
+        }
+        
+        function setupModals() {
+            document.querySelectorAll('.close-modal').forEach(closeBtn => {
+                closeBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                });
+            });
+            
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) this.style.display = 'none';
+                });
+            });
+            
+            document.getElementById('add-funds-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userId = document.getElementById('user-select').value;
+                const amount = document.getElementById('amount').value;
+                const currency = document.getElementById('currency').value;
+                const description = document.getElementById('description').value;
+                
+                if (!userId) { alert('Please select a user'); return; }
+                if (!amount || parseFloat(amount) <= 0) { alert('Please enter a valid amount'); return; }
+                
+                addFundsToUser(userId, amount, currency, description);
+            });
+        }
+        
+        async function loadDashboard() {
+            try {
+                const refreshBtn = document.getElementById('refresh-dashboard');
+                refreshBtn.textContent = '🔄 Loading...';
+                
+                const statsResponse = await fetch(`${API_BASE}/dashboard/stats`);
+                const stats = await statsResponse.json();
+                
+                document.getElementById('total-users').textContent = stats.totalUsers.toLocaleString();
+                document.getElementById('revenue-today').textContent = `$${stats.revenueToday.toLocaleString()}`;
+                document.getElementById('active-trades').textContent = stats.activeTrades.toLocaleString();
+                
+                const coins = ['BTC', 'ETH', 'SOL', 'ADA'];
+                for (let coin of coins) {
+                    try {
+                        const priceResponse = await fetch(`${API_BASE}/price/${coin}`);
+                        const priceData = await priceResponse.json();
+                        
+                        document.getElementById(`${coin.toLowerCase()}-price`).textContent = 
+                            `$${priceData.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                        
+                        const changeElement = document.getElementById(`${coin.toLowerCase()}-change`);
+                        changeElement.textContent = `${priceData.change >= 0 ? '↑' : '↓'} ${Math.abs(priceData.change).toFixed(2)}%`;
+                        changeElement.className = `change ${priceData.change >= 0 ? '' : 'negative'}`;
+                        
+                    } catch (error) {
+                        console.error(`Error loading ${coin} price:`, error);
+                    }
+                }
+                
+                refreshBtn.textContent = '🔄 Refresh';
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('refresh-dashboard').textContent = '❌ Error - Click to retry';
+            }
+        }
+        
+        async function loadUsers() {
+            try {
+                const refreshBtn = document.getElementById('refresh-users');
+                refreshBtn.textContent = '🔄 Loading...';
+                
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('users-table-body');
+                tbody.innerHTML = '';
+                
+                data.users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td class="status-${user.status}">${user.status}</td>
+                        <td>${user.balance}</td>
+                        <td>${user.joinDate}</td>
+                        <td>
+                            <button class="action-btn btn-add-funds" onclick="openAddFundsModalForUser(${user.id}, '${user.name}')">Add Funds</button>
+                            <button class="action-btn ${user.status === 'active' ? 'btn-danger' : 'btn-success'}" 
+                                    onclick="toggleUserStatus(${user.id}, '${user.status}')">
+                                ${user.status === 'active' ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                refreshBtn.textContent = '🔄 Refresh Users';
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('users-table-body').innerHTML = `
+                    <tr><td colspan="7" style="text-align: center; color: red;">❌ Error loading users</td></tr>
+                `;
+            }
+        }
+        
+        async function loadOrders() {
+            try {
+                const refreshBtn = document.getElementById('refresh-orders');
+                refreshBtn.textContent = '🔄 Loading...';
+                
+                const response = await fetch(`${API_BASE}/orders`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('orders-table-body');
+                tbody.innerHTML = '';
+                
+                data.orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${order.id}</td>
+                        <td>${order.user}</td>
+                        <td>${order.pair}</td>
+                        <td>${order.type}</td>
+                        <td>${order.amount}</td>
+                        <td>$${order.price.toLocaleString()}</td>
+                        <td class="status-${order.status}">${order.status}</td>
+                        <td>${order.time}</td>
+                        <td>
+                            ${order.status === 'pending' ? `
+                                <button class="action-btn btn-approve" onclick="approveOrder(${order.id})">Complete</button>
+                                <button class="action-btn btn-reject" onclick="cancelOrder(${order.id})">Cancel</button>
+                            ` : '-'}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                refreshBtn.textContent = '🔄 Refresh Orders';
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('orders-table-body').innerHTML = `
+                    <tr><td colspan="9" style="text-align: center; color: red;">❌ Error loading orders</td></tr>
+                `;
+            }
+        }
+        
+        async function loadDeposits() {
+            try {
+                const response = await fetch(`${API_BASE}/transactions/deposits`);
+                const data = await response.json();
+                
+                document.getElementById('pending-deposits').textContent = data.pending;
+                const tbody = document.getElementById('deposits-table-body');
+                tbody.innerHTML = '';
+                
+                data.deposits.forEach(deposit => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${deposit.id}</td>
+                        <td>${deposit.userName} (ID: ${deposit.userId})</td>
+                        <td><strong>${deposit.amount} ${deposit.currency}</strong></td>
+                        <td>${deposit.method}</td>
+                        <td>${deposit.date}</td>
+                        <td class="status-${deposit.status}">${deposit.status}</td>
+                        <td><small>${deposit.txHash}</small></td>
+                        <td>
+                            ${deposit.status === 'pending' ? `
+                                <button class="action-btn btn-approve" onclick="approveDeposit(${deposit.id})">Approve</button>
+                                <button class="action-btn btn-reject" onclick="rejectDeposit(${deposit.id})">Reject</button>
+                            ` : '-'}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading deposits:', error);
+                document.getElementById('deposits-table-body').innerHTML = `
+                    <tr><td colspan="8" style="text-align: center; color: red;">❌ Error loading deposits</td></tr>
+                `;
+            }
+        }
+        
+        async function loadWithdrawals() {
+            try {
+                const response = await fetch(`${API_BASE}/transactions/withdrawals`);
+                const data = await response.json();
+                
+                document.getElementById('pending-withdrawals').textContent = data.pending;
+                const tbody = document.getElementById('withdrawals-table-body');
+                tbody.innerHTML = '';
+                
+                data.withdrawals.forEach(withdrawal => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${withdrawal.id}</td>
+                        <td>${withdrawal.userName} (ID: ${withdrawal.userId})</td>
+                        <td><strong>${withdrawal.amount} ${withdrawal.currency}</strong></td>
+                        <td><small>${withdrawal.address}</small></td>
+                        <td>${withdrawal.date}</td>
+                        <td class="status-${withdrawal.status}">${withdrawal.status}</td>
+                        <td>
+                            ${withdrawal.status === 'pending' ? `
+                                <button class="action-btn btn-approve" onclick="approveWithdrawal(${withdrawal.id})">Approve</button>
+                                <button class="action-btn btn-reject" onclick="rejectWithdrawal(${withdrawal.id})">Reject</button>
+                            ` : '-'}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading withdrawals:', error);
+                document.getElementById('withdrawals-table-body').innerHTML = `
+                    <tr><td colspan="7" style="text-align: center; color: red;">❌ Error loading withdrawals</td></tr>
+                `;
+            }
+        }
+        
+        function openAddFundsModalForUser(userId, userName) {
+            openAddFundsModal();
+            setTimeout(() => {
+                document.getElementById('user-select').value = userId;
+                document.getElementById('description').value = `Manual deposit for ${userName}`;
+            }, 100);
+        }
+        
+        async function openAddFundsModal() {
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+                const userSelect = document.getElementById('user-select');
+                userSelect.innerHTML = '<option value="">Select a user</option>';
+                data.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = `${user.name} (ID: ${user.id}) - Balance: ${user.balance}`;
+                    userSelect.appendChild(option);
+                });
+                document.getElementById('add-funds-modal').style.display = 'flex';
+            } catch (error) {
+                alert('Error loading users. Please try again.');
+            }
+        }
+        
+    // Update the addFundsToUser function to refresh user list
+async function addFundsToUser(userId, amount, currency, description) {
+    try {
+        const response = await fetch(`${API_BASE}/users/${userId}/add-funds`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount, currency, description })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            showTransactionResult(`
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; color: #28a745;">✅</div>
+                    <h3>Funds Added Successfully!</h3>
+                    <p>${result.message}</p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                        <p><strong>Transaction ID:</strong> ${result.transaction.id}</p>
+                        <p><strong>Amount:</strong> ${result.transaction.amount} ${result.transaction.currency}</p>
+                        <p><strong>Old Balance:</strong> $${result.oldBalance}</p>
+                        <p><strong>New Balance:</strong> $${result.newBalance}</p>
+                        <p><strong>Status:</strong> <span class="status-${result.transaction.status}">${result.transaction.status}</span></p>
+                        <p><strong>Time:</strong> ${new Date(result.transaction.timestamp).toLocaleString()}</p>
+                    </div>
+                    <button class="btn-primary" onclick="refreshAllData()">Close & Refresh Data</button>
+                </div>
+            `);
+            
+            document.getElementById('add-funds-modal').style.display = 'none';
+            document.getElementById('add-funds-form').reset();
+        } else {
+            showTransactionResult(`<div style="color: red;">❌ ${result.error}</div>`);
+        }
+    } catch (error) {
+        showTransactionResult(`<div style="color: red;">❌ Error: ${error.message}</div>`);
+    }
+}
+
+// Update the toggleUserStatus function
+async function toggleUserStatus(userId, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    if (confirm(`${newStatus === 'active' ? 'Activate' : 'Deactivate'} user ${userId}?`)) {
+        try {
+            const response = await fetch(`${API_BASE}/users/${userId}/toggle-status`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ User ${userId} status changed to ${newStatus}`);
+                loadUsers(); // Refresh the user list
+            } else {
+                alert('❌ Failed to update user status: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error toggling user status:', error);
+            alert('❌ Error toggling user status. Please check console.');
+        }
+    }
+}
+
+// Update the approveDeposit function
+async function approveDeposit(depositId) {
+    if (confirm(`Approve deposit #${depositId}?`)) {
+        try {
+            const response = await fetch(`${API_BASE}/transactions/deposits/${depositId}/approve`, { method: 'POST' });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ Deposit ${depositId} approved!`);
+                loadDeposits(); // Refresh deposits list
+                loadUsers(); // Refresh users list to show updated balance
+            } else {
+                alert('❌ Failed to approve deposit: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error approving deposit.');
+        }
+    }
+}
+
+// Update the rejectDeposit function
+async function rejectDeposit(depositId) {
+    const reason = prompt('Enter rejection reason:');
+    if (reason !== null && reason.trim() !== '') {
+        try {
+            const response = await fetch(`${API_BASE}/transactions/deposits/${depositId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ Deposit ${depositId} rejected. Reason: ${reason}`);
+                loadDeposits(); // Refresh deposits list
+            } else {
+                alert('❌ Failed to reject deposit: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error rejecting deposit.');
+        }
+    }
+}
+
+// Update the approveWithdrawal function
+async function approveWithdrawal(withdrawalId) {
+    if (confirm(`Approve withdrawal #${withdrawalId}?`)) {
+        try {
+            const response = await fetch(`${API_BASE}/transactions/withdrawals/${withdrawalId}/approve`, { method: 'POST' });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ Withdrawal ${withdrawalId} approved!`);
+                loadWithdrawals(); // Refresh withdrawals list
+                loadUsers(); // Refresh users list to show updated balance
+            } else {
+                alert('❌ Failed to approve withdrawal: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error approving withdrawal.');
+        }
+    }
+}
+
+// Update the rejectWithdrawal function
+async function rejectWithdrawal(withdrawalId) {
+    const reason = prompt('Enter rejection reason:');
+    if (reason !== null && reason.trim() !== '') {
+        try {
+            const response = await fetch(`${API_BASE}/transactions/withdrawals/${withdrawalId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ Withdrawal ${withdrawalId} rejected. Reason: ${reason}`);
+                loadWithdrawals(); // Refresh withdrawals list
+            } else {
+                alert('❌ Failed to reject withdrawal: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error rejecting withdrawal.');
+        }
+    }
+}
+
+        
+        function toggleUserStatus(userId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+            if (confirm(`${newStatus === 'active' ? 'Activate' : 'Deactivate'} user ${userId}?`)) {
+                alert(`User ${userId} status changed to ${newStatus} (this would update database in real app)`);
+                loadUsers();
+            }
+        }
+        
+        // Add a refresh all data function
+function refreshAllData() {
+    // Close modal
+    document.getElementById('transaction-modal').style.display = 'none';
+    
+    // Refresh current section
+    const activeSection = document.querySelector('.content-section.active');
+    if (activeSection) {
+        const sectionId = activeSection.id.replace('-section', '');
+        loadSectionData(sectionId);
+    }
+}
+
+// Update the order status functions
+async function approveOrder(orderId) {
+    if (confirm(`Complete order #${orderId}?`)) {
+        try {
+            const response = await fetch(`${API_BASE}/orders/${orderId}/update-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'completed' })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ Order ${orderId} marked as completed`);
+                loadOrders(); // Refresh orders list
+            } else {
+                alert('❌ Failed to update order: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error updating order.');
+        }
+    }
+}
+
+async function cancelOrder(orderId) {
+    if (confirm(`Cancel order #${orderId}?`)) {
+        try {
+            const response = await fetch(`${API_BASE}/orders/${orderId}/update-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'cancelled' })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(`✅ Order ${orderId} cancelled`);
+                loadOrders(); // Refresh orders list
+            } else {
+                alert('❌ Failed to cancel order: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error cancelling order.');
+        }
+    }
+}
+        
+        setInterval(loadDashboard, 30000);
+    </script>
+</body>
+</html>
