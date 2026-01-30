@@ -27,7 +27,7 @@ export const DatabaseProvider = ({ children }) => {
     setLoading(true);
     try {
       // Try your admin backend on port 3002
-      const response = await fetch('http://localhost:3002/api/dashboard');
+      const response = await fetch('https://myproject-admin1.onrender.com//api/dashboard');
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
