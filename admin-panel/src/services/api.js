@@ -1,7 +1,7 @@
 // admin-panel/src/services/api.js
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'https://myproject1-d097.onrender.com/api';
 
 // Create axios instance with defaults
 const apiClient = axios.create({
