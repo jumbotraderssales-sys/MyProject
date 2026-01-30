@@ -1,0 +1,15 @@
+services:
+  # Admin Panel Service
+  - type: web
+    name: paper2real-admin
+    env: node
+    rootDirectory: admin-panel
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3002
+      - key: NODE_ENV
+        value: production
+      - key: REACT_APP_API_URL
+        value: https://myproject1-d097.onrender.com/api
