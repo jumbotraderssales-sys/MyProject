@@ -355,6 +355,38 @@ body {
   flex-shrink: 0;
 }
 
+/* QUICK TRADE MOVED TO LEFT PANEL */
+.left-panel .top-right-trading {
+  display: block !important;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.left-panel .quick-trade-top h3 {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.left-panel .trade-actions-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.left-panel .leverage-buttons-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 .order-book-section {
   background: rgba(30, 41, 59, 0.5);
   border: 1px solid #334155;
@@ -656,7 +688,7 @@ body {
   accent-color: #3b82f6;
 }
 
-/* Chart Container */
+/* Chart Container - FIXED */
 .chart-container {
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid #1e293b;
@@ -666,6 +698,7 @@ body {
   margin-bottom: 1rem;
   width: 100%;
   min-height: 500px;
+  height: calc(100vh - 350px);
 }
 
 .tradingview-chart {
@@ -895,11 +928,9 @@ body {
   font-weight: 600;
 }
 
-.order-history {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid #334155;
-  border-radius: 8px;
-  overflow: hidden;
+/* ORDER HISTORY HIDDEN IN CENTER PANEL (MOVED TO RIGHT PANEL) */
+.trading-controls .order-history {
+  display: none !important;
 }
 
 .order-history-header.enhanced {
@@ -1155,6 +1186,43 @@ body {
   flex-direction: column;
   gap: 1.5rem;
   flex-shrink: 0;
+}
+
+/* QUICK TRADE HIDDEN IN RIGHT PANEL (MOVED TO LEFT PANEL) */
+.right-panel .top-right-trading {
+  display: none !important;
+}
+
+/* ORDER HISTORY MOVED TO RIGHT PANEL */
+.right-panel .order-history {
+  display: block !important;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.right-panel .order-history-header.enhanced {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.9);
+  font-size: 0.75rem;
+  color: #94a3b8;
+  border-bottom: 1px solid #334155;
+}
+
+.right-panel .order-history-item.enhanced {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
 }
 
 .top-right-trading {
@@ -4378,16 +4446,21 @@ a {
     border-left: none !important;
   }
   
-  /* Chart Container mobile optimization */
+  /* CHART FIX FOR MOBILE - Full visibility */
   .chart-container {
     min-height: 300px !important;
-    max-height: 60vh !important;
+    max-height: 70vh !important;
+    height: auto !important;
+    overflow: visible !important;
     border-radius: 8px !important;
     margin-bottom: 0.5rem !important;
   }
   
   .tradingview-chart {
     min-height: 300px !important;
+    max-height: 70vh !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   
   .chart-header-simplified {
@@ -4472,6 +4545,19 @@ a {
   .trading-controls {
     padding: 0.75rem !important;
     margin-bottom: 0.5rem !important;
+  }
+  
+  /* Hide left panel quick trade on mobile */
+  .left-panel .top-right-trading {
+    display: none !important;
+  }
+  
+  /* Show order history in right panel on mobile */
+  .right-panel .order-history {
+    display: block !important;
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   .order-history-header.enhanced,
@@ -4672,10 +4758,12 @@ a {
   
   .chart-container {
     min-height: 600px;
+    height: calc(100vh - 350px);
   }
   
   .tradingview-chart {
     min-height: 600px;
+    height: 100%;
   }
   
   .advanced-main {
@@ -4760,20 +4848,6 @@ a {
   [data-tab="trading"] .quick-trade-mobile {
     display: block !important;
   }
-  /* Hide DEMO MODE/LIVE toggle and Remove all This text */
-.mode-toggle,
-.mode-toggle + .separator + span {
-  display: none !important;
-}
-
-/* Hide Market News 5 button */
-.news-indicator-below-alert {
-  display: none !important;
-}
-  /* Hide Total Balance section */
-.below-price-alert-section {
-  display: none !important;
-}
 }
 
 /* End of CSS */
