@@ -4770,6 +4770,10 @@ a {
 .news-indicator-below-alert {
   display: none !important;
 }
+  /* Hide Total Balance section */
+.below-price-alert-section {
+  display: none !important;
+}
 }
 
 /* End of CSS */
