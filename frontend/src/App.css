@@ -4760,6 +4760,16 @@ a {
   [data-tab="trading"] .quick-trade-mobile {
     display: block !important;
   }
+  /* Hide DEMO MODE/LIVE toggle and Remove all This text */
+.mode-toggle,
+.mode-toggle + .separator + span {
+  display: none !important;
+}
+
+/* Hide Market News 5 button */
+.news-indicator-below-alert {
+  display: none !important;
+}
 }
 
 /* End of CSS */
