@@ -5,6 +5,7 @@ import AccountSetup from './components/AccountSetup';
 import WithdrawalRequest from './components/WithdrawalRequest';
 import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
 import WithdrawalHistory from './components/WithdrawalHistory';
+import Navbar from './components/Navbar'; // Adjust the path
 
 import './App.css';
 
@@ -81,6 +82,14 @@ const PLANS = [
     paperMoney: "500,000"
   }
 ];
+function App() {
+  return (
+    <div className="advanced-app">
+      <Navbar />
+      {/* Rest of your app content */}
+    </div>
+  );
+}
 
 function App() {
   const [userAccount, setUserAccount] = useState({
