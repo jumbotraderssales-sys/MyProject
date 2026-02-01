@@ -42,6 +42,241 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 150px;
+}
+
+/* DUAL CURRENCY BALANCE STYLES */
+.dual-currency-balance {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.currency-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rupee-balance .currency-amount {
+  color: #4caf50; /* Green for rupees */
+}
+
+.dollar-balance .currency-amount {
+  color: #2196f3; /* Blue for dollars */
+}
+
+.currency-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+}
+
+.currency-amount {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.rupee-amount {
+  font-size: 1.1rem;
+}
+
+.dollar-amount {
+  font-size: 1.1rem;
+}
+
+.currency-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+.exchange-rate {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}
+
+.static-logout-btn {
+  background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%);
+  border: none;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.static-logout-btn:hover {
+  background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* Adjust top navigation to be below the static bar */
+.top-horizontal-nav {
+  top: 48px; /* Adjust based on static bar height */
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 1024px) {
+  .static-user-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .static-user-name {
+    min-width: auto;
+  }
+  
+  .dual-currency-balance {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .currency-balance {
+    flex: 1;
+  }
+  
+  .currency-separator {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-static-user-bar {
+    padding: 6px 12px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .static-user-info {
+    gap: 8px;
+  }
+  
+  .static-user-name {
+    font-size: 0.9rem;
+  }
+  
+  .dual-currency-balance {
+    padding: 6px 10px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .currency-balance {
+    min-width: 120px;
+  }
+  
+  .currency-label {
+    font-size: 0.75rem;
+  }
+  
+  .currency-amount {
+    font-size: 0.9rem;
+  }
+  
+  .rupee-amount, .dollar-amount {
+    font-size: 1rem;
+  }
+  
+  .exchange-rate {
+    font-size: 0.65rem;
+  }
+  
+  .static-logout-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    width: 100%;
+  }
+  
+  .top-horizontal-nav {
+    top: 130px; /* Adjust for mobile stacked layout */
+  }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+  .dual-currency-balance {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .currency-balance {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .currency-label {
+    font-size: 0.8rem;
+  }
+  
+  .currency-amount {
+    font-size: 0.9rem;
+  }
+  
+  .exchange-rate {
+    position: absolute;
+    right: 15px;
+    margin-top: 0;
+  }
+  
+  .top-horizontal-nav {
+    top: 180px; /* Adjust for mobile stacked layout */
+  }
+}
+
+/* Animation for balance updates */
+@keyframes balanceUpdate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.balance-updated {
+  animation: balanceUpdate 0.3s ease-in-out;
+}
+/* Add this to your App.css file, preferably near the top after the base styles */
+
+/* TOP STATIC USER INFO BAR */
+.top-static-user-bar {
+  background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+  color: white;
+  padding: 8px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #3949ab;
+  position: sticky;
+  top: 0;
+  z-index: 1002;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.static-user-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.static-user-name {
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .static-user-balance {
