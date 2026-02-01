@@ -1901,33 +1901,17 @@ const syncUserWallet = async () => {
             
             {/* USER INFO AND LOGOUT */}
             <div className="auth-buttons">
-              {isLoggedIn ? (
-                <>
-                  <div className="user-info-header">
-                    <span className="user-name-header">{userAccount.name || 'User'}</span>
-                    <div className="user-balance-header">
-                      <span className="balance-label-header">Paper Balance:</span>
-                      <span className="balance-amount-header">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
-                    </div>
-                  </div>
-                  <button className="auth-btn logout-btn" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button className="auth-btn" onClick={() => setShowLogin(true)}>
-                    Login
-                  </button>
-                  <button className="auth-btn register-btn" onClick={() => {
-                    setPendingPlanPurchase(false);
-                    setShowRegister(true);
-                  }}>
-                    Register
-                  </button>
-                </>
-              )}
-            </div>
+            {isLoggedIn && (
+  <div className="top-static-user-bar">
+    <div className="static-user-info">
+      <span className="static-user-name">👤 {userAccount.name || 'User'}</span>
+      {/* Balance display here - either simple or dual currency */}
+    </div>
+    <button className="static-logout-btn" onClick={handleLogout}>
+      Logout
+    </button>
+  </div>
+)}
           </header>
 
           {/* SHIFT TO BELOW PRICE ALERT SECTION */}
