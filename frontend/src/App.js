@@ -11,7 +11,6 @@ import './App.css';
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
 
-
 // Crypto data with details
 const cryptoData = [
   { symbol: 'BTCUSDT', name: 'Bitcoin', price: 91391.5, change24h: 2.34, volume: '42.5B', marketCap: '1.8T', color: '#F7931A' },
@@ -84,7 +83,7 @@ const PLANS = [
 ];
 
 function App() {
-const [userAccount, setUserAccount] = useState({
+  const [userAccount, setUserAccount] = useState({
     id: null,
     name: "",
     email: "",
@@ -203,6 +202,8 @@ const [userAccount, setUserAccount] = useState({
     merchantName: 'Paper2Real Trading'
   });
   
+  // NEW: Dollar balance conversion rate
+  const [dollarRate, setDollarRate] = useState(90); // 1 USD = 90 INR
 
   // NEW: Payment tracking state
   const [payments, setPayments] = useState([]);
@@ -225,6 +226,11 @@ const [userAccount, setUserAccount] = useState({
   useEffect(() => {
     positionsRef.current = positions;
   }, [positions]);
+
+  // Calculate dollar balance whenever paper balance changes
+  const calculateDollarBalance = (paperBalance) => {
+    return (paperBalance / dollarRate).toFixed(2);
+  };
 
   // Load payments when user logs in
   useEffect(() => {
@@ -1779,23 +1785,7 @@ const syncUserWallet = async () => {
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
-          {/* TOP STATIC USER INFO BAR - NEW ADDITION */}
-          {isLoggedIn && (
-            <div className="top-static-user-bar">
-              <div className="static-user-info">
-                <span className="static-user-name">👤 {userAccount.name || 'User'}</span>
-                <div className="static-user-balance">
-                  <span className="static-balance-label">Paper Balance:</span>
-                  <span className="static-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
-                </div>
-              </div>
-              <button className="static-logout-btn" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          )}
-
-          {/* TOP HORIZONTAL NAVIGATION - BOLD TABS */}
+          {/* TOP HORIZONTAL NAVIGATION - BOLD TABS WITH USER INFO ON SAME ROW */}
           <div className="top-horizontal-nav">
             <div className="nav-tabs-container">
               <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
@@ -1865,9 +1855,39 @@ const syncUserWallet = async () => {
                 </div>
               )}
             </div>
+
+            {/* USER INFO AND BALANCE DISPLAY ON SAME ROW */}
+            <div className="nav-user-info-container">
+              {isLoggedIn ? (
+                <>
+                  <div className="nav-user-info">
+                    <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
+                    <div className="nav-user-balance">
+                      <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                      <span className="nav-balance-dollar">(${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                    </div>
+                  </div>
+                  <button className="nav-logout-btn" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <div className="nav-auth-buttons">
+                  <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>
+                    Login
+                  </button>
+                  <button className="nav-auth-btn register-btn" onClick={() => {
+                    setPendingPlanPurchase(false);
+                    setShowRegister(true);
+                  }}>
+                    Register
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* MAIN HEADER - Remove user info from here since it's now in top bar */}
+          {/* MAIN HEADER - Remove user info from here since it's now in navigation row */}
           <header className="advanced-header">
             <div className="connection-info">
               <span className="api-status">Connection to API</span>
@@ -1913,28 +1933,6 @@ const syncUserWallet = async () => {
                 📰 Market News
                 {marketNews.length > 0 && <span className="news-badge">{marketNews.length}</span>}
               </button>
-            </div>
-            
-            {/* USER INFO AND LOGOUT - REMOVED FROM HERE */}
-            <div className="auth-buttons">
-              {!isLoggedIn ? ( // Only show login/register buttons when not logged in
-                <>
-                  <button className="auth-btn" onClick={() => setShowLogin(true)}>
-                    Login
-                  </button>
-                  <button className="auth-btn register-btn" onClick={() => {
-                    setPendingPlanPurchase(false);
-                    setShowRegister(true);
-                  }}>
-                    Register
-                  </button>
-                </>
-              ) : (
-                // When logged in, we could show a profile icon or leave empty since info is in top bar
-                <div className="user-info-header">
-                  <span className="user-name-header">{userAccount.name || 'User'}</span>
-                </div>
-              )}
             </div>
           </header>
 
@@ -2046,7 +2044,7 @@ const syncUserWallet = async () => {
                 )}
                 {isLoggedIn && userAccount.currentPlan && (
                   <div className="active-plan-banner">
-                    <span>✅ Active Plan: {userAccount.currentPlan} | Paper Balance: ₹{userAccount.paperBalance?.toLocaleString()}</span>
+                    <span>✅ Active Plan: {userAccount.currentPlan} | Paper Balance: ₹{userAccount.paperBalance?.toLocaleString()} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
                   </div>
                 )}
               </div>
@@ -2340,7 +2338,7 @@ const syncUserWallet = async () => {
                   </div>
                   <div className="balance-item">
                     <span>Paper Balance:</span>
-                    <strong>₹{(userAccount.paperBalance || 0).toLocaleString()}</strong>
+                    <strong>₹{(userAccount.paperBalance || 0).toLocaleString()} (${calculateDollarBalance(userAccount.paperBalance || 0)})</strong>
                   </div>
                   <div className="balance-item">
                     <span>Total Profit:</span>
@@ -2802,7 +2800,7 @@ const syncUserWallet = async () => {
                   <div className="performance-stats">
                     <div className="performance-stat">
                       <span className="performance-label">Paper Balance</span>
-                      <span className="performance-value">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                      <span className="performance-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
                     </div>
                     <div className="performance-stat">
                       <span className="performance-label">Total Profit</span>
@@ -2828,7 +2826,7 @@ const syncUserWallet = async () => {
                     </div>
                     <div className="setting-item">
                       <span className="setting-label">Paper Balance</span>
-                      <span className="setting-value">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                      <span className="setting-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
                     </div>
                     <div className="setting-item">
                       <span className="setting-label">Real Balance</span>
