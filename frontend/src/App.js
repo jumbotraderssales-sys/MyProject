@@ -1798,11 +1798,50 @@ const syncUserWallet = async () => {
   };
 
   return (
-    <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
-      {!isFullScreen && (
-        <>
-          {/* TOP STATIC USER INFO BAR - UPDATED WITH DUAL CURRENCY */}
-          {isLoggedIn && (
+<div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
+  {!isFullScreen && isLoggedIn && (
+    <div style={{
+      background: '#1e293b',
+      color: 'white',
+      padding: '8px 20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderBottom: '1px solid #334155',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1002
+    }}>
+      <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+        <span style={{fontWeight: 600}}>👤 {userAccount.name || 'User'}</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          padding: '6px 12px',
+          borderRadius: '6px',
+          border: '1px solid rgba(59, 130, 246, 0.3)'
+        }}>
+          <span style={{fontSize: '0.85rem', color: '#94a3b8'}}>Paper Balance:</span>
+          <span style={{fontWeight: 700, color: '#10b981'}}>₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+        </div>
+      </div>
+      <button onClick={handleLogout} style={{
+        background: '#dc2626',
+        border: 'none',
+        color: 'white',
+        padding: '6px 16px',
+        borderRadius: '6px',
+        fontWeight: 600,
+        cursor: 'pointer'
+      }}>
+        Logout
+      </button>
+    </div>
+  )}
+
+  {/* Your existing code continues below... */}
             <div className="top-static-user-bar">
               <div className="static-user-info">
                 <span className="static-user-name">👤 {userAccount.name || 'User'}</span>
