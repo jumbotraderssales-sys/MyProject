@@ -4888,34 +4888,47 @@ body.profile-route .below-price-alert-section {
     flex-direction: column !important;
   }
 }
-/* ALTERNATIVE: Target profile page by its content class */
-.profile-content ~ .advanced-header {
+/* ============================================================================
+   ALTERNATIVE: Show paper balance in header using page URL detection
+   ============================================================================ */
+
+/* Hide balance section from content area on ALL pages */
+.below-price-alert-section {
+  display: none !important;
+}
+
+/* Show user balance in header on ALL pages */
+.user-balance-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  margin-left: auto !important;
+}
+
+/* On non-profile pages, hide everything except tabs */
+.top-horizontal-nav {
+  display: block !important;
+}
+
+/* Simple solution: Just show the balance in header for all pages */
+/* This puts Paper Balance in the top right corner */
+.advanced-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 0.5rem 1rem !important;
-  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%) !important;
-  border-bottom: 2px solid #334155 !important;
 }
 
-/* Hide the balance section from content area */
-.profile-content ~ .below-price-alert-section {
-  display: none !important;
+/* Move connection info to left */
+.connection-info {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-/* Create header content for profile page */
-.profile-content ~ .advanced-header .connection-info,
-.profile-content ~ .advanced-header .symbol-info,
-.profile-content ~ .advanced-header .news-indicator-below-alert {
-  display: none !important;
+/* Move balance to right */
+.auth-buttons {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
 }
-
-/* Add custom user info to header */
-.profile-content ~ .advanced-header::after {
-  content: '' !important;
-  display: none !important;
-}
-
-/* You'll need to modify your JSX/HTML to include this structure in the header for profile page */
 
 /* End of CSS */
