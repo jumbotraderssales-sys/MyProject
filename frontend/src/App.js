@@ -227,6 +227,14 @@ const [userAccount, setUserAccount] = useState({
       setDollarBalance(dollarAmount);
     }
   }, [userAccount.paperBalance]);
+  // Add this effect to trigger animation when balance changes
+useEffect(() => {
+  if (userAccount.paperBalance !== undefined) {
+    setBalanceAnimation(true);
+    const timer = setTimeout(() => setBalanceAnimation(false), 300);
+    return () => clearTimeout(timer);
+  }
+}, [userAccount.paperBalance]);
 
   // Also update when user logs in
   useEffect(() => {
@@ -1798,18 +1806,18 @@ const syncUserWallet = async () => {
             <div className="top-static-user-bar">
               <div className="static-user-info">
                 <span className="static-user-name">👤 {userAccount.name || 'User'}</span>
-                <div className="dual-currency-balance">
-                  <div className="currency-balance rupee-balance">
-                    <span className="currency-label">Paper Balance:</span>
-                    <span className="currency-amount rupee-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
-                  </div>
-                  <div className="currency-separator">|</div>
-                  <div className="currency-balance dollar-balance">
-                    <span className="currency-label">Dollar Balance:</span>
-                    <span className="currency-amount dollar-amount">${dollarBalance.toFixed(2)}</span>
-                    <span className="exchange-rate">(1$ = ₹{exchangeRate})</span>
-                  </div>
-                </div>
+               <div className={`dual-currency-balance ${balanceAnimation ? 'balance-updated' : ''}`}>
+  <div className="currency-balance rupee-balance">
+    <span className="currency-label">Paper Balance:</span>
+    <span className="currency-amount rupee-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+  </div>
+  <div className="currency-separator">|</div>
+  <div className="currency-balance dollar-balance">
+    <span className="currency-label">Dollar Balance:</span>
+    <span className="currency-amount dollar-amount">${dollarBalance.toFixed(2)}</span>
+    <span className="exchange-rate">(1$ = ₹{exchangeRate})</span>
+  </div>
+</div>
               </div>
               <button className="static-logout-btn" onClick={handleLogout}>
                 Logout
