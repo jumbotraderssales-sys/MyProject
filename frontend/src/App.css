@@ -4775,5 +4775,42 @@ a {
   display: none !important;
 }
 }
+/* Hide the entire advanced-header and below-price-alert-section from HOME, MARKET, TRADING, WITHDRAW */
+[data-tab="home"] .advanced-header,
+[data-tab="home"] .below-price-alert-section,
+[data-tab="market"] .advanced-header,
+[data-tab="market"] .below-price-alert-section,
+[data-tab="trading"] .advanced-header,
+[data-tab="trading"] .below-price-alert-section,
+[data-tab="withdraw"] .advanced-header,
+[data-tab="withdraw"] .below-price-alert-section {
+  display: none !important;
+}
+
+/* Show only in PROFILE page */
+[data-tab="profile"] .advanced-header,
+[data-tab="profile"] .below-price-alert-section {
+  display: flex !important;
+}
+
+/* Mobile responsive adjustments for hidden sections */
+@media (max-width: 768px) {
+  [data-tab="home"] .advanced-header,
+  [data-tab="market"] .advanced-header,
+  [data-tab="trading"] .advanced-header,
+  [data-tab="withdraw"] .advanced-header,
+  [data-tab="home"] .below-price-alert-section,
+  [data-tab="market"] .below-price-alert-section,
+  [data-tab="trading"] .below-price-alert-section,
+  [data-tab="withdraw"] .below-price-alert-section {
+    display: none !important;
+  }
+  
+  [data-tab="profile"] .advanced-header,
+  [data-tab="profile"] .below-price-alert-section {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
 
 /* End of CSS */
