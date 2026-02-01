@@ -1774,10 +1774,26 @@ const syncUserWallet = async () => {
     setShowPaymentDetails(true);
   };
 
-  return (
+   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
+          {/* TOP STATIC USER INFO BAR - NEW ADDITION */}
+          {isLoggedIn && (
+            <div className="top-static-user-bar">
+              <div className="static-user-info">
+                <span className="static-user-name">👤 {userAccount.name || 'User'}</span>
+                <div className="static-user-balance">
+                  <span className="static-balance-label">Paper Balance:</span>
+                  <span className="static-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                </div>
+              </div>
+              <button className="static-logout-btn" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
+          )}
+
           {/* TOP HORIZONTAL NAVIGATION - BOLD TABS */}
           <div className="top-horizontal-nav">
             <div className="nav-tabs-container">
@@ -1850,9 +1866,8 @@ const syncUserWallet = async () => {
             </div>
           </div>
 
-          {/* MAIN HEADER */}
+          {/* MAIN HEADER - Remove user info from here since it's now in top bar */}
           <header className="advanced-header">
-            
             <div className="connection-info">
               <span className="api-status">Connection to API</span>
               <div className="mode-toggle">
@@ -1899,22 +1914,9 @@ const syncUserWallet = async () => {
               </button>
             </div>
             
-            {/* USER INFO AND LOGOUT */}
+            {/* USER INFO AND LOGOUT - REMOVED FROM HERE */}
             <div className="auth-buttons">
-            {isLoggedIn ? (
-                <>
-                  <div className="user-info-header">
-                    <span className="user-name-header">{userAccount.name || 'User'}</span>
-                    <div className="user-balance-header">
-                      <span className="balance-label-header">Paper Balance:</span>
-                      <span className="balance-amount-header">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
-                    </div>
-                  </div>
-                  <button className="auth-btn logout-btn" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </>
-              ) : (
+              {!isLoggedIn ? ( // Only show login/register buttons when not logged in
                 <>
                   <button className="auth-btn" onClick={() => setShowLogin(true)}>
                     Login
@@ -1926,9 +1928,14 @@ const syncUserWallet = async () => {
                     Register
                   </button>
                 </>
+              ) : (
+                // When logged in, we could show a profile icon or leave empty since info is in top bar
+                <div className="user-info-header">
+                  <span className="user-name-header">{userAccount.name || 'User'}</span>
+                </div>
               )}
             </div>
-  </header>
+          </header>
 
           {/* SHIFT TO BELOW PRICE ALERT SECTION */}
           {activeDashboard === 'Trading' && (
@@ -1950,7 +1957,6 @@ const syncUserWallet = async () => {
               </div>
               
               {/* ADDITIONAL SHIFTED CONTENT CAN GO HERE */}
-            
             </div>
           )}
         </>
