@@ -103,7 +103,8 @@ const [userAccount, setUserAccount] = useState({
       upiId: ''
     }
   });
-    
+  const [dollarBalance, setDollarBalance] = useState(0);  
+  const exchangeRate = 90;  
   const [balance, setBalance] = useState(0);
   const [equity, setEquity] = useState(0);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
@@ -219,7 +220,21 @@ const [userAccount, setUserAccount] = useState({
 
   // Ref for checking stop loss and take profit
   const positionsRef = useRef(positions);
+  // Update dollar balance when paper balance changes
+  useEffect(() => {
+    if (userAccount.paperBalance !== undefined) {
+      const dollarAmount = userAccount.paperBalance / exchangeRate;
+      setDollarBalance(dollarAmount);
+    }
+  }, [userAccount.paperBalance]);
 
+  // Also update when user logs in
+  useEffect(() => {
+    if (isLoggedIn && userAccount.paperBalance) {
+      const dollarAmount = userAccount.paperBalance / exchangeRate;
+      setDollarBalance(dollarAmount);
+    }
+  }, [isLoggedIn, userAccount.paperBalance]);
   // Update ref when positions change
   useEffect(() => {
     positionsRef.current = positions;
@@ -1774,18 +1789,26 @@ const syncUserWallet = async () => {
     setShowPaymentDetails(true);
   };
 
-   return (
+  return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
-          {/* TOP STATIC USER INFO BAR - NEW ADDITION */}
+          {/* TOP STATIC USER INFO BAR - UPDATED WITH DUAL CURRENCY */}
           {isLoggedIn && (
             <div className="top-static-user-bar">
               <div className="static-user-info">
                 <span className="static-user-name">👤 {userAccount.name || 'User'}</span>
-                <div className="static-user-balance">
-                  <span className="static-balance-label">Paper Balance:</span>
-                  <span className="static-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                <div className="dual-currency-balance">
+                  <div className="currency-balance rupee-balance">
+                    <span className="currency-label">Paper Balance:</span>
+                    <span className="currency-amount rupee-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className="currency-separator">|</div>
+                  <div className="currency-balance dollar-balance">
+                    <span className="currency-label">Dollar Balance:</span>
+                    <span className="currency-amount dollar-amount">${dollarBalance.toFixed(2)}</span>
+                    <span className="exchange-rate">(1$ = ₹{exchangeRate})</span>
+                  </div>
                 </div>
               </div>
               <button className="static-logout-btn" onClick={handleLogout}>
@@ -1867,8 +1890,7 @@ const syncUserWallet = async () => {
           </div>
 
           {/* MAIN HEADER - Remove user info from here since it's now in top bar */}
-          <header className="advanced-header">
-            <div className="connection-info">
+                      <div className="connection-info">
               <span className="api-status">Connection to API</span>
               <div className="mode-toggle">
                 <button 
