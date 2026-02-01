@@ -4888,27 +4888,7 @@ body.profile-route .below-price-alert-section {
     flex-direction: column !important;
   }
 }
-/* ============================================================================
-   ALTERNATIVE: Show paper balance in header using page URL detection
-   ============================================================================ */
 
-/* Hide balance section from content area on ALL pages */
-.below-price-alert-section {
-  display: none !important;
-}
-
-/* Show user balance in header on ALL pages */
-.user-balance-header {
-  display: flex !important;
-  align-items: center !important;
-  gap: 1rem !important;
-  margin-left: auto !important;
-}
-
-/* On non-profile pages, hide everything except tabs */
-.top-horizontal-nav {
-  display: block !important;
-}
 
 
 
