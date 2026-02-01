@@ -4812,5 +4812,81 @@ a {
     flex-direction: column !important;
   }
 }
+/* ============================================================================
+   HIDE TOP SECTION FROM NON-PROFILE PAGES - FIXED VERSION
+   ============================================================================ */
+
+/* Hide Connection Info, Symbol Info, News Indicator, and Total Balance from all pages by default */
+.home-content ~ .advanced-header,
+.home-content ~ .below-price-alert-section,
+.market-content ~ .advanced-header,
+.market-content ~ .below-price-alert-section,
+.trading-content ~ .advanced-header,
+.trading-content ~ .below-price-alert-section,
+.withdrawal-content ~ .advanced-header,
+.withdrawal-content ~ .below-price-alert-section {
+  display: none !important;
+}
+
+/* Show these sections only on Profile page */
+.profile-content ~ .advanced-header,
+.profile-content ~ .below-price-alert-section {
+  display: flex !important;
+}
+
+/* Alternative: Hide based on page container classes */
+.main-content:not(.profile-page) .advanced-header,
+.main-content:not(.profile-page) .below-price-alert-section,
+.app-container:not(.profile-page) .advanced-header,
+.app-container:not(.profile-page) .below-price-alert-section {
+  display: none !important;
+}
+
+/* Show only in profile pages */
+.main-content.profile-page .advanced-header,
+.main-content.profile-page .below-price-alert-section,
+.app-container.profile-page .advanced-header,
+.app-container.profile-page .below-price-alert-section {
+  display: flex !important;
+}
+
+/* If you're using route-based classes on body */
+body:not(.profile-route) .advanced-header,
+body:not(.profile-route) .below-price-alert-section {
+  display: none !important;
+}
+
+body.profile-route .advanced-header,
+body.profile-route .below-price-alert-section {
+  display: flex !important;
+}
+
+/* Direct element hiding for specific pages */
+/* This targets the header sections when not on profile page */
+.advanced-app:not(:has(.profile-content)) .advanced-header,
+.advanced-app:not(:has(.profile-content)) .below-price-alert-section {
+  display: none !important;
+}
+
+.advanced-app:has(.profile-content) .advanced-header,
+.advanced-app:has(.profile-content) .below-price-alert-section {
+  display: flex !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  /* Hide on mobile for non-profile pages */
+  .advanced-app:not(:has(.profile-content)) .advanced-header,
+  .advanced-app:not(:has(.profile-content)) .below-price-alert-section {
+    display: none !important;
+  }
+  
+  /* Show on mobile for profile page */
+  .advanced-app:has(.profile-content) .advanced-header,
+  .advanced-app:has(.profile-content) .below-price-alert-section {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
 
 /* End of CSS */
