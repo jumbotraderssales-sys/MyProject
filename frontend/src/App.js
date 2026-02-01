@@ -1912,7 +1912,7 @@ const syncUserWallet = async () => {
     </button>
   </div>
 )}
-          </header>
+  </header>
 
           {/* SHIFT TO BELOW PRICE ALERT SECTION */}
           {activeDashboard === 'Trading' && (
