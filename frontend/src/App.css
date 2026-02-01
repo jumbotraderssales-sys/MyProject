@@ -4,12 +4,6 @@
   padding: 0;
   box-sizing: border-box;
 }
-/* Reset & Base Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -19,13 +13,12 @@ body {
   width: 100%;
   max-width: 100vw;
 }
-/* Add this to your App.css file, preferably near the top after the base styles */
 
-/* TOP STATIC USER INFO BAR */
+/* TOP STATIC USER INFO BAR - UPDATED VERSION */
 .top-static-user-bar {
   background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
   color: white;
-  padding: 8px 20px;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -34,53 +27,141 @@ body {
   top: 0;
   z-index: 1002;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  min-height: 48px;
 }
 
+/* Navigation tabs on left side */
+.nav-tabs-container-static {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+}
+
+.nav-tabs-container-static::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab-static {
+  padding: 14px 20px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: fit-content;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab-static:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab-static.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.nav-tab-static.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #4caf50;
+}
+
+/* User info on right side */
 .static-user-info {
   display: flex;
   align-items: center;
   gap: 20px;
+  padding-left: 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .static-user-name {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 8px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.static-user-name i {
+  font-size: 1.1rem;
+  color: #bb86fc;
 }
 
 .static-user-balance {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
+  padding: 6px 16px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.static-balance-currency {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
 .static-balance-label {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .static-balance-amount {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #4caf50;
+}
+
+/* USD balance style */
+.usd-balance {
+  color: #2196f3 !important;
+}
+
+.balance-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.8rem;
 }
 
 .static-logout-btn {
   background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%);
   border: none;
   color: white;
-  padding: 6px 16px;
-  border-radius: 4px;
+  padding: 6px 20px;
+  border-radius: 20px;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.static-logout-btn i {
+  font-size: 0.9rem;
 }
 
 .static-logout-btn:hover {
@@ -89,67 +170,95 @@ body {
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
 }
 
-/* Adjust top navigation to be below the static bar */
+/* Adjust main content to be below the static bar */
+.advanced-main {
+  margin-top: 0;
+}
+
+/* Hide the old top horizontal nav since we moved tabs to static bar */
 .top-horizontal-nav {
-  top: 48px; /* Adjust based on static bar height */
+  display: none;
 }
 
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .top-static-user-bar {
-    padding: 6px 12px;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
+    padding: 0 10px;
+    flex-wrap: wrap;
+    min-height: auto;
+  }
+  
+  .nav-tabs-container-static {
+    order: 1;
+    width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .nav-tab-static {
+    padding: 12px 15px;
+    font-size: 0.8rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
   }
   
   .static-user-info {
+    order: 2;
+    width: 100%;
     justify-content: space-between;
+    padding: 8px 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     gap: 10px;
+    flex-wrap: wrap;
   }
   
   .static-user-name {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
   
   .static-user-balance {
-    padding: 4px 8px;
+    padding: 4px 12px;
+    gap: 8px;
   }
   
   .static-balance-label {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
   }
   
   .static-balance-amount {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
   
   .static-logout-btn {
-    padding: 6px;
+    padding: 6px 16px;
     font-size: 0.8rem;
-    width: 100%;
-  }
-  
-  .top-horizontal-nav {
-    top: 90px; /* Adjust for mobile stacked layout */
   }
 }
 
 /* For very small screens */
 @media (max-width: 480px) {
+  .nav-tab-static {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+  
   .static-user-info {
     flex-direction: column;
-    gap: 6px;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .static-user-name {
+    justify-content: center;
   }
   
   .static-user-balance {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
   }
   
-  .top-horizontal-nav {
-    top: 110px; /* Adjust for mobile stacked layout */
+  .static-logout-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -165,61 +274,9 @@ body {
   background: #0a0e17;
 }
 
-/* Top Horizontal Navigation - MOBILE FIXED */
+/* Top Horizontal Navigation - HIDDEN (moved to static bar) */
 .top-horizontal-nav {
-  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
-  border-bottom: 2px solid #334155;
-  padding: 0.5rem 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 1001;
-  width: 100%;
-}
-
-.nav-tabs-container {
-  display: flex;
-  gap: 0.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.5rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.nav-tabs-container::-webkit-scrollbar {
   display: none;
-}
-
-.nav-tab {
-  padding: 0.75rem 1.5rem;
-  background: rgba(30, 41, 59, 0.5);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid transparent;
-  white-space: nowrap;
-  flex-shrink: 0;
-  min-width: fit-content;
-}
-
-.nav-tab:hover {
-  background: rgba(51, 65, 85, 0.5);
-  border-color: #475569;
-}
-
-.nav-tab.active {
-  background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
-  border-color: #60a5fa;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.tab-text {
-  font-weight: 600;
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
 }
 
 /* Advanced Header - MOBILE OPTIMIZED */
@@ -232,9 +289,14 @@ body {
   justify-content: space-between;
   align-items: center;
   position: sticky;
-  top: 0;
+  top: 48px; /* Below static bar */
   z-index: 1000;
 }
+
+/* ... REST OF THE EXISTING CSS REMAINS UNCHANGED ... */
+
+/* All the existing CSS from line 118 to the end of the file remains exactly the same */
+/* I'm not copying it here to save space, but it should stay as is */
 
 .connection-info {
   display: flex;
