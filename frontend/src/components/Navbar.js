@@ -7,83 +7,88 @@ const Navbar = () => {
     const navigate = useNavigate();
     const isAdmin = localStorage.getItem('role') === 'admin';
 
+    // Get user data
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const username = userData.username || localStorage.getItem('username') || 'User';
+    const paperBalance = userData.paperBalance || 0;
+    const usdBalance = userData.usdBalance || 0;
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('userData');
+        localStorage.removeItem('username');
         navigate('/login');
     };
 
+    // Format the balance as shown in image
+    const formatBalance = (balance) => {
+        return parseFloat(balance).toFixed(3);
+    };
+
     return (
-        <nav className="navbar">
-            <div className="navbar-container">
-                {/* Logo/Brand */}
-                <div className="navbar-brand">
-                    <Link to="/">
-                        <i className="fas fa-chart-line"></i>
-                        <span>Trading Platform</span>
-                    </Link>
-                </div>
-
-                {/* Navigation Links */}
-                <div className="navbar-links">
-                    <Link 
-                        to="/" 
-                        className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
-                    >
-                        <i className="fas fa-home"></i>
-                        <span>Dashboard</span>
-                    </Link>
-                    
-                    <Link 
-                        to="/account-setup" 
-                        className={`nav-link ${location.pathname === '/account-setup' ? 'active' : ''}`}
-                    >
-                        <i className="fas fa-university"></i>
-                        <span>Bank Account</span>
-                    </Link>
-                    
-                    <Link 
-                        to="/withdrawal" 
-                        className={`nav-link ${location.pathname === '/withdrawal' ? 'active' : ''}`}
-                    >
-                        <i className="fas fa-money-check-alt"></i>
-                        <span>Withdraw</span>
-                    </Link>
-                    
-                    <Link 
-                        to="/withdrawal-history" 
-                        className={`nav-link ${location.pathname === '/withdrawal-history' ? 'active' : ''}`}
-                    >
-                        <i className="fas fa-history"></i>
-                        <span>History</span>
-                    </Link>
-                    
-                    {/* Admin link - only show for admins */}
-                    {isAdmin && (
-                        <Link 
-                            to="/admin/withdrawals" 
-                            className={`nav-link ${location.pathname === '/admin/withdrawals' ? 'active' : ''}`}
-                        >
-                            <i className="fas fa-user-shield"></i>
-                            <span>Admin Panel</span>
-                        </Link>
-                    )}
-                </div>
-
-                {/* User profile and logout */}
-                <div className="navbar-user">
-                    <div className="user-profile">
-                        <i className="fas fa-user-circle"></i>
-                        <span>{localStorage.getItem('username') || 'User'}</span>
-                    </div>
-                    <button onClick={handleLogout} className="logout-btn">
-                        <i className="fas fa-sign-out-alt"></i>
-                        Logout
-                    </button>
-                </div>
+        <div className="top-static-user-bar">
+            {/* Left side - Navigation tabs */}
+            <div className="nav-tabs-container-static">
+                <Link 
+                    to="/" 
+                    className={`nav-tab-static ${location.pathname === '/' ? 'active' : ''}`}
+                >
+                    HOME
+                </Link>
+                
+                <Link 
+                    to="/market" 
+                    className={`nav-tab-static ${location.pathname === '/market' ? 'active' : ''}`}
+                >
+                    MARKET
+                </Link>
+                
+                <Link 
+                    to="/trading" 
+                    className={`nav-tab-static ${location.pathname === '/trading' ? 'active' : ''}`}
+                >
+                    TRADING
+                </Link>
+                
+                <Link 
+                    to="/profile" 
+                    className={`nav-tab-static ${location.pathname === '/profile' ? 'active' : ''}`}
+                >
+                    PROFILE
+                </Link>
+                
+                <Link 
+                    to="/withdraw" 
+                    className={`nav-tab-static ${location.pathname === '/withdraw' ? 'active' : ''}`}
+                >
+                    WITHDRAW
+                </Link>
             </div>
-        </nav>
+
+            {/* Right side - User info, balance, and logout */}
+            <div className="static-user-info">
+                <div className="static-user-name">
+                    <i className="fas fa-user"></i>
+                    <span>{username}</span>
+                </div>
+                
+                <div className="static-user-balance">
+                    <div className="static-balance-currency">
+                        <div className="static-balance-label">Paper Balance</div>
+                        <div className="static-balance-amount">
+                            {formatBalance(paperBalance)} <span className="balance-separator">|</span> 
+                            <span className="usd-balance">(${formatBalance(usdBalance)})</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onClick={handleLogout} className="static-logout-btn">
+                    <i className="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
     );
 };
 
