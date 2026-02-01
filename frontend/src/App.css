@@ -5172,6 +5172,9 @@ body.profile-route .below-price-alert-section {
 /* Add this to your existing App.css file - it should go after the reset/base styles */
 
 /* TOP STATIC USER INFO BAR - CUSTOMIZED FOR YOUR STRUCTURE */
+/* Add this to your existing App.css file - it should go after the reset/base styles */
+
+/* TOP STATIC USER INFO BAR - CUSTOMIZED FOR YOUR STRUCTURE */
 .top-horizontal-nav {
   background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
   color: white;
@@ -5451,7 +5454,6 @@ body.profile-route .below-price-alert-section {
     min-width: 44px !important;
   }
 }
-
 /* 8. On mobile, adjust layout */
 @media (max-width: 768px) {
   .advanced-header {
