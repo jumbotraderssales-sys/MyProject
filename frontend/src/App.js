@@ -1849,7 +1849,7 @@ const syncUserWallet = async () => {
           <div className="nav-user-info">
             <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
             <div className="nav-user-balance">
-              <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+              <span className="nav-balance-amount">💼₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
               <span className="nav-balance-dollar">
                 (${calculateDollarBalance(userAccount.paperBalance || 0)})
               </span>
