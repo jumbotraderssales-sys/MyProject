@@ -205,9 +205,23 @@ body {
   }
 
   .static-user-balance {
-    font-size: 0.7rem;
-    padding: 3px 8px;
-  }
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.75rem;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Wallet icon before balance */
+.static-user-balance::before {
+  content: "💼";
+  font-size: 0.8rem;
+}
+
 
   .static-logout-btn {
     font-size: 0.7rem;
