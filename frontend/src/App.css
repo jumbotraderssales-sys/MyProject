@@ -21756,7 +21756,106 @@ body.profile-route .below-price-alert-section {
     justify-content: center !important;
   }
 }
+/* =============================================
+   FIXED USER INFO ORGANIZATION - ADD AT END OF FILE
+   ============================================= */
 
+/* Override existing top bar styles */
+.top-static-user-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 8px 20px !important;
+  min-height: 50px !important;
+}
+
+/* Reorganize user info container */
+.static-user-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 15px !important;
+  margin-left: auto !important;
+}
+
+/* User name styling */
+.static-user-name {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  color: white !important;
+  white-space: nowrap !important;
+}
+
+/* Wallet balance styling */
+.static-user-balance {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  white-space: nowrap !important;
+}
+
+/* Add wallet symbol before balance */
+.static-balance-amount {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.static-balance-amount::before {
+  content: "💰" !important;
+  font-size: 0.9rem !important;
+  margin-right: 2px !important;
+}
+
+/* Logout button */
+.static-logout-btn {
+  background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%) !important;
+  border: none !important;
+  color: white !important;
+  padding: 6px 15px !important;
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-size: 0.85rem !important;
+  white-space: nowrap !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .top-static-user-bar {
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+  
+  .static-user-info {
+    width: 100% !important;
+    justify-content: space-between !important;
+    margin-left: 0 !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .static-user-info {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+  
+  .static-user-name,
+  .static-user-balance,
+  .static-logout-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
 
 
 /* End of CSS */
