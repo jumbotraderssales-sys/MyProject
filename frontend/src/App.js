@@ -2306,110 +2306,7 @@ const syncUserWallet = async () => {
               </div>
             </div>
             
-                
-            
-                   ) : activeDashboard === 'Profile' ? (
-            <div className="profile-content">
-              
-              <div className="profile-header">
-                <h2>Your Profile</h2>
-                <div className="profile-status">
-                  <span className="profile-badge">{isLoggedIn ? 'ACTIVE ACCOUNT' : 'DEMO ACCOUNT'}</span>
-                  <span className="profile-tier">{userAccount.currentPlan || 'NO PLAN'}</span>
-                
-                </div>
-              </div>
-
-              <div className="profile-grid">
-                <div className="profile-card main-card">
-                  <div className="profile-avatar">
-                    <div className="avatar-circle">
-                      {userAccount.name?.charAt(0) || 'U'}
-                    </div>
-                    <div className="profile-info">
-                      <h3>{isLoggedIn ? userAccount.name : 'Guest User'}</h3>
-                      <p>Status: {isLoggedIn ? (userAccount.currentPlan ? 'Premium Member' : 'Free Account') : 'Not Logged In'}</p>
-                      <p>Email: {isLoggedIn ? userAccount.email : 'guest@example.com'}</p>
-                      <p>User ID: {userAccount.id || 'Not Available'}</p>
-                    </div>
-                  </div>
-                  <div className="profile-stats">
-                    <div className="profile-stat">
-                      <span className="stat-label">Account Level</span>
-                      <span className="stat-value">{userAccount.currentPlan ? 'Premium' : 'Basic'}</span>
-                    </div>
-                    <div className="profile-stat">
-                      <span className="stat-label">Trading Days</span>
-                      <span className="stat-value">{orderHistory.length > 0 ? Math.ceil(orderHistory.length / 5) : 0}</span>
-                    </div>
-                    <div className="profile-stat">
-                      <span className="stat-label">Total Trades</span>
-                      <span className="stat-value">{stats.total}</span>
-                    </div>
-                    <div className="profile-stat">
-                      <span className="stat-label">Win Rate</span>
-                      <span className="stat-value">{stats.winRate.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="profile-card performance-card">
-                  <h3>Trading Performance</h3>
-                  <div className="performance-stats">
-                    <div className="performance-stat">
-                      <span className="performance-label">Paper Balance</span>
-                      <span className="performance-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
-                    </div>
-                    <div className="performance-stat">
-                      <span className="performance-label">Total Profit</span>
-                      <span className="performance-value positive">+${orderHistory.filter(o => o.pnl > 0).reduce((sum, o) => sum + o.pnl, 0).toFixed(2)}</span>
-                    </div>
-                    <div className="performance-stat">
-                      <span className="performance-label">Total Loss</span>
-                      <span className="performance-value negative">-${Math.abs(orderHistory.filter(o => o.pnl < 0).reduce((sum, o) => sum + o.pnl, 0)).toFixed(2)}</span>
-                    </div>
-                    <div className="performance-stat">
-                      <span className="performance-label">Profit Factor</span>
-                      <span className="performance-value">{stats.profitFactor.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="profile-card settings-card">
-                  <h3>Account Settings</h3>
-                  <div className="settings-list">
-                    <div className="setting-item">
-                      <span className="setting-label">Current Plan</span>
-                      <span className="setting-value">{userAccount.currentPlan || 'None'}</span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Paper Balance</span>
-                      <span className="setting-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Real Balance</span>
-                      <span className="setting-value">₹{userAccount.realBalance?.toLocaleString() || '0'}</span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Account Status</span>
-                      <span className="setting-value">{userAccount.accountStatus || 'pending'}</span>
-                    </div>
-                  </div>
-                  <div className="settings-buttons">
-                    {!userAccount.currentPlan && (
-                      <button className="settings-btn upgrade-btn" onClick={() => setActiveDashboard('Home')}>
-                        Buy Trading Plan
-                      </button>
-                    )}
-                    {userAccount.currentPlan && (
-                      <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
-                        Start Trading
-                      </button>
-
-                    )}
-                  </div>
-                </div>
-    ) : activeDashboard === 'Withdrawal' ? (
+                    ) : activeDashboard === 'Withdrawal' ? (
             <div className="withdrawal-content">
               {/* Simple withdrawal dashboard with options */}
               <div className="withdrawal-dashboard">
@@ -2854,6 +2751,109 @@ const syncUserWallet = async () => {
                 </div>
               </div>
             </div>
+            
+                   ) : activeDashboard === 'Profile' ? (
+            <div className="profile-content">
+              
+              <div className="profile-header">
+                <h2>Your Profile</h2>
+                <div className="profile-status">
+                  <span className="profile-badge">{isLoggedIn ? 'ACTIVE ACCOUNT' : 'DEMO ACCOUNT'}</span>
+                  <span className="profile-tier">{userAccount.currentPlan || 'NO PLAN'}</span>
+                
+                </div>
+              </div>
+
+              <div className="profile-grid">
+                <div className="profile-card main-card">
+                  <div className="profile-avatar">
+                    <div className="avatar-circle">
+                      {userAccount.name?.charAt(0) || 'U'}
+                    </div>
+                    <div className="profile-info">
+                      <h3>{isLoggedIn ? userAccount.name : 'Guest User'}</h3>
+                      <p>Status: {isLoggedIn ? (userAccount.currentPlan ? 'Premium Member' : 'Free Account') : 'Not Logged In'}</p>
+                      <p>Email: {isLoggedIn ? userAccount.email : 'guest@example.com'}</p>
+                      <p>User ID: {userAccount.id || 'Not Available'}</p>
+                    </div>
+                  </div>
+                  <div className="profile-stats">
+                    <div className="profile-stat">
+                      <span className="stat-label">Account Level</span>
+                      <span className="stat-value">{userAccount.currentPlan ? 'Premium' : 'Basic'}</span>
+                    </div>
+                    <div className="profile-stat">
+                      <span className="stat-label">Trading Days</span>
+                      <span className="stat-value">{orderHistory.length > 0 ? Math.ceil(orderHistory.length / 5) : 0}</span>
+                    </div>
+                    <div className="profile-stat">
+                      <span className="stat-label">Total Trades</span>
+                      <span className="stat-value">{stats.total}</span>
+                    </div>
+                    <div className="profile-stat">
+                      <span className="stat-label">Win Rate</span>
+                      <span className="stat-value">{stats.winRate.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="profile-card performance-card">
+                  <h3>Trading Performance</h3>
+                  <div className="performance-stats">
+                    <div className="performance-stat">
+                      <span className="performance-label">Paper Balance</span>
+                      <span className="performance-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                    </div>
+                    <div className="performance-stat">
+                      <span className="performance-label">Total Profit</span>
+                      <span className="performance-value positive">+${orderHistory.filter(o => o.pnl > 0).reduce((sum, o) => sum + o.pnl, 0).toFixed(2)}</span>
+                    </div>
+                    <div className="performance-stat">
+                      <span className="performance-label">Total Loss</span>
+                      <span className="performance-value negative">-${Math.abs(orderHistory.filter(o => o.pnl < 0).reduce((sum, o) => sum + o.pnl, 0)).toFixed(2)}</span>
+                    </div>
+                    <div className="performance-stat">
+                      <span className="performance-label">Profit Factor</span>
+                      <span className="performance-value">{stats.profitFactor.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="profile-card settings-card">
+                  <h3>Account Settings</h3>
+                  <div className="settings-list">
+                    <div className="setting-item">
+                      <span className="setting-label">Current Plan</span>
+                      <span className="setting-value">{userAccount.currentPlan || 'None'}</span>
+                    </div>
+                    <div className="setting-item">
+                      <span className="setting-label">Paper Balance</span>
+                      <span className="setting-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                    </div>
+                    <div className="setting-item">
+                      <span className="setting-label">Real Balance</span>
+                      <span className="setting-value">₹{userAccount.realBalance?.toLocaleString() || '0'}</span>
+                    </div>
+                    <div className="setting-item">
+                      <span className="setting-label">Account Status</span>
+                      <span className="setting-value">{userAccount.accountStatus || 'pending'}</span>
+                    </div>
+                  </div>
+                  <div className="settings-buttons">
+                    {!userAccount.currentPlan && (
+                      <button className="settings-btn upgrade-btn" onClick={() => setActiveDashboard('Home')}>
+                        Buy Trading Plan
+                      </button>
+                    )}
+                    {userAccount.currentPlan && (
+                      <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
+                        Start Trading
+                      </button>
+
+                    )}
+                  </div>
+                </div>
+
                 <div className="profile-card activity-card">
                   <h3>Recent Activity</h3>
                   <div className="activity-list">
