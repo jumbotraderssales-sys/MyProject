@@ -99,34 +99,89 @@ body {
 .static-user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-left: 10px;
+  gap: 20px;
+  padding-left: 20px;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
-  flex-wrap: nowrap;
 }
 
-/* username */
 .static-user-name {
-  font-size: 0.75rem;
-  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.95);
 }
 
-/* balance pill */
+.static-user-name i {
+  font-size: 1.1rem;
+  color: #bb86fc;
+}
+
 .static-user-balance {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  font-size: 0.75rem;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* logout button */
+.static-balance-currency {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.static-balance-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.static-balance-amount {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #4caf50;
+}
+
+/* USD balance style */
+.usd-balance {
+  color: #2196f3 !important;
+}
+
+.balance-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.8rem;
+}
+
 .static-logout-btn {
-  padding: 4px 10px;
-  font-size: 0.75rem;
+  background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%);
+  border: none;
+  color: white;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
+.static-logout-btn i {
+  font-size: 0.9rem;
+}
+
+.static-logout-btn:hover {
+  background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
 
 /* Adjust main content to be below the static bar */
 .advanced-main {
@@ -194,38 +249,29 @@ body {
 
 /* For very small screens */
 @media (max-width: 480px) {
+  .nav-tab-static {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+  
   .static-user-info {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
-
+  
   .static-user-name {
-    font-size: 0.7rem;
+    justify-content: center;
   }
-
+  
   .static-user-balance {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  font-size: 0.75rem;
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-  color: #fff;
-  font-weight: 600;
-}
-
-/* Wallet icon before balance */
-.static-user-balance::before {
-  content: "💼";
-  font-size: 0.8rem;
-}
-
-
+    width: 100%;
+    justify-content: center;
+  }
+  
   .static-logout-btn {
-    font-size: 0.7rem;
-    padding: 3px 8px;
+    width: 100%;
+    justify-content: center;
   }
 }
 
