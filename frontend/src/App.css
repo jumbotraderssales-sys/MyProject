@@ -21576,6 +21576,95 @@ body.profile-route .below-price-alert-section {
     justify-content: center !important;
   }
 }
+/* ===== NAVBAR COMPACT MODE (FIT ALL ITEMS IN ONE ROW) ===== */
+
+.top-horizontal-nav {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 6px;
+}
+
+/* Tabs container */
+.nav-tabs-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+/* Individual tabs */
+.nav-tab {
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  white-space: nowrap;
+}
+
+/* Tab text */
+.tab-text {
+  font-size: 11px !important;
+  letter-spacing: 0.3px;
+}
+
+/* User info container */
+.nav-user-info-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* Username */
+.nav-user-name {
+  font-size: 11px;
+}
+
+/* Balance */
+.nav-user-balance {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+/* Logout button */
+.nav-logout-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* Prevent overflow */
+.nav-tabs-container,
+.nav-user-info-container {
+  min-width: 0;
+}
+
+/* RESPONSIVE EXTRA COMPRESSION */
+@media (max-width: 1200px) {
+  .nav-tab {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .tab-text {
+    font-size: 10px !important;
+  }
+
+  .nav-user-name {
+    font-size: 10px;
+  }
+
+  .nav-user-balance {
+    font-size: 9px;
+  }
+
+  .nav-logout-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+}
+
 
 
 /* End of CSS */
