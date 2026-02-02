@@ -26,7 +26,187 @@ body {
   width: 100%;
   max-width: 100vw;
 }
+/* Add this to your App.css file, preferably near the top after the reset/base styles */
 
+/* TOP STATIC USER BAR - ORGANIZED LAYOUT */
+.top-static-user-bar {
+  background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+  color: white;
+  padding: 8px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #3949ab;
+  position: sticky;
+  top: 0;
+  z-index: 1002;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  min-height: 48px;
+}
+
+/* User info section - organized layout */
+.static-user-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto; /* Push to the right */
+}
+
+/* User name with icon */
+.static-user-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: white;
+  white-space: nowrap;
+}
+
+.static-user-name i {
+  color: #bb86fc;
+  font-size: 1.1rem;
+}
+
+/* Wallet balance with clear visual hierarchy */
+.static-user-balance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.static-balance-currency {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.static-balance-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.static-balance-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #4caf50;
+}
+
+/* Wallet symbol */
+.wallet-symbol {
+  font-size: 0.9rem;
+  color: #ffd700; /* Gold color for wallet */
+  margin-right: 2px;
+}
+
+/* USD balance style */
+.usd-balance .static-balance-amount {
+  color: #2196f3;
+}
+
+.balance-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem;
+  margin: 0 4px;
+}
+
+/* Logout button */
+.static-logout-btn {
+  background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%);
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.static-logout-btn i {
+  font-size: 0.9rem;
+}
+
+.static-logout-btn:hover {
+  background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .top-static-user-bar {
+    padding: 6px 12px;
+    flex-wrap: wrap;
+  }
+  
+  .static-user-info {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 5px;
+  }
+  
+  .static-user-name {
+    font-size: 0.85rem;
+  }
+  
+  .static-user-balance {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+  
+  .static-balance-label {
+    font-size: 0.7rem;
+  }
+  
+  .static-balance-amount {
+    font-size: 0.85rem;
+  }
+  
+  .static-logout-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+  }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+  .static-user-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .static-user-name {
+    justify-content: center;
+  }
+  
+  .static-user-balance {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .static-logout-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 /* TOP STATIC USER INFO BAR - UPDATED VERSION */
 .top-static-user-bar {
   background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
