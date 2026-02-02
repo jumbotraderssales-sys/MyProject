@@ -1785,106 +1785,109 @@ const syncUserWallet = async () => {
       {!isFullScreen && (
         <>
           {/* TOP HORIZONTAL NAVIGATION - BOLD TABS WITH USER INFO ON SAME ROW */}
-          <div className="top-horizontal-nav">
-            <div className="nav-tabs-container">
-              <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
-                <span className="tab-text">HOME</span>
-              </div>
-              <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to view market');
-                  setShowLogin(true);
-                } else {
-                  setActiveDashboard('Market');
-                }
-              }}>
-                <span className="tab-text">MARKET</span>
-              </div>
-              <div className={`nav-tab ${activeDashboard === 'Trading' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to trade');
-                  setShowLogin(true);
-                } else if (!canTrade) {
-                  alert('Please purchase a plan to start trading');
-                  setActiveDashboard('Home');
-                } else {
-                  setActiveDashboard('Trading');
-                }
-              }}>
-                <span className="tab-text">TRADING</span>
-              </div>
-              <div className={`nav-tab ${activeDashboard === 'Profile' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to view profile');
-                  setShowLogin(true);
-                } else {
-                  setActiveDashboard('Profile');
-                }
-              }}>
-                <span className="tab-text">PROFILE</span>
-              </div>
-              {/* NEW WITHDRAWAL TAB */}
-              <div className={`nav-tab ${activeDashboard === 'Withdraw' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to access withdrawals');
-                  setShowLogin(true);
-                } else if (!userAccount.currentPlan) {
-                  alert('Please purchase a plan to make withdrawals');
-                  setActiveDashboard('Home');
-                } else {
-                  setActiveDashboard('Withdraw');
-                }
-              }}>
-                <span className="tab-text">WITHDRAW</span>
-              </div>
-              
-              {/* ADMIN TAB (only for admin users) */}
-              {userAccount.role === 'admin' && (
-                <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
-                  if (!isLoggedIn) {
-                    alert('Please login as admin');
-                    setShowLogin(true);
-                  } else if (userAccount.role !== 'admin') {
-                    alert('Admin access only');
-                  } else {
-                    setActiveDashboard('AdminPanel');
-                  }
-                }}>
-                  <span className="tab-text">ADMIN</span>
-                </div>
-              )}
-            </div>
+         <div className="top-horizontal-nav">
+  <div className="nav-tabs-container">
+    <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
+      <span className="tab-text">HOME</span>
+    </div>
 
-            {/* USER INFO AND BALANCE DISPLAY ON SAME ROW */}
-            <div className="nav-user-info-container">
-              {isLoggedIn ? (
-                <>
-                  <div className="nav-user-info">
-                    <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
-                    <div className="nav-user-balance">
-                      <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
-                      <span className="nav-balance-dollar">(${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
-                    </div>
-                  </div>
-                  <button className="nav-logout-btn" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <div className="nav-auth-buttons">
-                  <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>
-                    Login
-                  </button>
-                  <button className="nav-auth-btn register-btn" onClick={() => {
-                    setPendingPlanPurchase(false);
-                    setShowRegister(true);
-                  }}>
-                    Register
-                  </button>
-                </div>
-              )}
+    <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
+      if (!isLoggedIn) {
+        alert('Please login to view market');
+        setShowLogin(true);
+      } else {
+        setActiveDashboard('Market');
+      }
+    }}>
+      <span className="tab-text">MARKET</span>
+    </div>
+
+    <div className={`nav-tab ${activeDashboard === 'Trading' ? 'active' : ''}`} onClick={() => {
+      if (!isLoggedIn) {
+        alert('Please login to trade');
+        setShowLogin(true);
+      } else if (!canTrade) {
+        alert('Please purchase a plan to start trading');
+        setActiveDashboard('Home');
+      } else {
+        setActiveDashboard('Trading');
+      }
+    }}>
+      <span className="tab-text">TRADING</span>
+    </div>
+
+    <div className={`nav-tab ${activeDashboard === 'Profile' ? 'active' : ''}`} onClick={() => {
+      if (!isLoggedIn) {
+        alert('Please login to view profile');
+        setShowLogin(true);
+      } else {
+        setActiveDashboard('Profile');
+      }
+    }}>
+      <span className="tab-text">PROFILE</span>
+    </div>
+
+    <div className={`nav-tab ${activeDashboard === 'Withdraw' ? 'active' : ''}`} onClick={() => {
+      if (!isLoggedIn) {
+        alert('Please login to access withdrawals');
+        setShowLogin(true);
+      } else if (!userAccount.currentPlan) {
+        alert('Please purchase a plan to make withdrawals');
+        setActiveDashboard('Home');
+      } else {
+        setActiveDashboard('Withdraw');
+      }
+    }}>
+      <span className="tab-text">WITHDRAW</span>
+    </div>
+
+    {userAccount.role === 'admin' && (
+      <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
+        if (!isLoggedIn) {
+          alert('Please login as admin');
+          setShowLogin(true);
+        } else if (userAccount.role !== 'admin') {
+          alert('Admin access only');
+        } else {
+          setActiveDashboard('AdminPanel');
+        }
+      }}>
+        <span className="tab-text">ADMIN</span>
+      </div>
+    )}
+
+    {/* 🔥 USER INFO MOVED HERE (same row) */}
+    <div className="nav-user-info-container">
+      {isLoggedIn ? (
+        <>
+          <div className="nav-user-info">
+            <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
+            <div className="nav-user-balance">
+              <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+              <span className="nav-balance-dollar">
+                (${calculateDollarBalance(userAccount.paperBalance || 0)})
+              </span>
             </div>
           </div>
+          <button className="nav-logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </>
+      ) : (
+        <div className="nav-auth-buttons">
+          <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
+          <button className="nav-auth-btn register-btn" onClick={() => {
+            setPendingPlanPurchase(false);
+            setShowRegister(true);
+          }}>
+            Register
+          </button>
+        </div>
+      )}
+    </div>
+
+  </div>
+</div>
 
           {/* MAIN HEADER - Remove user info from here since it's now in navigation row */}
           <header className="advanced-header">
