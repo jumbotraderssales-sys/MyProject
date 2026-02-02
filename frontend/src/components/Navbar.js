@@ -7,7 +7,6 @@ const Navbar = () => {
     const navigate = useNavigate();
     const isAdmin = localStorage.getItem('role') === 'admin';
 
-    // Get user data
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
     const username = userData.username || localStorage.getItem('username') || 'User';
     const paperBalance = userData.paperBalance || 0;
@@ -21,7 +20,6 @@ const Navbar = () => {
         navigate('/login');
     };
 
-    // Format the balance as shown in image
     const formatBalance = (balance) => {
         return parseFloat(balance).toFixed(3);
     };
@@ -56,13 +54,6 @@ const Navbar = () => {
                     className={`nav-tab-static ${location.pathname === '/profile' ? 'active' : ''}`}
                 >
                     PROFILE
-                </Link>
-                
-                <Link 
-                    to="/withdraw" 
-                    className={`nav-tab-static ${location.pathname === '/withdraw' ? 'active' : ''}`}
-                >
-                    WITHDRAW
                 </Link>
             </div>
 
