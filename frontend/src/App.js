@@ -2849,6 +2849,12 @@ const syncUserWallet = async () => {
                       <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
                         Start Trading
                       </button>
+<button
+  className="profile-withdraw-btn"
+  onClick={() => navigate('/withdraw')}
+>
+  Withdraw Funds
+</button>
                     )}
                   </div>
                 </div>
