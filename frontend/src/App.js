@@ -1827,20 +1827,6 @@ const syncUserWallet = async () => {
       <span className="tab-text">PROFILE</span>
     </div>
 
-    <div className={`nav-tab ${activeDashboard === 'Withdraw' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to access withdrawals');
-        setShowLogin(true);
-      } else if (!userAccount.currentPlan) {
-        alert('Please purchase a plan to make withdrawals');
-        setActiveDashboard('Home');
-      } else {
-        setActiveDashboard('Withdraw');
-      }
-    }}>
-      <span className="tab-text">WITHDRAW</span>
-    </div>
-
     {userAccount.role === 'admin' && (
       <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
         if (!isLoggedIn) {
@@ -2306,453 +2292,7 @@ const syncUserWallet = async () => {
               </div>
             </div>
             
-                    ) : activeDashboard === 'Withdrawal' ? (
-            <div className="withdrawal-content">
-              {/* Simple withdrawal dashboard with options */}
-              <div className="withdrawal-dashboard">
-                <h2>Withdrawal Management</h2>
-                <p>Manage your withdrawals and bank account</p>
-                
-                <div className="withdrawal-options">
-                  <div className="withdrawal-card" onClick={() => setActiveDashboard('AccountSetup')}>
-                    <div className="card-icon">🏦</div>
-                    <h3>Bank Account Setup</h3>
-                    <p>Add or update your bank account for withdrawals</p>
-                  </div>
-                  
-                  <div className="withdrawal-card" onClick={() => setActiveDashboard('WithdrawalRequest')}>
-                    <div className="card-icon">💰</div>
-                    <h3>Request Withdrawal</h3>
-                    <p>Withdraw your paper profits to real money</p>
-                  </div>
-                  
-                  <div className="withdrawal-card" onClick={() => setActiveDashboard('WithdrawalHistory')}>
-                    <div className="card-icon">📜</div>
-                    <h3>Withdrawal History</h3>
-                    <p>View your withdrawal requests and status</p>
-                  </div>
-                </div>
-                
-                <div className="balance-summary">
-                  <div className="balance-item">
-                    <span>Available for Withdrawal:</span>
-                    <strong>₹{(userAccount.realBalance || 0).toLocaleString()}</strong>
-                  </div>
-                  <div className="balance-item">
-                    <span>Paper Balance:</span>
-                    <strong>₹{(userAccount.paperBalance || 0).toLocaleString()} (${calculateDollarBalance(userAccount.paperBalance || 0)})</strong>
-                  </div>
-                  <div className="balance-item">
-                    <span>Total Profit:</span>
-                    <strong>₹{(userAccount.realBalance + userAccount.paperBalance || 0).toLocaleString()}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          ) : activeDashboard === 'AccountSetup' ? (
-            <AccountSetup userAccount={userAccount} setUserAccount={setUserAccount} />
-            
-          ) : activeDashboard === 'WithdrawalRequest' ? (
-            <WithdrawalRequest 
-              userAccount={userAccount} 
-              setUserAccount={setUserAccount}
-              balance={balance}
-              setActiveDashboard={setActiveDashboard}
-            />
-            
-          ) : activeDashboard === 'WithdrawalHistory' ? (
-            <WithdrawalHistory userAccount={userAccount} />
-            
-          ) : activeDashboard === 'AdminWithdrawals' ? (
-            <AdminWithdrawalPanel userAccount={userAccount} />
-                      ) : activeDashboard === 'Withdraw' ? (
-            <div className="withdraw-content">
-              {/* Simple Withdrawal Dashboard */}
-              <div className="simple-withdrawal-dashboard">
-                <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
-                
-                <div className="withdrawal-options-grid">
-                  <div className="withdrawal-card" onClick={() => {
-                    setShowAccountSetup(true);
-                    setShowWithdrawalRequest(false);
-                  }}>
-                    <div className="card-icon">🏦</div>
-                    <h3>Bank Account Setup</h3>
-                    <p>Add your bank details for withdrawals</p>
-                  </div>
-                  
-                  <div className="withdrawal-card" onClick={() => {
-                    if (!userBankAccount.accountNumber) {
-                      alert('Please set up your bank account first');
-                      setShowAccountSetup(true);
-                    } else {
-                      setShowWithdrawalRequest(true);
-                      setShowAccountSetup(false);
-                    }
-                  }}>
-                    <div className="card-icon">💰</div>
-                    <h3>Request Withdrawal</h3>
-                    <p>Withdraw your real balance</p>
-                  </div>
-                  
-                  <div className="withdrawal-card" onClick={() => {
-                    // Show withdrawal history
-                    alert('Withdrawal history will be shown here');
-                  }}>
-                    <div className="card-icon">📜</div>
-                    <h3>Withdrawal History</h3>
-                    <p>View past withdrawal requests</p>
-                  </div>
-                </div>
-                
-                {/* Bank Account Setup Modal */}
-                {showAccountSetup && (
-                  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-                    <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-                        <h3 style={{color: 'white'}}>Bank Account Setup</h3>
-                        <button onClick={() => setShowAccountSetup(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-                      </div>
-                      
-                      <div style={{marginBottom: '20px'}}>
-                        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Holder Name</label>
-                        <input
-                          type="text"
-                          value={userBankAccount.accountHolderName}
-                          onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
-                          placeholder="Enter name as per bank records"
-                          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-                        />
-                      </div>
-                      
-                      <div style={{marginBottom: '20px'}}>
-                        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Number</label>
-                        <input
-                          type="text"
-                          value={userBankAccount.accountNumber}
-                          onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
-                          placeholder="Enter your bank account number"
-                          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-                        />
-                      </div>
-                      
-                      <div style={{marginBottom: '20px'}}>
-                        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Bank Name</label>
-                        <select
-                          value={userBankAccount.bankName}
-                          onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-                          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-                        >
-                          <option value="">Select Bank</option>
-                          <option value="HDFC Bank">HDFC Bank</option>
-                          <option value="SBI">State Bank of India</option>
-                          <option value="ICICI Bank">ICICI Bank</option>
-                          <option value="Axis Bank">Axis Bank</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      
-                      <div style={{marginBottom: '20px'}}>
-                        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>IFSC Code</label>
-                        <input
-                          type="text"
-                          value={userBankAccount.ifscCode}
-                          onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
-                          placeholder="Enter IFSC code"
-                          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-                        />
-                      </div>
-                      
-                      <button
-                        onClick={() => {
-                          if (userBankAccount.accountNumber && userBankAccount.bankName && userBankAccount.ifscCode) {
-                            alert('Bank account saved successfully!');
-                            setShowAccountSetup(false);
-                          } else {
-                            alert('Please fill all required fields');
-                          }
-                        }}
-                        style={{width: '100%', padding: '12px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
-                      >
-                        Save Bank Account
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Withdrawal Request Modal */}
-                {showWithdrawalRequest && (
-                  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-                    <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-                        <h3 style={{color: 'white'}}>Request Withdrawal</h3>
-                        <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-                      </div>
-                      
-                      <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
-                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Available Balance:</p>
-                        <h3 style={{color: 'white'}}>₹{userAccount.realBalance?.toLocaleString() || '0'}</h3>
-                      </div>
-                      
-                      <div style={{marginBottom: '20px'}}>
-                        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Amount to Withdraw (₹)</label>
-                        <input
-                          type="number"
-                          value={withdrawalAmount}
-                          onChange={(e) => setWithdrawalAmount(e.target.value)}
-                          placeholder="Enter amount"
-                          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-                        />
-                      </div>
-                      
-                      <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
-                        <h4 style={{color: 'white', marginBottom: '10px'}}>Bank Account Details:</h4>
-                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.accountHolderName}</p>
-                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.bankName}</p>
-                        <p style={{color: '#a0aec0'}}>Account: XXXX{userBankAccount.accountNumber.slice(-4) || 'XXXX'}</p>
-                      </div>
-                      
-                      <button
-                        onClick={() => {
-                          const amount = parseFloat(withdrawalAmount);
-                          const balance = userAccount.realBalance || 0;
-                          
-                          if (!amount || amount <= 0) {
-                            alert('Please enter a valid amount');
-                            return;
-                          }
-                          
-                          if (amount < 100) {
-                            alert('Minimum withdrawal amount is ₹100');
-                            return;
-                          }
-                          
-                          if (amount > balance) {
-                            alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
-                            return;
-                          }
-                          
-                          // Create withdrawal request
-                          const newRequest = {
-                            id: `WD${Date.now()}`,
-                            amount: amount,
-                            status: 'pending',
-                            date: new Date().toLocaleString(),
-                            bankDetails: userBankAccount
-                          };
-                          
-                          setWithdrawalRequests([newRequest, ...withdrawalRequests]);
-                          
-                          // Update user balance
-                          setUserAccount({
-                            ...userAccount,
-                            realBalance: balance - amount
-                          });
-                          
-                          alert(`Withdrawal request submitted for ₹${amount.toLocaleString()}! It will be processed by admin within 24-48 hours.`);
-                          setWithdrawalAmount('');
-                          setShowWithdrawalRequest(false);
-                        }}
-                        style={{width: '100%', padding: '12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
-                      >
-                        Submit Withdrawal Request
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Simple Withdrawal History */}
-                <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
-                  <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
-                  
-                  {withdrawalRequests.length > 0 ? (
-                    <div style={{overflowX: 'auto'}}>
-                      <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                        <thead>
-                          <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                            <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
-                            <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
-                            <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
-                            <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {withdrawalRequests.slice(0, 5).map(request => (
-                            <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                              <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
-                              <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
-                              <td style={{padding: '10px'}}>
-                                <span style={{
-                                  padding: '5px 10px',
-                                  borderRadius: '20px',
-                                  fontSize: '12px',
-                                  fontWeight: '600',
-                                  background: request.status === 'pending' ? '#f59e0b' : 
-                                             request.status === 'approved' ? '#10b981' : 
-                                             request.status === 'rejected' ? '#ef4444' : '#6b7280',
-                                  color: 'white'
-                                }}>
-                                  {request.status}
-                                </span>
-                              </td>
-                              <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : activeDashboard === 'AdminPanel' ? (
-            <div className="admin-panel-content">
-              <h2 style={{color: 'white', marginBottom: '20px'}}>👑 Admin Withdrawal Panel</h2>
-              
-              <div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px', marginBottom: '20px'}}>
-                <h3 style={{color: 'white', marginBottom: '15px'}}>Pending Withdrawal Requests</h3>
-                
-                {withdrawalRequests.filter(req => req.status === 'pending').length > 0 ? (
-                  withdrawalRequests.filter(req => req.status === 'pending').map(request => (
-                    <div key={request.id} style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      padding: '15px',
-                      borderRadius: '8px',
-                      marginBottom: '10px',
-                      border: '1px solid rgba(255,255,255,0.1)'
-                    }}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
-                        <div>
-                          <h4 style={{color: 'white', marginBottom: '5px'}}>Request #{request.id}</h4>
-                          <p style={{color: '#a0aec0'}}>Amount: ₹{request.amount?.toLocaleString()}</p>
-                        </div>
-                        <span style={{
-                          padding: '5px 10px',
-                          background: '#f59e0b',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          color: 'white',
-                          fontWeight: '600'
-                        }}>
-                          Pending
-                        </span>
-                      </div>
-                      
-                      <div style={{background: '#2d3748', padding: '10px', borderRadius: '5px', marginBottom: '10px'}}>
-                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Bank: {request.bankDetails?.bankName}</p>
-                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Account: {request.bankDetails?.accountHolderName}</p>
-                        <p style={{color: '#a0aec0'}}>Submitted: {request.date}</p>
-                      </div>
-                      
-                      <div style={{display: 'flex', gap: '10px'}}>
-                        <button
-                          onClick={() => {
-                            // Approve withdrawal
-                            const updatedRequests = withdrawalRequests.map(req => 
-                              req.id === request.id ? {...req, status: 'approved'} : req
-                            );
-                            setWithdrawalRequests(updatedRequests);
-                            alert(`Withdrawal #${request.id} approved! Funds released to user.`);
-                          }}
-                          style={{flex: 1, padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
-                        >
-                          Approve & Release Funds
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            // Reject withdrawal
-                            const reason = prompt('Enter rejection reason:');
-                            if (reason) {
-                              const updatedRequests = withdrawalRequests.map(req => 
-                                req.id === request.id ? {...req, status: 'rejected', reason: reason} : req
-                              );
-                              setWithdrawalRequests(updatedRequests);
-                              
-                              // Return funds to user
-                              setUserAccount({
-                                ...userAccount,
-                                realBalance: (userAccount.realBalance || 0) + request.amount
-                              });
-                              
-                              alert(`Withdrawal #${request.id} rejected. Reason: ${reason}`);
-                            }
-                          }}
-                          style={{flex: 1, padding: '10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No pending withdrawal requests</p>
-                )}
-              </div>
-              
-              <div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
-                <h3 style={{color: 'white', marginBottom: '15px'}}>All Withdrawal Requests</h3>
-                
-                <div style={{overflowX: 'auto'}}>
-                  <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                    <thead>
-                      <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
-                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
-                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
-                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
-                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {withdrawalRequests.map(request => (
-                        <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                          <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
-                          <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
-                          <td style={{padding: '10px'}}>
-                            <span style={{
-                              padding: '5px 10px',
-                              borderRadius: '20px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              background: request.status === 'pending' ? '#f59e0b' : 
-                                         request.status === 'approved' ? '#10b981' : 
-                                         request.status === 'rejected' ? '#ef4444' : '#6b7280',
-                              color: 'white'
-                            }}>
-                              {request.status}
-                            </span>
-                          </td>
-                          <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
-                          <td style={{padding: '10px'}}>
-                            {request.status === 'pending' && (
-                              <button
-                                onClick={() => {
-                                  if (window.confirm(`Approve withdrawal of ₹${request.amount}?`)) {
-                                    const updatedRequests = withdrawalRequests.map(req => 
-                                      req.id === request.id ? {...req, status: 'approved'} : req
-                                    );
-                                    setWithdrawalRequests(updatedRequests);
-                                  }
-                                }}
-                                style={{padding: '5px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer'}}
-                              >
-                                Approve
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            
-                   ) : activeDashboard === 'Profile' ? (
+          ) : activeDashboard === 'Profile' ? (
             <div className="profile-content">
               
               <div className="profile-header">
@@ -2760,7 +2300,6 @@ const syncUserWallet = async () => {
                 <div className="profile-status">
                   <span className="profile-badge">{isLoggedIn ? 'ACTIVE ACCOUNT' : 'DEMO ACCOUNT'}</span>
                   <span className="profile-tier">{userAccount.currentPlan || 'NO PLAN'}</span>
-                
                 </div>
               </div>
 
@@ -2849,7 +2388,6 @@ const syncUserWallet = async () => {
                       <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
                         Start Trading
                       </button>
-
                     )}
                   </div>
                 </div>
@@ -2872,7 +2410,6 @@ const syncUserWallet = async () => {
                             </span>
                           </div>
                         </div>
-                        
                       );
                     })}
                     {orderHistory.length === 0 && (
@@ -2881,6 +2418,245 @@ const syncUserWallet = async () => {
                   </div>
                 </div>
                 
+                {/* WITHDRAWAL SECTION - MOVED INTO PROFILE PAGE */}
+                <div className="profile-card withdraw-card">
+                  <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
+                  
+                  <div className="withdrawal-options-grid">
+                    <div className="withdrawal-card" onClick={() => {
+                      setShowAccountSetup(true);
+                      setShowWithdrawalRequest(false);
+                    }}>
+                      <div className="card-icon">🏦</div>
+                      <h3>Bank Account Setup</h3>
+                      <p>Add your bank details for withdrawals</p>
+                    </div>
+                    
+                    <div className="withdrawal-card" onClick={() => {
+                      if (!userBankAccount.accountNumber) {
+                        alert('Please set up your bank account first');
+                        setShowAccountSetup(true);
+                      } else {
+                        setShowWithdrawalRequest(true);
+                        setShowAccountSetup(false);
+                      }
+                    }}>
+                      <div className="card-icon">💰</div>
+                      <h3>Request Withdrawal</h3>
+                      <p>Withdraw your real balance</p>
+                    </div>
+                    
+                    <div className="withdrawal-card" onClick={() => {
+                      // Show withdrawal history
+                      alert('Withdrawal history will be shown here');
+                    }}>
+                      <div className="card-icon">📜</div>
+                      <h3>Withdrawal History</h3>
+                      <p>View past withdrawal requests</p>
+                    </div>
+                  </div>
+                  
+                  {/* Bank Account Setup Modal */}
+                  {showAccountSetup && (
+                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                          <h3 style={{color: 'white'}}>Bank Account Setup</h3>
+                          <button onClick={() => setShowAccountSetup(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Holder Name</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.accountHolderName}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
+                            placeholder="Enter name as per bank records"
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Number</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.accountNumber}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
+                            placeholder="Enter your bank account number"
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Bank Name</label>
+                          <select
+                            value={userBankAccount.bankName}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                          >
+                            <option value="">Select Bank</option>
+                            <option value="HDFC Bank">HDFC Bank</option>
+                            <option value="SBI">State Bank of India</option>
+                            <option value="ICICI Bank">ICICI Bank</option>
+                            <option value="Axis Bank">Axis Bank</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>IFSC Code</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.ifscCode}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
+                            placeholder="Enter IFSC code"
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                          />
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            if (userBankAccount.accountNumber && userBankAccount.bankName && userBankAccount.ifscCode) {
+                              alert('Bank account saved successfully!');
+                              setShowAccountSetup(false);
+                            } else {
+                              alert('Please fill all required fields');
+                            }
+                          }}
+                          style={{width: '100%', padding: '12px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
+                        >
+                          Save Bank Account
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Withdrawal Request Modal */}
+                  {showWithdrawalRequest && (
+                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                          <h3 style={{color: 'white'}}>Request Withdrawal</h3>
+                          <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
+                          <p style={{color: '#a0aec0', marginBottom: '5px'}}>Available Balance:</p>
+                          <h3 style={{color: 'white'}}>₹{userAccount.realBalance?.toLocaleString() || '0'}</h3>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Amount to Withdraw (₹)</label>
+                          <input
+                            type="number"
+                            value={withdrawalAmount}
+                            onChange={(e) => setWithdrawalAmount(e.target.value)}
+                            placeholder="Enter amount"
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
+                          <h4 style={{color: 'white', marginBottom: '10px'}}>Bank Account Details:</h4>
+                          <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.accountHolderName}</p>
+                          <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.bankName}</p>
+                          <p style={{color: '#a0aec0'}}>Account: XXXX{userBankAccount.accountNumber.slice(-4) || 'XXXX'}</p>
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            const amount = parseFloat(withdrawalAmount);
+                            const balance = userAccount.realBalance || 0;
+                            
+                            if (!amount || amount <= 0) {
+                              alert('Please enter a valid amount');
+                              return;
+                            }
+                            
+                            if (amount < 100) {
+                              alert('Minimum withdrawal amount is ₹100');
+                              return;
+                            }
+                            
+                            if (amount > balance) {
+                              alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
+                              return;
+                            }
+                            
+                            // Create withdrawal request
+                            const newRequest = {
+                              id: `WD${Date.now()}`,
+                              amount: amount,
+                              status: 'pending',
+                              date: new Date().toLocaleString(),
+                              bankDetails: userBankAccount
+                            };
+                            
+                            setWithdrawalRequests([newRequest, ...withdrawalRequests]);
+                            
+                            // Update user balance
+                            setUserAccount({
+                              ...userAccount,
+                              realBalance: balance - amount
+                            });
+                            
+                            alert(`Withdrawal request submitted for ₹${amount.toLocaleString()}! It will be processed by admin within 24-48 hours.`);
+                            setWithdrawalAmount('');
+                            setShowWithdrawalRequest(false);
+                          }}
+                          style={{width: '100%', padding: '12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
+                        >
+                          Submit Withdrawal Request
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Simple Withdrawal History */}
+                  <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
+                    <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
+                    
+                    {withdrawalRequests.length > 0 ? (
+                      <div style={{overflowX: 'auto'}}>
+                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                          <thead>
+                            <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {withdrawalRequests.slice(0, 5).map(request => (
+                              <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                                <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
+                                <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
+                                <td style={{padding: '10px'}}>
+                                  <span style={{
+                                    padding: '5px 10px',
+                                    borderRadius: '20px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    background: request.status === 'pending' ? '#f59e0b' : 
+                                               request.status === 'approved' ? '#10b981' : 
+                                               request.status === 'rejected' ? '#ef4444' : '#6b7280',
+                                    color: 'white'
+                                  }}>
+                                    {request.status}
+                                  </span>
+                                </td>
+                                <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
+                    )}
+                  </div>
+                </div>
 
                 {/* NEW PAYMENT HISTORY SECTION */}
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
@@ -3048,6 +2824,150 @@ const syncUserWallet = async () => {
                 </div>
               </div>
             </div>
+          ) : activeDashboard === 'AdminPanel' ? (
+            <div className="admin-panel-content">
+              <h2 style={{color: 'white', marginBottom: '20px'}}>👑 Admin Withdrawal Panel</h2>
+              
+              <div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px', marginBottom: '20px'}}>
+                <h3 style={{color: 'white', marginBottom: '15px'}}>Pending Withdrawal Requests</h3>
+                
+                {withdrawalRequests.filter(req => req.status === 'pending').length > 0 ? (
+                  withdrawalRequests.filter(req => req.status === 'pending').map(request => (
+                    <div key={request.id} style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      padding: '15px',
+                      borderRadius: '8px',
+                      marginBottom: '10px',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                        <div>
+                          <h4 style={{color: 'white', marginBottom: '5px'}}>Request #{request.id}</h4>
+                          <p style={{color: '#a0aec0'}}>Amount: ₹{request.amount?.toLocaleString()}</p>
+                        </div>
+                        <span style={{
+                          padding: '5px 10px',
+                          background: '#f59e0b',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          color: 'white',
+                          fontWeight: '600'
+                        }}>
+                          Pending
+                        </span>
+                      </div>
+                      
+                      <div style={{background: '#2d3748', padding: '10px', borderRadius: '5px', marginBottom: '10px'}}>
+                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Bank: {request.bankDetails?.bankName}</p>
+                        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Account: {request.bankDetails?.accountHolderName}</p>
+                        <p style={{color: '#a0aec0'}}>Submitted: {request.date}</p>
+                      </div>
+                      
+                      <div style={{display: 'flex', gap: '10px'}}>
+                        <button
+                          onClick={() => {
+                            // Approve withdrawal
+                            const updatedRequests = withdrawalRequests.map(req => 
+                              req.id === request.id ? {...req, status: 'approved'} : req
+                            );
+                            setWithdrawalRequests(updatedRequests);
+                            alert(`Withdrawal #${request.id} approved! Funds released to user.`);
+                          }}
+                          style={{flex: 1, padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
+                        >
+                          Approve & Release Funds
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            // Reject withdrawal
+                            const reason = prompt('Enter rejection reason:');
+                            if (reason) {
+                              const updatedRequests = withdrawalRequests.map(req => 
+                                req.id === request.id ? {...req, status: 'rejected', reason: reason} : req
+                              );
+                              setWithdrawalRequests(updatedRequests);
+                              
+                              // Return funds to user
+                              setUserAccount({
+                                ...userAccount,
+                                realBalance: (userAccount.realBalance || 0) + request.amount
+                              });
+                              
+                              alert(`Withdrawal #${request.id} rejected. Reason: ${reason}`);
+                            }
+                          }}
+                          style={{flex: 1, padding: '10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No pending withdrawal requests</p>
+                )}
+              </div>
+              
+              <div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
+                <h3 style={{color: 'white', marginBottom: '15px'}}>All Withdrawal Requests</h3>
+                
+                <div style={{overflowX: 'auto'}}>
+                  <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                    <thead>
+                      <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
+                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
+                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
+                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
+                        <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {withdrawalRequests.map(request => (
+                        <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                          <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
+                          <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
+                          <td style={{padding: '10px'}}>
+                            <span style={{
+                              padding: '5px 10px',
+                              borderRadius: '20px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              background: request.status === 'pending' ? '#f59e0b' : 
+                                         request.status === 'approved' ? '#10b981' : 
+                                         request.status === 'rejected' ? '#ef4444' : '#6b7280',
+                              color: 'white'
+                            }}>
+                              {request.status}
+                            </span>
+                          </td>
+                          <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
+                          <td style={{padding: '10px'}}>
+                            {request.status === 'pending' && (
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Approve withdrawal of ₹${request.amount}?`)) {
+                                    const updatedRequests = withdrawalRequests.map(req => 
+                                      req.id === request.id ? {...req, status: 'approved'} : req
+                                    );
+                                    setWithdrawalRequests(updatedRequests);
+                                  }
+                                }}
+                                style={{padding: '5px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer'}}
+                              >
+                                Approve
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
           ) : (
             <>
               <div className="chart-header-simplified">
@@ -3130,7 +3050,7 @@ const syncUserWallet = async () => {
                 </div>
               )}
 
-                            <div className="chart-container tradingview-chart" style={{ height: isFullScreen ? 'calc(100vh - 100px)' : '400px' }}>
+              <div className="chart-container tradingview-chart" style={{ height: isFullScreen ? 'calc(100vh - 100px)' : '400px' }}>
                 <div id="tradingview-chart-container" style={{ width: '100%', height: '100%' }}>
                   {!widgetScriptLoaded && (
                     <div className="chart-fallback">
