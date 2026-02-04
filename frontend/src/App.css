@@ -1,18 +1,5 @@
 /* Reset & Base Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background: #0a0e17;
-  color: #e2e8f0;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100vw;/* Reset & Base Styles */
-* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
