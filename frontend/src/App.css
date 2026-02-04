@@ -4,6 +4,24 @@
   padding: 0;
   box-sizing: border-box;
 }
+/* NUCLEAR OPTION - ADD AT VERY TOP OF FILE */
+*[class*="top-static"], 
+*[class*="top-bar"],
+*[class*="static-user"] {
+  max-height: 30px !important;
+  min-height: 30px !important;
+  height: 30px !important;
+}
+
+@media (max-width: 768px) {
+  *[class*="top-static"], 
+  *[class*="top-bar"],
+  *[class*="static-user"] {
+    max-height: 28px !important;
+    min-height: 28px !important;
+    height: 28px !important;
+  }
+}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
