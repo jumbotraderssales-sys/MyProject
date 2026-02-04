@@ -11218,7 +11218,7 @@ body.profile-route .below-price-alert-section {
   justify-content: space-between;
   align-items: center;
   position: sticky;
-  top: 48px; /* Below static bar */
+  top: 30px; /* Below static bar */
   z-index: 1000;
 }
 
