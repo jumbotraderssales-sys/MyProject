@@ -175,96 +175,83 @@ body {
 }
 
 /* Mobile responsive adjustments */
-/* --- UPDATED MOBILE OPTIMIZATION --- */
 @media (max-width: 768px) {
-  /* 1. Ensure the bar has enough height and items can wrap if needed */
   .top-static-user-bar {
-    padding: 0 10px !important;
-    height: auto !important; /* Fixes "title height reduce" issue */
-    min-height: 60px !important;
-    flex-wrap: wrap !important;
-    justify-content: space-between;
-  }
-
-  /* 2. Handle the Tabs (Home, Market, etc.) */
-  .nav-tabs-container-static {
-    order: 2; /* Moves tabs below balance for better spacing */
-    width: 100%;
-    justify-content: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .nav-tab-static {
-    padding: 10px 12px !important; /* Balanced padding */
-    font-size: 0.75rem !important;
-    flex: 1;
-    text-align: center;
-  }
-
-  /* 3. Handle the User Info & Balance (Prevents going out of screen) */
-  .static-user-info {
-    order: 1;
-    width: 100%;
-    padding: 8px 0 !important;
-    border-left: none !important;
-    justify-content: space-between !important;
-    gap: 5px !important;
-  }
-
-  .static-user-name {
-    font-size: 0.8rem !important;
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .static-user-balance {
-    padding: 4px 10px !important; /* Keep balance inside screen */
-    margin: 0 !important;
-    flex-shrink: 0;
-  }
-
-  .static-balance-label {
-    font-size: 0.6rem !important;
-  }
-
-  .static-balance-amount {
-    font-size: 0.85rem !important;
-  }
-
-  .static-logout-btn {
-    padding: 4px 8px !important;
-    font-size: 0.7rem !important;
-  }
-}
-
-/* Extra small screens (Phones under 400px) */
-@media (max-width: 400px) {
-  .static-balance-amount {
-    font-size: 0.75rem !important;
+    padding: 0 10px;
+    flex-wrap: wrap;
+    min-height: auto;
   }
   
-  .usd-balance {
-    display: block; /* Stack USD below Paper Balance if very narrow */
+  .nav-tabs-container-static {
+    order: 1;
+    width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .nav-tab-static {
+    padding: 12px 15px;
+    font-size: 0.8rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .static-user-info {
+    order: 2;
+    width: 100%;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .static-user-name {
+    font-size: 0.85rem;
+  }
+  
+  .static-user-balance {
+    padding: 4px 12px;
+    gap: 8px;
+  }
+  
+  .static-balance-label {
     font-size: 0.65rem;
   }
-}
-.profile-withdraw-btn {
-  background: linear-gradient(135deg, #ff9800, #ff5722);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 25px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-bottom: 15px;
-  transition: 0.2s;
+  
+  .static-balance-amount {
+    font-size: 0.85rem;
+  }
+  
+  .static-logout-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+  }
 }
 
-.profile-withdraw-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+/* For very small screens */
+@media (max-width: 480px) {
+  .nav-tab-static {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+  
+  .static-user-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .static-user-name {
+    justify-content: center;
+  }
+  
+  .static-user-balance {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .static-logout-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
-
