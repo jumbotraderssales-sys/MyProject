@@ -194,88 +194,199 @@ body {
 }
 
 /* Mobile responsive adjustments */
+/* Mobile responsive adjustments - COMPACT VERSION */
 @media (max-width: 768px) {
   .top-static-user-bar {
-    padding: 0 10px;
-    flex-wrap: wrap;
-    min-height: auto;
+    padding: 2px 5px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    align-items: center !important;
   }
   
   .nav-tabs-container-static {
     order: 1;
-    width: 100%;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    width: auto !important;
+    border-bottom: none !important;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    align-items: center !important;
+    height: 100% !important;
   }
   
   .nav-tab-static {
-    padding: 12px 15px;
-    font-size: 0.8rem;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2px 8px !important;
+    font-size: 9px !important;
+    border-right: none !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+  }
+  
+  .nav-tab-static.active::after {
+    height: 2px !important;
+    bottom: -1px !important;
   }
   
   .static-user-info {
     order: 2;
-    width: 100%;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    gap: 10px;
-    flex-wrap: wrap;
+    width: auto !important;
+    justify-content: flex-end !important;
+    padding: 0 !important;
+    border-left: none !important;
+    border-top: none !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    height: 100% !important;
+    flex-shrink: 0 !important;
   }
   
   .static-user-name {
-    font-size: 0.85rem;
+    display: none !important; /* Hide name to save space */
   }
   
   .static-user-balance {
-    padding: 4px 12px;
-    gap: 8px;
+    padding: 1px 6px !important;
+    gap: 4px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    border-radius: 10px !important;
+    align-items: center !important;
   }
   
   .static-balance-label {
-    font-size: 0.65rem;
+    font-size: 7px !important;
+    line-height: 1 !important;
   }
   
   .static-balance-amount {
-    font-size: 0.85rem;
+    font-size: 9px !important;
+    line-height: 1 !important;
   }
   
   .static-logout-btn {
-    padding: 6px 16px;
-    font-size: 0.8rem;
+    padding: 1px 8px !important;
+    font-size: 8px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  /* Hide icons to save space */
+  .static-user-name i,
+  .static-logout-btn i {
+    display: none !important;
+  }
+  
+  /* Adjust advanced-header position */
+  .advanced-header {
+    top: 30px !important;
   }
 }
 
 /* For very small screens */
 @media (max-width: 480px) {
+  .top-static-user-bar {
+    min-height: 26px !important;
+    height: 26px !important;
+    padding: 1px 3px !important;
+  }
+  
   .nav-tab-static {
-    padding: 10px 12px;
-    font-size: 0.75rem;
-  }
-  
-  .static-user-info {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  
-  .static-user-name {
-    justify-content: center;
+    padding: 1px 6px !important;
+    font-size: 8px !important;
+    height: 22px !important;
   }
   
   .static-user-balance {
-    width: 100%;
-    justify-content: center;
+    padding: 0 4px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+  }
+  
+  .static-balance-label {
+    display: none !important; /* Hide label on very small screens */
+  }
+  
+  .static-balance-amount {
+    font-size: 8px !important;
   }
   
   .static-logout-btn {
-    width: 100%;
-    justify-content: center;
+    padding: 0 6px !important;
+    font-size: 7px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+  }
+  
+  .advanced-header {
+    top: 26px !important;
   }
 }
 
-/* Advanced App Container */
+/* For extremely small screens */
+@media (max-width: 360px) {
+  .top-static-user-bar {
+    min-height: 24px !important;
+    height: 24px !important;
+  }
+  
+  .nav-tab-static {
+    padding: 0 4px !important;
+    font-size: 7px !important;
+    letter-spacing: 0 !important;
+  }
+  
+  /* Hide some tabs if there are too many */
+  .nav-tab-static:nth-child(n+5) {
+    display: none !important;
+  }
+  
+  .static-user-balance {
+    min-width: 60px !important;
+    justify-content: center !important;
+  }
+  
+  .static-logout-btn {
+    min-width: 50px !important;
+    justify-content: center !important;
+  }
+  
+  /* Hide logout text, show only if there's an icon */
+  .static-logout-btn span {
+    font-size: 6px !important;
+  }
+  
+  .advanced-header {
+    top: 24px !important;
+  }
+}
+
+/* PREVENT HORIZONTAL SCROLL */
+@media (max-width: 768px) {
+  html, body, .advanced-app {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  
+  .top-static-user-bar {
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+}/* Advanced App Container */
 .advanced-app {
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0e17 0%, #0f172a 100%);
