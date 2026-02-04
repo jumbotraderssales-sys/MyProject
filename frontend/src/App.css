@@ -21576,69 +21576,7 @@ body.profile-route .below-price-alert-section {
     justify-content: center !important;
   }
 }
-/* Mobile Optimization for Top Bar and Balance */
-@media (max-width: 768px) {
-  .top-static-user-bar {
-    padding: 8px 12px !important;
-    height: auto !important; /* Allow height to expand if needed */
-    min-height: 60px !important;
-    flex-wrap: wrap !important; /* Allow elements to wrap on mid-size screens */
-    gap: 10px !important;
-  }
 
-  .nav-tabs-container-static {
-    order: 2; /* Move navigation tabs below user info if space is tight */
-    width: 100%;
-    justify-content: center;
-  }
-
-  .static-user-info {
-    order: 1; /* Keep user info prominent */
-    padding-left: 0 !important;
-    border-left: none !important;
-    width: 100%;
-    justify-content: space-between; /* Spread name and balance */
-  }
-
-  .static-user-balance {
-    padding: 4px 12px !important;
-    gap: 8px !important;
-  }
-}
-
-/* Extra Small Devices (Phones) */
-@media (max-width: 480px) {
-  .top-static-user-bar {
-    padding: 5px 10px !important;
-  }
-
-  .static-user-name {
-    font-size: 0.8rem !important;
-  }
-
-  .static-user-balance {
-    padding: 3px 8px !important;
-  }
-
-  .static-balance-amount {
-    font-size: 0.8rem !important;
-  }
-
-  .static-balance-label {
-    font-size: 0.6rem !important;
-  }
-
-  /* Ensure the title/tabs don't disappear and stay scrollable */
-  .nav-tab-static {
-    padding: 8px 12px !important;
-    font-size: 0.75rem !important;
-  }
-
-  .static-logout-btn {
-    padding: 4px 12px !important;
-    font-size: 0.75rem !important;
-  }
-}
 
 
 /* End of CSS */
