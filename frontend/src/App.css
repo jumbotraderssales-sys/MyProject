@@ -15,24 +15,24 @@ body {
 }
 
 /* TOP STATIC USER INFO BAR - COMPACT VERSION */
+/* TOP STATIC USER INFO BAR - COMPACT VERSION */
 .top-static-user-bar {
   background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
   color: white;
-  padding: 0 10px;
+  padding: 0 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #3949ab;
+  border-bottom: 2px solid #3949ab;
   position: sticky;
   top: 0;
   z-index: 1002;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
-  min-height: 36px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  min-height: 40px; /* Reduced from 48px */
   width: 100%;
-  overflow: hidden;
 }
 
-/* Navigation tabs on left side */
+/* Navigation tabs on left side - COMPACT */
 .nav-tabs-container-static {
   display: flex;
   gap: 0;
@@ -48,32 +48,32 @@ body {
 }
 
 .nav-tab-static {
-  padding: 8px 12px;
+  padding: 10px 16px; /* Reduced padding */
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   border: none;
   white-space: nowrap;
   flex-shrink: 0;
   min-width: fit-content;
   color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-  font-size: 0.75rem;
+  font-weight: 600;
+  font-size: 0.85rem; /* Smaller font */
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   position: relative;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  height: 36px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  height: 40px; /* Fixed height */
   display: flex;
   align-items: center;
 }
 
 .nav-tab-static:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-tab-static.active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
 }
 
@@ -81,46 +81,47 @@ body {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 10%;
-  right: 10%;
-  height: 2px;
+  left: 0;
+  right: 0;
+  height: 3px;
   background: #4caf50;
-  border-radius: 1px;
 }
 
-/* User info on right side */
+/* User info on right side - MOVED NEXT TO TABS */
 .static-user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-left: 10px;
+  gap: 12px; /* Reduced gap */
+  padding-left: 12px;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
-  height: 36px;
+  margin-left: auto; /* Push to right side */
+  height: 40px; /* Same height as tabs */
 }
 
 .static-user-name {
-  font-weight: 500;
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.static-user-name i {
-  font-size: 0.9rem;
-  color: #bb86fc;
-}
-
-.static-user-balance {
+  font-weight: 600;
+  font-size: 0.85rem; /* Smaller */
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 3px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  height: 24px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.static-user-name i {
+  font-size: 1rem;
+  color: #bb86fc;
+}
+
+/* Compact balance display */
+.static-user-balance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px; /* More compact */
+  border-radius: 16px; /* Smaller radius */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: 28px; /* Fixed height */
 }
 
 .static-balance-currency {
@@ -131,16 +132,16 @@ body {
 }
 
 .static-balance-label {
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.65rem; /* Smaller */
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   line-height: 1;
 }
 
 .static-balance-amount {
-  font-weight: 600;
-  font-size: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem; /* Smaller */
   color: #4caf50;
   line-height: 1;
 }
@@ -151,26 +152,26 @@ body {
 }
 
 .balance-separator {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 0.6rem;
-  margin: 0 2px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.7rem;
 }
 
+/* Compact logout button */
 .static-logout-btn {
   background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%);
   border: none;
   color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.7rem;
-  transition: all 0.2s;
+  font-size: 0.8rem; /* Smaller */
+  transition: all 0.3s;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  height: 28px;
   white-space: nowrap;
-  height: 24px;
 }
 
 .static-logout-btn i {
@@ -180,84 +181,84 @@ body {
 .static-logout-btn:hover {
   background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%);
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(244, 67, 54, 0.4);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* Adjust the main content to be below the static bar */
+.advanced-main {
+  margin-top: 0;
+}
+
+/* Adjust the top navigation to be below the compact bar */
+.top-horizontal-nav {
+  top: 40px; /* Match new height */
 }
 
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .top-static-user-bar {
-    padding: 0 6px;
-    min-height: 32px;
+    padding: 0 8px;
+    min-height: 36px; /* Even smaller on mobile */
     flex-wrap: nowrap;
   }
   
   .nav-tabs-container-static {
     order: 1;
-    width: 100%;
-    border-bottom: none;
+    flex: 1;
+    overflow-x: auto;
   }
   
   .nav-tab-static {
-    padding: 6px 8px;
-    font-size: 0.7rem;
-    letter-spacing: 0.2px;
-    border-right: 1px solid rgba(255, 255, 255, 0.03);
-    height: 32px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    height: 36px;
   }
   
   .static-user-info {
     order: 2;
-    width: auto;
-    justify-content: flex-end;
-    padding: 0 0 0 6px;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: none;
+    padding-left: 8px;
     gap: 6px;
-    flex-wrap: nowrap;
-    min-width: fit-content;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
+    width: auto;
+    margin-left: 0;
   }
   
   .static-user-name {
-    font-size: 0.7rem;
-    display: none; /* Hide name on mobile to save space */
+    display: none; /* Hide name on small mobile */
   }
   
   .static-user-balance {
-    padding: 2px 6px;
+    padding: 3px 8px;
     gap: 4px;
-    height: 22px;
+    height: 26px;
   }
   
   .static-balance-label {
-    font-size: 0.55rem;
+    font-size: 0.6rem;
   }
   
   .static-balance-amount {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
   
   .static-logout-btn {
     padding: 3px 8px;
-    font-size: 0.65rem;
-    height: 22px;
+    font-size: 0.7rem;
+    height: 26px;
   }
   
-  .balance-separator {
-    margin: 0 1px;
-    font-size: 0.5rem;
+  /* Adjust navigation below */
+  .top-horizontal-nav {
+    top: 36px; /* Match mobile height */
   }
 }
 
 /* For very small screens */
 @media (max-width: 480px) {
-  .top-static-user-bar {
-    min-height: 30px;
-  }
-  
   .nav-tab-static {
-    padding: 5px 6px;
-    font-size: 0.65rem;
-    height: 30px;
+    padding: 8px 10px;
+    font-size: 0.7rem;
   }
   
   .static-user-info {
@@ -265,23 +266,25 @@ body {
   }
   
   .static-user-balance {
-    padding: 2px 4px;
-    gap: 3px;
-    height: 20px;
+    min-width: 100px; /* Ensure balance doesn't get too small */
   }
   
-  .static-balance-label {
-    font-size: 0.5rem;
+  .balance-separator {
+    display: none; /* Hide separator on very small screens */
   }
-  
-  .static-balance-amount {
-    font-size: 0.65rem;
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .nav-tab-static {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
   }
   
   .static-logout-btn {
-    padding: 2px 6px;
-    font-size: 0.6rem;
-    height: 20px;
+    min-height: 32px;
+    min-width: 32px;
   }
 }
 
