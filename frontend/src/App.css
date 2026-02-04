@@ -292,7 +292,6 @@ body {
   width: 100%;
   overflow-x: hidden;
 }
-
 .advanced-app.fullscreen {
   background: #0a0e17;
 }
@@ -312,7 +311,7 @@ body {
   justify-content: space-between;
   align-items: center;
   position: sticky;
-  top: 36px; /* Below static bar */
+  top: 48px; /* Below static bar */
   z-index: 1000;
 }
 
@@ -5375,7 +5374,6 @@ body.profile-route .below-price-alert-section {
     padding: 0 10px;
     flex-wrap: wrap;
     min-height: auto;
-    top: 32px;
   }
   
   .nav-tabs-container {
@@ -5425,7 +5423,6 @@ body.profile-route .below-price-alert-section {
   .nav-tab {
     padding: 10px 12px;
     font-size: 0.75rem;
-    top: 30px;
   }
   
   .nav-user-info-container {
