@@ -1843,28 +1843,38 @@ const syncUserWallet = async () => {
     )}
 
     {/* 🔥 USER INFO MOVED HERE (same row) */}
-<div className="nav-user-info-container">
-  {isLoggedIn ? (
-    <>
-      <div className="nav-user-info">
-        <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
-      </div>
-      <button className="nav-logout-btn" onClick={handleLogout}>
-        Logout
-      </button>
-    </>
-  ) : (
-    <div className="nav-auth-buttons">
-      <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
-      <button className="nav-auth-btn register-btn" onClick={() => {
-        setPendingPlanPurchase(false);
-        setShowRegister(true);
-      }}>
-        Register
-      </button>
+    <div className="nav-user-info-container">
+      {isLoggedIn ? (
+        <>
+          <div className="nav-user-info">
+            <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
+            <div className="nav-user-balance">
+              <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+              <span className="nav-balance-dollar">
+                (${calculateDollarBalance(userAccount.paperBalance || 0)})
+              </span>
+            </div>
+          </div>
+          <button className="nav-logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </>
+      ) : (
+        <div className="nav-auth-buttons">
+          <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
+          <button className="nav-auth-btn register-btn" onClick={() => {
+            setPendingPlanPurchase(false);
+            setShowRegister(true);
+          }}>
+            Register
+          </button>
+        </div>
+      )}
     </div>
-  )}
+
+  </div>
 </div>
+
           {/* MAIN HEADER - Remove user info from here since it's now in navigation row */}
           <header className="advanced-header">
             <div className="connection-info">
@@ -1933,11 +1943,11 @@ const syncUserWallet = async () => {
                 </div>
               </div>
               
-              {/* ADDITIONAL SHIFTED CONTENT CAN GO HERE 
+              {/* ADDITIONAL SHIFTED CONTENT CAN GO HERE */}
             </div>
           )}
         </>
-      )} */}
+      )}
 
       <div className="advanced-main">
         {!isFullScreen && activeDashboard === 'Trading' && (
@@ -3324,26 +3334,6 @@ const syncUserWallet = async () => {
             <div className="top-right-trading">
               <div className="quick-trade-top">
                 <h3>Quick Trade</h3>
-          {/* ADD WALLET BALANCE HERE */}
-    {isLoggedIn && (
-      <div className="wallet-balance-quicktrade">
-        <div className="wallet-balance-header">
-          <span className="wallet-icon">💰</span>
-          <span className="wallet-label">Wallet Balance</span>
-        </div>
-        <div className="wallet-balance-amount">
-          ₹{userAccount.paperBalance?.toLocaleString() || '0'}
-        </div>
-        <div className="wallet-balance-dollar">
-          ${calculateDollarBalance(userAccount.paperBalance || 0)}
-        </div>
-        {userAccount.currentPlan && (
-          <div className="wallet-plan-info">
-            Plan: {userAccount.currentPlan}
-          </div>
-        )}
-      </div>
-    )}
                 <div className="trade-actions-top">
                   <button 
                     className="trade-btn-top buy-btn-top"
