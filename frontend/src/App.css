@@ -5797,10 +5797,7 @@ body.profile-route .below-price-alert-section {
   font-size: 0.9rem;
 }
 
-.trade-info-item:first-child {
-  border-bottom: 1px solid #4a5568;
-}
-  /* Hide right panel trading controls on mobile */
+/* Hide right panel trading controls on mobile */
 @media (max-width: 768px) {
   .right-panel .top-right-trading {
     display: none !important;
@@ -5868,41 +5865,6 @@ body.profile-route .below-price-alert-section {
   
   #tradingview-chart-container {
     min-height: 300px;
-  }
-}
-/* Remove space between quick trade and order book on mobile */
-@media (max-width: 768px) {
-  .quick-trading-below-chart {
-    margin-top: 5px !important;
-  }
-  
-  .order-book-section {
-    margin-top: 10px !important;
-  }
-  
-  /* Remove any extra padding/margin between sections */
-  .left-panel {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-  }
-  
-  .right-panel {
-    margin-top: 0 !important;
-  }
-  
-  /* Make sure there's no gap */
-  .advanced-main {
-    gap: 5px !important;
-  }
-  
-  .center-panel {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-  }
-  
-  /* Specifically target the trading dashboard layout */
-  .center-panel:not(.full-width) {
-    padding-bottom: 0 !important;
   }
 }
 }
