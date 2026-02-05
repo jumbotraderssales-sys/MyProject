@@ -5870,6 +5870,41 @@ body.profile-route .below-price-alert-section {
     min-height: 300px;
   }
 }
+  /* Remove space between quick trade and order book on mobile */
+@media (max-width: 768px) {
+  .quick-trading-below-chart {
+    margin-top: 5px !important;
+  }
+  
+  .order-book-section {
+    margin-top: 10px !important;
+  }
+  
+  /* Remove any extra padding/margin between sections */
+  .left-panel {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  .right-panel {
+    margin-top: 0 !important;
+  }
+  
+  /* Make sure there's no gap */
+  .advanced-main {
+    gap: 5px !important;
+  }
+  
+  .center-panel {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Specifically target the trading dashboard layout */
+  .center-panel:not(.full-width) {
+    padding-bottom: 0 !important;
+  }
+}
 }
 
 
