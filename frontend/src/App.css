@@ -5870,31 +5870,6 @@ body.profile-route .below-price-alert-section {
     min-height: 300px;
   }
 }
-  /* Mobile-only warning */
-.mobile-only-warning {
-  text-align: center;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #2d3748;
-  color: #a0aec0;
-  font-size: 0.8rem;
-}
-
-/* Hide on desktop */
-@media (min-width: 769px) {
-  .mobile-only-warning {
-    display: none;
-  }
-  
-  /* Show right panel controls on desktop */
-  .right-panel .top-right-trading {
-    display: block !important;
-  }
-  
-  .trading-controls {
-    display: block !important;
-  }
-}
 }
 
 
