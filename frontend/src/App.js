@@ -2970,41 +2970,230 @@ const syncUserWallet = async () => {
             
           ) : (
             <>
-              <div className="chart-header-simplified">
-                <div className="chart-controls-left">
-                  <div className="symbol-selector">
-                    {SYMBOLS.slice(0, 8).map(symbol => (
-                      <button
-                        key={symbol}
-                        className={`symbol-btn ${selectedSymbol === symbol ? 'active' : ''}`}
-                        onClick={() => setSelectedSymbol(symbol)}
+              <div className="chart-container-wrapper">
+                <div className="chart-main-section">
+                  {/* SHIFTED INDICATOR DISPLAY - Now inside chart section */}
+                  <div className="chart-top-controls">
+                    <div className="symbol-selector">
+                      {SYMBOLS.slice(0, 8).map(symbol => (
+                        <button
+                          key={symbol}
+                          className={`symbol-btn ${selectedSymbol === symbol ? 'active' : ''}`}
+                          onClick={() => setSelectedSymbol(symbol)}
+                        >
+                          {symbol.replace('USDT', '')}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="chart-control-buttons">
+                      <button 
+                        className="indicators-btn-shifted"
+                        onClick={() => setShowIndicatorsPanel(!showIndicatorsPanel)}
                       >
-                        {symbol}
+                        📈 Indicators ({activeIndicators.length})
                       </button>
-                    ))}
+                      
+                      <button 
+                        className="theme-toggle-btn"
+                        onClick={() => setChartTheme(chartTheme === 'dark' ? 'light' : 'dark')}
+                        title={`Switch to ${chartTheme === 'dark' ? 'Light' : 'Dark'} theme`}
+                      >
+                        {chartTheme === 'dark' ? '☀️' : '🌙'}
+                      </button>
+                      
+                      <button 
+                        className="fullscreen-btn"
+                        onClick={toggleFullScreen}
+                      >
+                        {isFullScreen ? '↩ Exit Full' : '⛶ Full'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MAIN CHART CONTAINER - Full Height */}
+                  <div className="chart-container tradingview-chart" style={{ height: isFullScreen ? 'calc(100vh - 100px)' : '500px' }}>
+                    <div id="tradingview-chart-container" style={{ width: '100%', height: '100%' }}>
+                      {!widgetScriptLoaded && (
+                        <div className="chart-fallback">
+                          <div className="fallback-content">
+                            <div className="fallback-icon">📊</div>
+                            <h3>Loading Professional Chart...</h3>
+                            <p>Real-time TradingView chart is loading</p>
+                            <div className="fallback-grid">
+                              <div className="fallback-candle"></div>
+                              <div className="fallback-candle"></div>
+                              <div className="fallback-candle"></div>
+                              <div className="fallback-candle"></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Chart Horizontal Lines Overlay */}
+                    {chartHorizontalLines.length > 0 && (
+                      <div className="chart-horizontal-lines-overlay">
+                        {chartHorizontalLines.map(line => (
+                          <div key={line.id} className="chart-horizontal-line-container">
+                            <div 
+                              className={`chart-horizontal-line ${line.side === 'LONG' ? 'line-long' : 'line-short'}`}
+                              style={{ top: '50%' }}
+                            >
+                              <div className="line-info-box">
+                                <div className="line-header">
+                                  <span className={`line-side ${line.side === 'LONG' ? 'side-long' : 'side-short'}`}>
+                                    {line.side}
+                                  </span>
+                                  <button 
+                                    className="close-line-btn"
+                                    onClick={() => closePositionFromChart(line.id)}
+                                    title="Close Position"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                                <div className="line-details">
+                                  <div>Entry: <strong>${line.entryPrice.toFixed(2)}</strong></div>
+                                  <div>Size: <strong>{line.size}</strong></div>
+                                  {line.stopLoss > 0 && (
+                                    <div>SL: <strong>${line.stopLoss.toFixed(2)}</strong> (${line.stopLossAmount.toFixed(2)})</div>
+                                  )}
+                                  {line.takeProfit > 0 && (
+                                    <div>TP: <strong>${line.takeProfit.toFixed(2)}</strong> (${line.takeProfitAmount.toFixed(2)})</div>
+                                  )}
+                                  <div>Value: <strong>${line.positionValue.toFixed(2)}</strong></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {!showChartLines && activeDashboard === 'Trading' && (
+                      <button 
+                        style={{
+                          position: 'absolute',
+                          top: '10px',
+                          right: '10px',
+                          zIndex: '100',
+                          padding: '0.5rem 1rem',
+                          background: 'rgba(26, 31, 46, 0.9)',
+                          border: '1px solid #2d3748',
+                          borderRadius: '8px',
+                          color: '#e2e8f0',
+                          cursor: 'pointer',
+                          backdropFilter: 'blur(5px)'
+                        }}
+                        onClick={() => setShowChartLines(true)}
+                      >
+                        Show Position Lines
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* QUICK TRADING CONTROLS BELOW CHART */}
+                <div className="quick-trading-below-chart">
+                  <div className="quick-trade-header">
+                    <h3>Quick Trade</h3>
+                    <div className="current-price-display">
+                      ${prices[selectedSymbol] ? prices[selectedSymbol].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 
+                        cryptoData.find(c => c.symbol === selectedSymbol)?.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}
+                    </div>
                   </div>
                   
-                  <button 
-                    className="indicators-btn-shifted"
-                    onClick={() => setShowIndicatorsPanel(!showIndicatorsPanel)}
-                  >
-                    📈 Indicators ({activeIndicators.length})
-                  </button>
+                  <div className="quick-trade-buttons">
+                    <button 
+                      className="quick-trade-btn buy-quick-btn"
+                      onClick={() => handleTrade('LONG')}
+                      disabled={!canTrade}
+                    >
+                      <span className="quick-btn-label">BUY/LONG</span>
+                      <span className="quick-btn-price">
+                        ${(prices[selectedSymbol] * 1.0005).toFixed(2)}
+                      </span>
+                    </button>
+                    
+                    <button 
+                      className="quick-trade-btn sell-quick-btn"
+                      onClick={() => handleTrade('SHORT')}
+                      disabled={!canTrade}
+                    >
+                      <span className="quick-btn-label">SELL/SHORT</span>
+                      <span className="quick-btn-price">
+                        ${(prices[selectedSymbol] * 0.9995).toFixed(2)}
+                      </span>
+                    </button>
+                  </div>
                   
-                  <button 
-                    className="theme-toggle-btn"
-                    onClick={() => setChartTheme(chartTheme === 'dark' ? 'light' : 'dark')}
-                    title={`Switch to ${chartTheme === 'dark' ? 'Light' : 'Dark'} theme`}
-                  >
-                    {chartTheme === 'dark' ? '☀️' : '🌙'}
-                  </button>
+                  <div className="quick-trade-inputs">
+                    <div className="quick-input-group">
+                      <label>Size</label>
+                      <input 
+                        type="number" 
+                        step="0.001"
+                        value={orderSize}
+                        onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
+                        className="quick-input"
+                        disabled={!canTrade}
+                      />
+                    </div>
+                    
+                    <div className="quick-input-group">
+                      <label>Leverage</label>
+                      <div className="leverage-quick-buttons">
+                        {[1, 5, 10, 20].map(lev => (
+                          <button
+                            key={lev}
+                            className={`leverage-quick-btn ${leverage === lev ? 'active' : ''}`}
+                            onClick={() => setLeverage(lev)}
+                            disabled={!canTrade}
+                          >
+                            {lev}x
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="quick-input-row">
+                      <div className="quick-input-group half">
+                        <label>Stop Loss</label>
+                        <input 
+                          type="number"
+                          value={stopLoss}
+                          onChange={(e) => setStopLoss(e.target.value)}
+                          placeholder="Auto"
+                          className="quick-input"
+                          disabled={!canTrade}
+                        />
+                      </div>
+                      
+                      <div className="quick-input-group half">
+                        <label>Take Profit</label>
+                        <input 
+                          type="number"
+                          value={takeProfit}
+                          onChange={(e) => setTakeProfit(e.target.value)}
+                          placeholder="Auto"
+                          className="quick-input"
+                          disabled={!canTrade}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   
-                  <button 
-                    className="fullscreen-btn"
-                    onClick={toggleFullScreen}
-                  >
-                    {isFullScreen ? '↩ Exit Full' : '⛶ Full'}
-                  </button>
+                  <div className="quick-trade-info">
+                    <div className="trade-info-item">
+                      <span>Position Value:</span>
+                      <span>${(orderSize * (prices[selectedSymbol] || 0) * leverage).toFixed(2)}</span>
+                    </div>
+                    <div className="trade-info-item">
+                      <span>Available Balance:</span>
+                      <span>${balance.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
