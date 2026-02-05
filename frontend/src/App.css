@@ -5800,6 +5800,76 @@ body.profile-route .below-price-alert-section {
 .trade-info-item:first-child {
   border-bottom: 1px solid #4a5568;
 }
+  /* Hide right panel trading controls on mobile */
+@media (max-width: 768px) {
+  .right-panel .top-right-trading {
+    display: none !important;
+  }
+  
+  .trading-controls {
+    display: none !important;
+  }
+  
+  .quick-trading-below-chart {
+    display: block !important;
+  }
+}
+
+/* Make the chart section stack properly on mobile */
+@media (max-width: 768px) {
+  .chart-container-wrapper {
+    flex-direction: column;
+  }
+  
+  .chart-main-section {
+    height: 60vh;
+  }
+  
+  .quick-trading-below-chart {
+    margin-top: 10px;
+  }
+  
+  .center-panel {
+    padding: 10px !important;
+  }
+  
+  /* Adjust quick trading buttons for mobile */
+  .quick-trade-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .quick-trade-btn {
+    padding: 12px;
+  }
+  
+  .quick-input-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .half {
+    width: 100%;
+  }
+  
+  .leverage-quick-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+  }
+}
+
+/* Ensure the chart is visible on mobile */
+@media (max-width: 768px) {
+  .chart-container.tradingview-chart {
+    height: 50vh !important;
+    min-height: 300px;
+  }
+  
+  #tradingview-chart-container {
+    min-height: 300px;
+  }
+}
 }
 
 
