@@ -5870,7 +5870,7 @@ body.profile-route .below-price-alert-section {
     min-height: 300px;
   }
 }
-  /* Remove space between quick trade and order book on mobile */
+/* Remove space between quick trade and order book on mobile */
 @media (max-width: 768px) {
   .quick-trading-below-chart {
     margin-top: 5px !important;
@@ -5906,6 +5906,7 @@ body.profile-route .below-price-alert-section {
   }
 }
 }
+
 
 
 /* End of CSS */
