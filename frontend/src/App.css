@@ -115,20 +115,11 @@ body {
 /* Compact balance display */
 .static-user-balance {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 12px; /* More compact */
-  border-radius: 16px; /* Smaller radius */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  height: 28px; /* Fixed height */
+  display: none !important; /* Add this to hide */
 }
 
 .static-balance-currency {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+ display: none !important; /* Add this to hide */
 }
 
 .static-balance-label {
@@ -2384,6 +2375,94 @@ body {
   padding: 2rem;
   color: #94a3b8;
   font-size: 0.9rem;
+}
+/* Wallet Balance in Quick Trade Area */
+.wallet-balance-quicktrade {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.wallet-balance-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.wallet-icon {
+  font-size: 1.2rem;
+}
+
+.wallet-label {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wallet-balance-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.wallet-balance-dollar {
+  font-size: 0.9rem;
+  color: #60a5fa;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.wallet-plan-info {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+/* Adjust Quick Trade section to accommodate wallet balance */
+.quick-trade-top {
+  display: flex;
+  flex-direction: column;
+}
+
+.trade-actions-top {
+  margin-top: 0.5rem;
+}
+
+/* Mobile responsive adjustments for wallet balance */
+@media (max-width: 768px) {
+  .wallet-balance-quicktrade {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .wallet-balance-amount {
+    font-size: 1.5rem;
+  }
+  
+  .wallet-balance-dollar {
+    font-size: 0.8rem;
+  }
+  
+  .wallet-plan-info {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
 }
 
 /* Profile Content */
