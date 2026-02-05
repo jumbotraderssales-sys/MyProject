@@ -1933,11 +1933,11 @@ const syncUserWallet = async () => {
                 </div>
               </div>
               
-              {/* ADDITIONAL SHIFTED CONTENT CAN GO HERE */}
+              {/* ADDITIONAL SHIFTED CONTENT CAN GO HERE 
             </div>
           )}
         </>
-      )}
+      )} */}
 
       <div className="advanced-main">
         {!isFullScreen && activeDashboard === 'Trading' && (
