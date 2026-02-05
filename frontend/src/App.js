@@ -1865,9 +1865,6 @@ const syncUserWallet = async () => {
     </div>
   )}
 </div>
-  </div>
-</div>
-
           {/* MAIN HEADER - Remove user info from here since it's now in navigation row */}
           <header className="advanced-header">
             <div className="connection-info">
@@ -3325,10 +3322,9 @@ const syncUserWallet = async () => {
         {!isFullScreen && activeDashboard === 'Trading' && (
           <div className="right-panel">
             <div className="top-right-trading">
-  <div className="quick-trade-top">
-    <h3>Quick Trade</h3>
-    
-    {/* ADD WALLET BALANCE HERE */}
+              <div className="quick-trade-top">
+                <h3>Quick Trade</h3>
+          {/* ADD WALLET BALANCE HERE */}
     {isLoggedIn && (
       <div className="wallet-balance-quicktrade">
         <div className="wallet-balance-header">
@@ -3348,8 +3344,6 @@ const syncUserWallet = async () => {
         )}
       </div>
     )}
-    
-    <div className="trade-actions-top">
                 <div className="trade-actions-top">
                   <button 
                     className="trade-btn-top buy-btn-top"
