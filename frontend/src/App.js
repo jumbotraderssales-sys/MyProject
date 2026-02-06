@@ -81,6 +81,7 @@ const PLANS = [
     paperMoney: "500,000"
   }
 ];
+
 function App() {
   const [userAccount, setUserAccount] = useState({
     id: null,
@@ -504,6 +505,7 @@ function App() {
     
     setPaymentStats(stats);
   };
+
 // Function to sync user wallet with backend
 const syncUserWallet = async () => {
   try {
@@ -541,6 +543,7 @@ const syncUserWallet = async () => {
     console.error('Error syncing wallet:', error);
   }
 };
+
   // Function to load user payments
   const loadUserPayments = async () => {
     if (!isLoggedIn) return;
@@ -1780,100 +1783,189 @@ const syncUserWallet = async () => {
     setShowPaymentDetails(true);
   };
 
-   return (
+  // Quick Trade Component for reuse
+  const QuickTradeComponent = () => (
+    <div className="quick-trade-top mobile-quick-trade-component">
+      <h3>Quick Trade</h3>
+      <div className="trade-actions-top">
+        <button 
+          className="trade-btn-top buy-btn-top"
+          onClick={() => handleTrade('LONG')}
+          disabled={!canTrade}
+        >
+          {canTrade ? 'BUY/LONG' : 'BUY PLAN'}
+        </button>
+        <button 
+          className="trade-btn-top sell-btn-top"
+          onClick={() => handleTrade('SHORT')}
+          disabled={!canTrade}
+        >
+          {canTrade ? 'SELL/SHORT' : 'BUY PLAN'}
+        </button>
+      </div>
+      
+      <div className="leverage-section-top">
+        <div className="section-label">Leverage</div>
+        <div className="leverage-buttons-top">
+          {[1, 5, 10, 20, 50, 100].map(lev => (
+            <button
+              key={lev}
+              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+              onClick={() => setLeverage(lev)}
+              disabled={!canTrade}
+            >
+              {lev}x
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* FIXED SL/TP SECTION - COMPACT DESIGN */}
+      <div className="sl-tp-section-adjusted" style={{ 
+        display: 'flex', 
+        gap: '10px', 
+        flexWrap: 'wrap' 
+      }}>
+        <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+          <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
+          <input 
+            type="number"
+            value={stopLoss}
+            onChange={(e) => setStopLoss(e.target.value)}
+            placeholder="Auto"
+            className="sl-input-adjusted"
+            disabled={!canTrade}
+            style={{ 
+              width: '100%',
+              padding: '0.3rem',
+              fontSize: '0.85rem'
+            }}
+          />
+        </div>
+        <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+          <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
+          <input 
+            type="number"
+            value={takeProfit}
+            onChange={(e) => setTakeProfit(e.target.value)}
+            placeholder="Auto"
+            className="tp-input-adjusted"
+            disabled={!canTrade}
+            style={{ 
+              width: '100%',
+              padding: '0.3rem',
+              fontSize: '0.85rem'
+            }}
+          />
+        </div>
+      </div>
+      
+      <div className="order-size-section">
+        <div className="section-label">Order Size</div>
+        <input 
+          type="number" 
+          step="0.001"
+          value={orderSize}
+          onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
+          className="order-size-input"
+          disabled={!canTrade}
+        />
+      </div>
+    </div>
+  );
+
+  return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
           {/* TOP HORIZONTAL NAVIGATION - BOLD TABS WITH USER INFO ON SAME ROW */}
-         <div className="top-horizontal-nav">
-  <div className="nav-tabs-container">
-    <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
-      <span className="tab-text">HOME</span>
-    </div>
+          <div className="top-horizontal-nav">
+            <div className="nav-tabs-container">
+              <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
+                <span className="tab-text">HOME</span>
+              </div>
 
-    <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to view market');
-        setShowLogin(true);
-      } else {
-        setActiveDashboard('Market');
-      }
-    }}>
-      <span className="tab-text">MARKET</span>
-    </div>
+              <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
+                if (!isLoggedIn) {
+                  alert('Please login to view market');
+                  setShowLogin(true);
+                } else {
+                  setActiveDashboard('Market');
+                }
+              }}>
+                <span className="tab-text">MARKET</span>
+              </div>
 
-    <div className={`nav-tab ${activeDashboard === 'Trading' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to trade');
-        setShowLogin(true);
-      } else if (!canTrade) {
-        alert('Please purchase a plan to start trading');
-        setActiveDashboard('Home');
-      } else {
-        setActiveDashboard('Trading');
-      }
-    }}>
-      <span className="tab-text">TRADING</span>
-    </div>
+              <div className={`nav-tab ${activeDashboard === 'Trading' ? 'active' : ''}`} onClick={() => {
+                if (!isLoggedIn) {
+                  alert('Please login to trade');
+                  setShowLogin(true);
+                } else if (!canTrade) {
+                  alert('Please purchase a plan to start trading');
+                  setActiveDashboard('Home');
+                } else {
+                  setActiveDashboard('Trading');
+                }
+              }}>
+                <span className="tab-text">TRADING</span>
+              </div>
 
-    <div className={`nav-tab ${activeDashboard === 'Profile' ? 'active' : ''}`} onClick={() => {
-      if (!isLoggedIn) {
-        alert('Please login to view profile');
-        setShowLogin(true);
-      } else {
-        setActiveDashboard('Profile');
-      }
-    }}>
-      <span className="tab-text">PROFILE</span>
-    </div>
+              <div className={`nav-tab ${activeDashboard === 'Profile' ? 'active' : ''}`} onClick={() => {
+                if (!isLoggedIn) {
+                  alert('Please login to view profile');
+                  setShowLogin(true);
+                } else {
+                  setActiveDashboard('Profile');
+                }
+              }}>
+                <span className="tab-text">PROFILE</span>
+              </div>
 
-    {userAccount.role === 'admin' && (
-      <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
-        if (!isLoggedIn) {
-          alert('Please login as admin');
-          setShowLogin(true);
-        } else if (userAccount.role !== 'admin') {
-          alert('Admin access only');
-        } else {
-          setActiveDashboard('AdminPanel');
-        }
-      }}>
-        <span className="tab-text">ADMIN</span>
-      </div>
-    )}
+              {userAccount.role === 'admin' && (
+                <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
+                  if (!isLoggedIn) {
+                    alert('Please login as admin');
+                    setShowLogin(true);
+                  } else if (userAccount.role !== 'admin') {
+                    alert('Admin access only');
+                  } else {
+                    setActiveDashboard('AdminPanel');
+                  }
+                }}>
+                  <span className="tab-text">ADMIN</span>
+                </div>
+              )}
 
-    {/* 🔥 USER INFO MOVED HERE (same row) */}
-    <div className="nav-user-info-container">
-      {isLoggedIn ? (
-        <>
-          <div className="nav-user-info">
-            <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
-            <div className="nav-user-balance">
-              <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
-              <span className="nav-balance-dollar">
-                (${calculateDollarBalance(userAccount.paperBalance || 0)})
-              </span>
+              {/* 🔥 USER INFO MOVED HERE (same row) */}
+              <div className="nav-user-info-container">
+                {isLoggedIn ? (
+                  <>
+                    <div className="nav-user-info">
+                      <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
+                      <div className="nav-user-balance">
+                        <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                        <span className="nav-balance-dollar">
+                          (${calculateDollarBalance(userAccount.paperBalance || 0)})
+                        </span>
+                      </div>
+                    </div>
+                    <button className="nav-logout-btn" onClick={handleLogout}>
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <div className="nav-auth-buttons">
+                    <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
+                    <button className="nav-auth-btn register-btn" onClick={() => {
+                      setPendingPlanPurchase(false);
+                      setShowRegister(true);
+                    }}>
+                      Register
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <button className="nav-logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-        </>
-      ) : (
-        <div className="nav-auth-buttons">
-          <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
-          <button className="nav-auth-btn register-btn" onClick={() => {
-            setPendingPlanPurchase(false);
-            setShowRegister(true);
-          }}>
-            Register
-          </button>
-        </div>
-      )}
-    </div>
-
-  </div>
-</div>
 
           {/* MAIN HEADER - Remove user info from here since it's now in navigation row */}
           <header className="advanced-header">
@@ -1951,7 +2043,7 @@ const syncUserWallet = async () => {
 
       <div className="advanced-main">
         {!isFullScreen && activeDashboard === 'Trading' && (
-          <div className="left-panel">
+          <div className="left-panel desktop-only">
             {/* ORDER BOOK SECTION - MOVED FROM BALANCE SECTION ABOVE */}
             <div className="order-book-section">
               <div className="order-book-header">
@@ -2472,7 +2564,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountHolderName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
                             placeholder="Enter name as per bank records"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2483,7 +2575,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountNumber}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
                             placeholder="Enter your bank account number"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2492,7 +2584,7 @@ const syncUserWallet = async () => {
                           <select
                             value={userBankAccount.bankName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           >
                             <option value="">Select Bank</option>
                             <option value="HDFC Bank">HDFC Bank</option>
@@ -2510,7 +2602,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.ifscCode}
                             onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
                             placeholder="Enter IFSC code"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2552,7 +2644,7 @@ const syncUserWallet = async () => {
                             value={withdrawalAmount}
                             onChange={(e) => setWithdrawalAmount(e.target.value)}
                             placeholder="Enter amount"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -3131,6 +3223,13 @@ const syncUserWallet = async () => {
                 )}
               </div>
 
+              {/* MOBILE QUICK TRADE SECTION - ADDED HERE */}
+              {activeDashboard === 'Trading' && (
+                <div className="mobile-quick-trade-container">
+                  <QuickTradeComponent />
+                </div>
+              )}
+
               {/* FULLSCREEN TRADING CONTROLS - NOW VISIBLE IN FULLSCREEN */}
               {activeDashboard === 'Trading' && (
                 <div className={`trading-controls ${isFullScreen ? 'fullscreen-trading-controls' : ''}`}>
@@ -3330,94 +3429,9 @@ const syncUserWallet = async () => {
         </div>
 
         {!isFullScreen && activeDashboard === 'Trading' && (
-          <div className="right-panel">
+          <div className="right-panel desktop-only">
             <div className="top-right-trading">
-              <div className="quick-trade-top">
-                <h3>Quick Trade</h3>
-                <div className="trade-actions-top">
-                  <button 
-                    className="trade-btn-top buy-btn-top"
-                    onClick={() => handleTrade('LONG')}
-                    disabled={!canTrade}
-                  >
-                    {canTrade ? 'BUY/LONG' : 'BUY PLAN'}
-                  </button>
-                  <button 
-                    className="trade-btn-top sell-btn-top"
-                    onClick={() => handleTrade('SHORT')}
-                    disabled={!canTrade}
-                  >
-                    {canTrade ? 'SELL/SHORT' : 'BUY PLAN'}
-                  </button>
-                </div>
-                
-                <div className="leverage-section-top">
-                  <div className="section-label">Leverage</div>
-                  <div className="leverage-buttons-top">
-                    {[1, 5, 10, 20, 50, 100].map(lev => (
-                      <button
-                        key={lev}
-                        className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-                        onClick={() => setLeverage(lev)}
-                        disabled={!canTrade}
-                      >
-                        {lev}x
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {/* FIXED SL/TP SECTION - COMPACT DESIGN */}
-                <div className="sl-tp-section-adjusted" style={{ 
-                  display: 'flex', 
-                  gap: '10px', 
-                  flexWrap: 'wrap' 
-                }}>
-                  <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-                    <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
-                    <input 
-                      type="number"
-                      value={stopLoss}
-                      onChange={(e) => setStopLoss(e.target.value)}
-                      placeholder="Auto"
-                      className="sl-input-adjusted"
-                      disabled={!canTrade}
-                      style={{ 
-                        width: '100%',
-                        padding: '0.3rem',
-                        fontSize: '0.85rem'
-                      }}
-                    />
-                  </div>
-                  <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-                    <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
-                    <input 
-                      type="number"
-                      value={takeProfit}
-                      onChange={(e) => setTakeProfit(e.target.value)}
-                      placeholder="Auto"
-                      className="tp-input-adjusted"
-                      disabled={!canTrade}
-                      style={{ 
-                        width: '100%',
-                        padding: '0.3rem',
-                        fontSize: '0.85rem'
-                      }}
-                    />
-                  </div>
-                </div>
-                
-                <div className="order-size-section">
-                  <div className="section-label">Order Size</div>
-                  <input 
-                    type="number" 
-                    step="0.001"
-                    value={orderSize}
-                    onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
-                    className="order-size-input"
-                    disabled={!canTrade}
-                  />
-                </div>
-              </div>
+              <QuickTradeComponent />
             </div>
 
             <div className="trading-journal">
