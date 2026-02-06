@@ -46,30 +46,30 @@ const INDICATOR_PRESETS = [
 const PLANS = [
   {
     name: "Silver Challenge",
-    Entry Fee: "₹1,000",
+    EntryFee: "₹1,000",
     dailyLoss: "3%",
     maxLoss: "10%",
-    Hit 20% Profit : "Win 20% real cash prize",
+    Hit20%Profit : "Win 20% real cash prize",
     Withdrawal: "Immediate",
     Get paperMoney: "20,000"
   },
   {
     name: "Gold Challenge",
-    Entry Fee: "₹2,500",
+    EntryFee: "₹2,500",
     dailyLoss: "3%",
     maxLoss: "10%",
-    Hit 20% Profit : "Win 20% real cash prize",
+    Hit20%Profit : "Win 20% real cash prize",
     Withdrawal: "Immediate",
-    Get paperMoney: "50,000"
+    GetpaperMoney: "50,000"
   },
   {
     name: "Diamond Challenge",
-    Entry Fee: "₹5,000",
+    EntryFee: "₹5,000",
     dailyLoss: "3%",
     maxLoss: "10%",
-    Hit 20% Profit : "Win 20% real cash prize",
+    Hit20%Profit : "Win 20% real cash prize",
     Withdrawal: "Immediate",
-    Get paperMoney: "1,00,000"
+    GetpaperMoney: "1,00,000"
   }
 ];
 
