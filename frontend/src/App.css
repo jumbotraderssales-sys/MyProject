@@ -284,6 +284,12 @@ body {
     height: 20px;
   }
 }
+/* Ensure Quick Trade doesn't show twice on Desktop */
+@media (min-width: 1024px) {
+  .mobile-only-trade-panel {
+    display: none !important;
+  }
+}
 
 /* Advanced App Container */
 .advanced-app {
