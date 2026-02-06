@@ -49,16 +49,16 @@ const PLANS = [
     EntryFee: "₹1,000",
     dailyLoss: "3%",
     maxLoss: "10%",
-    Hit20%Profit : "Win 20% real cash prize",
+    Winnerreward : "Hit 20% Profit get 20% real cash prize",
     Withdrawal: "Immediate",
-    Get paperMoney: "20,000"
+    GetpaperMoney: "20,000"
   },
   {
     name: "Gold Challenge",
     EntryFee: "₹2,500",
     dailyLoss: "3%",
     maxLoss: "10%",
-    Hit20%Profit : "Win 20% real cash prize",
+    Winnerreward : "Hit 20% Profit get 20% real cash prize",
     Withdrawal: "Immediate",
     GetpaperMoney: "50,000"
   },
@@ -67,7 +67,7 @@ const PLANS = [
     EntryFee: "₹5,000",
     dailyLoss: "3%",
     maxLoss: "10%",
-    Hit20%Profit : "Win 20% real cash prize",
+    Winnerreward : "Hit 20% Profit get 20% real cash prize",
     Withdrawal: "Immediate",
     GetpaperMoney: "1,00,000"
   }
