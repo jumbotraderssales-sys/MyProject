@@ -4880,12 +4880,7 @@ a {
   }
 }
 
-/* Desktop: Hide mobile quick trade */
-@media (min-width: 769px) {
-  .quick-trade-mobile {
-    display: none !important;
-  }
-}
+
 
 /* PROFESSIONAL DESKTOP IMPROVEMENTS */
 @media (min-width: 1200px) {
@@ -4980,10 +4975,6 @@ a {
     display: none;
   }
   
-  /* Show mobile quick trade instead */
-  [data-tab="trading"] .quick-trade-mobile {
-    display: block !important;
-  }
   /* Hide DEMO MODE/LIVE toggle and Remove all This text */
 .mode-toggle,
 .mode-toggle + .separator + span {
