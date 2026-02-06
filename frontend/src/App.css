@@ -5483,7 +5483,7 @@ body.profile-route .below-price-alert-section {
   .user-balance-header {
     justify-content: center !important;
   }
-}
+
 
    /* Hide the quick trade section in right panel on mobile */
 @media (max-width: 768px) {
