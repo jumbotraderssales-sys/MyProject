@@ -5491,19 +5491,6 @@ body.profile-route .below-price-alert-section {
     display: none !important;
   }
 }
-  /* Hide mobile quick trade container on desktop */
-@media (min-width: 769px) {
-  .mobile-quick-trade-container {
-    display: none !important;
-  }
-}
-
-/* Ensure right panel quick trade is visible on desktop */
-@media (min-width: 769px) {
-  .right-panel .top-right-trading.desktop-only {
-    display: block !important;
-  }
-}
  }
 
 /* End of CSS */
