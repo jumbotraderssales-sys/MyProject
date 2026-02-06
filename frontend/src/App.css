@@ -5536,6 +5536,12 @@ body.profile-route .below-price-alert-section {
     display: block !important;
   }
 }
+  /* Hide duplicate quick trade in center panel on desktop */
+@media (min-width: 769px) {
+  .mobile-quick-trade-container {
+    display: none !important;
+  }
+}
 }
 
 /* End of CSS */
