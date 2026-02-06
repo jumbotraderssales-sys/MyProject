@@ -15,24 +15,24 @@ body {
 }
 
 /* TOP STATIC USER INFO BAR - COMPACT VERSION */
-/* TOP STATIC USER INFO BAR - COMPACT VERSION */
 .top-static-user-bar {
   background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
   color: white;
-  padding: 0 15px;
+  padding: 0 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #3949ab;
+  border-bottom: 1px solid #3949ab;
   position: sticky;
   top: 0;
   z-index: 1002;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  min-height: 40px; /* Reduced from 48px */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+  min-height: 36px;
   width: 100%;
+  overflow: hidden;
 }
 
-/* Navigation tabs on left side - COMPACT */
+/* Navigation tabs on left side */
 .nav-tabs-container-static {
   display: flex;
   gap: 0;
@@ -48,32 +48,32 @@ body {
 }
 
 .nav-tab-static {
-  padding: 10px 16px; /* Reduced padding */
+  padding: 8px 12px;
   background: transparent;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   border: none;
   white-space: nowrap;
   flex-shrink: 0;
   min-width: fit-content;
   color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-  font-size: 0.85rem; /* Smaller font */
+  font-weight: 500;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   position: relative;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  height: 40px; /* Fixed height */
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  height: 36px;
   display: flex;
   align-items: center;
 }
 
 .nav-tab-static:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .nav-tab-static.active {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
 }
 
@@ -81,58 +81,66 @@ body {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
   background: #4caf50;
+  border-radius: 1px;
 }
 
-/* User info on right side - MOVED NEXT TO TABS */
+/* User info on right side */
 .static-user-info {
   display: flex;
   align-items: center;
-  gap: 12px; /* Reduced gap */
-  padding-left: 12px;
+  gap: 8px;
+  padding-left: 10px;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
-  margin-left: auto; /* Push to right side */
-  height: 40px; /* Same height as tabs */
+  height: 36px;
 }
 
 .static-user-name {
-  font-weight: 600;
-  font-size: 0.85rem; /* Smaller */
+  font-weight: 500;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: rgba(255, 255, 255, 0.95);
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .static-user-name i {
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #bb86fc;
 }
 
-/* Compact balance display */
 .static-user-balance {
   display: flex;
-  display: none !important; /* Add this to hide */
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 24px;
 }
 
 .static-balance-currency {
- display: none !important; /* Add this to hide */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
 }
 
 .static-balance-label {
-  font-size: 0.65rem; /* Smaller */
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.6);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   line-height: 1;
 }
 
 .static-balance-amount {
-  font-weight: 700;
-  font-size: 0.85rem; /* Smaller */
+  font-weight: 600;
+  font-size: 0.75rem;
   color: #4caf50;
   line-height: 1;
 }
@@ -143,26 +151,26 @@ body {
 }
 
 .balance-separator {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.6rem;
+  margin: 0 2px;
 }
 
-/* Compact logout button */
 .static-logout-btn {
   background: linear-gradient(90deg, #f44336 0%, #d32f2f 100%);
   border: none;
   color: white;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.8rem; /* Smaller */
-  transition: all 0.3s;
+  font-size: 0.7rem;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 28px;
+  gap: 3px;
   white-space: nowrap;
+  height: 24px;
 }
 
 .static-logout-btn i {
@@ -172,84 +180,84 @@ body {
 .static-logout-btn:hover {
   background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
-}
-
-/* Adjust the main content to be below the static bar */
-.advanced-main {
-  margin-top: 0;
-}
-
-/* Adjust the top navigation to be below the compact bar */
-.top-horizontal-nav {
-  top: 40px; /* Match new height */
+  box-shadow: 0 2px 6px rgba(244, 67, 54, 0.4);
 }
 
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .top-static-user-bar {
-    padding: 0 8px;
-    min-height: 36px; /* Even smaller on mobile */
+    padding: 0 6px;
+    min-height: 32px;
     flex-wrap: nowrap;
   }
   
   .nav-tabs-container-static {
     order: 1;
-    flex: 1;
-    overflow-x: auto;
+    width: 100%;
+    border-bottom: none;
   }
   
   .nav-tab-static {
-    padding: 8px 12px;
-    font-size: 0.75rem;
-    height: 36px;
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    letter-spacing: 0.2px;
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+    height: 32px;
   }
   
   .static-user-info {
     order: 2;
-    padding-left: 8px;
-    gap: 6px;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-top: none;
     width: auto;
-    margin-left: 0;
+    justify-content: flex-end;
+    padding: 0 0 0 6px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+    gap: 6px;
+    flex-wrap: nowrap;
+    min-width: fit-content;
   }
   
   .static-user-name {
-    display: none; /* Hide name on small mobile */
+    font-size: 0.7rem;
+    display: none; /* Hide name on mobile to save space */
   }
   
   .static-user-balance {
-    padding: 3px 8px;
+    padding: 2px 6px;
     gap: 4px;
-    height: 26px;
+    height: 22px;
   }
   
   .static-balance-label {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
   
   .static-balance-amount {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
   
   .static-logout-btn {
     padding: 3px 8px;
-    font-size: 0.7rem;
-    height: 26px;
+    font-size: 0.65rem;
+    height: 22px;
   }
   
-  /* Adjust navigation below */
-  .top-horizontal-nav {
-    top: 36px; /* Match mobile height */
+  .balance-separator {
+    margin: 0 1px;
+    font-size: 0.5rem;
   }
 }
 
 /* For very small screens */
 @media (max-width: 480px) {
+  .top-static-user-bar {
+    min-height: 30px;
+  }
+  
   .nav-tab-static {
-    padding: 8px 10px;
-    font-size: 0.7rem;
+    padding: 5px 6px;
+    font-size: 0.65rem;
+    height: 30px;
   }
   
   .static-user-info {
@@ -257,25 +265,23 @@ body {
   }
   
   .static-user-balance {
-    min-width: 100px; /* Ensure balance doesn't get too small */
+    padding: 2px 4px;
+    gap: 3px;
+    height: 20px;
   }
   
-  .balance-separator {
-    display: none; /* Hide separator on very small screens */
+  .static-balance-label {
+    font-size: 0.5rem;
   }
-}
-
-/* Touch-friendly improvements */
-@media (hover: none) and (pointer: coarse) {
-  .nav-tab-static {
-    min-height: 36px;
-    display: flex;
-    align-items: center;
+  
+  .static-balance-amount {
+    font-size: 0.65rem;
   }
   
   .static-logout-btn {
-    min-height: 32px;
-    min-width: 32px;
+    padding: 2px 6px;
+    font-size: 0.6rem;
+    height: 20px;
   }
 }
 
@@ -2375,94 +2381,6 @@ body {
   padding: 2rem;
   color: #94a3b8;
   font-size: 0.9rem;
-}
-/* Wallet Balance in Quick Trade Area */
-.wallet-balance-quicktrade {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.wallet-balance-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.wallet-icon {
-  font-size: 1.2rem;
-}
-
-.wallet-label {
-  color: #94a3b8;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.wallet-balance-amount {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #10b981;
-  margin-bottom: 0.25rem;
-  line-height: 1.2;
-}
-
-.wallet-balance-dollar {
-  font-size: 0.9rem;
-  color: #60a5fa;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.wallet-plan-info {
-  display: inline-block;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #60a5fa;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-top: 0.5rem;
-}
-
-/* Adjust Quick Trade section to accommodate wallet balance */
-.quick-trade-top {
-  display: flex;
-  flex-direction: column;
-}
-
-.trade-actions-top {
-  margin-top: 0.5rem;
-}
-
-/* Mobile responsive adjustments for wallet balance */
-@media (max-width: 768px) {
-  .wallet-balance-quicktrade {
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-  
-  .wallet-balance-amount {
-    font-size: 1.5rem;
-  }
-  
-  .wallet-balance-dollar {
-    font-size: 0.8rem;
-  }
-  
-  .wallet-plan-info {
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
-  }
 }
 
 /* Profile Content */
