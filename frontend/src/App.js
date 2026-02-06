@@ -8,24 +8,18 @@ import WithdrawalHistory from './components/WithdrawalHistory';
 
 import './App.css';
 
-const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
+const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
+// Updated Leverage Constants
+const LEVERAGE_OPTIONS = [5, 10, 15, 20];
 
 // Crypto data with details
 const cryptoData = [
   { symbol: 'BTCUSDT', name: 'Bitcoin', price: 91391.5, change24h: 2.34, volume: '42.5B', marketCap: '1.8T', color: '#F7931A' },
   { symbol: 'ETHUSDT', name: 'Ethereum', price: 3850.25, change24h: 1.56, volume: '18.3B', marketCap: '462B', color: '#627EEA' },
   { symbol: 'SOLUSDT', name: 'Solana', price: 185.42, change24h: 5.23, volume: '3.2B', marketCap: '81B', color: '#00FFA3' },
-  { symbol: 'XRPUSDT', name: 'Ripple', price: 2.15, change24h: 0.89, volume: '1.8B', marketCap: '117B', color: '#23292F' },
-  { symbol: 'ADAUSDT', name: 'Cardano', price: 0.85, change24h: -0.45, volume: '850M', marketCap: '30B', color: '#0033AD' },
-  { symbol: 'DOTUSDT', name: 'Polkadot', price: 35.50, change24h: 1.23, volume: '650M', marketCap: '45B', color: '#E6007A' },
-  { symbol: 'AVAXUSDT', name: 'Avalanche', price: 45.20, change24h: 3.45, volume: '920M', marketCap: '16B', color: '#E84142' },
-  { symbol: 'MATICUSDT', name: 'Polygon', price: 1.25, change24h: -1.23, volume: '520M', marketCap: '12B', color: '#8247E5' },
-  { symbol: 'BNBUSDT', name: 'Binance Coin', price: 650.30, change24h: 0.78, volume: '1.2B', marketCap: '100B', color: '#F0B90B' },
-  { symbol: 'DOGEUSDT', name: 'Dogecoin', price: 0.18, change24h: 0.25, volume: '1.1B', marketCap: '26B', color: '#C2A633' },
-  { symbol: 'LTCUSDT', name: 'Litecoin', price: 85.60, change24h: 0.92, volume: '450M', marketCap: '6.3B', color: '#BFBBBB' },
-  { symbol: 'TRXUSDT', name: 'Tron', price: 0.12, change24h: 1.45, volume: '380M', marketCap: '11B', color: '#FF001B' },
-];
+    { symbol: 'BNBUSDT', name: 'Binance Coin', price: 650.30, change24h: 0.78, volume: '1.2B', marketCap: '100B', color: '#F0B90B' },
+ ];
 
 // Chart types for TradingView
 const CHART_TYPES = [
@@ -51,34 +45,31 @@ const INDICATOR_PRESETS = [
 // Plans Data
 const PLANS = [
   {
-    name: "Plan A",
-    price: "₹1,000",
-    dailyLoss: "5%",
-    maxLoss: "50%",
-    profitPayout: "Paper Profit × 10% = Real Money",
-    minWithdrawal: "5%",
-    maxWithdrawal: "4,000",
-    paperMoney: "100,000"
+    name: "Silver Challenge",
+    Entry Fee: "₹1,000",
+    dailyLoss: "3%",
+    maxLoss: "10%",
+    Hit 20% Profit : "Win 20% real cash prize",
+    Withdrawal: "Immediate",
+    Get paperMoney: "20,000"
   },
   {
-    name: "Plan B", 
-    price: "₹2,500",
-    dailyLoss: "5%",
-    maxLoss: "50%",
-    profitPayout: "Paper Profit × 10% = Real Money",
-    minWithdrawal: "5%",
-    maxWithdrawal: "10,000",
-    paperMoney: "250,000"
+    name: "Gold Challenge",
+    Entry Fee: "₹2,500",
+    dailyLoss: "3%",
+    maxLoss: "10%",
+    Hit 20% Profit : "Win 20% real cash prize",
+    Withdrawal: "Immediate",
+    Get paperMoney: "50,000"
   },
   {
-    name: "Plan C",
-    price: "₹5,000",
-    dailyLoss: "5%",
-    maxLoss: "50%",
-    profitPayout: "Paper Profit × 10% = Real Money",
-    minWithdrawal: "5%",
-    maxWithdrawal: "20,000",
-    paperMoney: "500,000"
+    name: "Diamond Challenge",
+    Entry Fee: "₹5,000",
+    dailyLoss: "3%",
+    maxLoss: "10%",
+    Hit 20% Profit : "Win 20% real cash prize",
+    Withdrawal: "Immediate",
+    Get paperMoney: "1,00,000"
   }
 ];
 
@@ -121,7 +112,7 @@ function App() {
   const [withdrawalStatus, setWithdrawalStatus] = useState('pending');
   const [showAccountSetup, setShowAccountSetup] = useState(false);
   const [showWithdrawalRequest, setShowWithdrawalRequest] = useState(false);
-  const [timeframe, setTimeframe] = useState('60');
+  const [timeframe, setTimeframe] = useState('15');
   const [activeIndicators, setActiveIndicators] = useState([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showIndicatorsPanel, setShowIndicatorsPanel] = useState(false);
@@ -129,7 +120,7 @@ function App() {
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const [orderSize, setOrderSize] = useState(0.001);
-  const [leverage, setLeverage] = useState(10);
+  const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
   const [chartType, setChartType] = useState('0');
@@ -193,6 +184,155 @@ function App() {
     upiId: '7799191208-2@ybl',
     merchantName: 'Paper2Real Trading'
   });
+  const currentPrice = cryptoData.find(c => c.symbol === selectedSymbol)?.price || 0;
+  const marginRequired = (currentPrice * orderSize) / leverage;
+
+  const handleUpdatePosition = (id, field, value) => {
+    setPositions(prev => prev.map(pos => 
+      pos.id === id ? { ...pos, [field]: value } : pos
+    ));
+  };
+
+  const handlePlaceTrade = (type) => {
+    if (marginRequired > userAccount.paperBalance) {
+      alert("Insufficient Funds");
+      return;
+    }
+
+    const newPosition = {
+      id: Date.now(),
+      symbol: selectedSymbol,
+      type,
+      size: orderSize,
+      entryPrice: currentPrice,
+      leverage,
+      margin: marginRequired,
+      stopLoss: '',
+      takeProfit: '',
+      pnl: 0
+    };
+
+    setPositions([...positions, newPosition]);
+    setOrderHistory([{ ...newPosition, status: 'Open', time: new Date().toLocaleTimeString() }, ...orderHistory]);
+    setUserAccount(prev => ({ ...prev, paperBalance: prev.paperBalance - marginRequired }));
+  };
+
+  return (
+    <div className="app-container">
+      {/* Quick Trade Panel */}
+      <div className="trade-panel card">
+        <h3>Quick Trade: {selectedSymbol}</h3>
+        <div className="trade-input-group">
+          <label>Quantity</label>
+          <input type="number" value={orderSize} onChange={(e) => setOrderSize(Number(e.target.value))} />
+        </div>
+
+        <div className="leverage-selector">
+          <label>Leverage</label>
+          <div className="leverage-buttons">
+            {LEVERAGE_OPTIONS.map(lev => (
+              <button 
+                key={lev} 
+                className={leverage === lev ? 'active' : ''} 
+                onClick={() => setLeverage(lev)}
+              >
+                {lev}x
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="trade-stats">
+          <div className="stat-row">
+            <span>Available Funds:</span>
+            <span className="value">${userAccount.paperBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+          </div>
+          <div className="stat-row">
+            <span>Margin Required:</span>
+            <span className={marginRequired > userAccount.paperBalance ? 'value-error' : 'value'}>
+              ${marginRequired.toLocaleString(undefined, {minimumFractionDigits: 2})}
+            </span>
+          </div>
+        </div>
+
+        <div className="trade-actions">
+          <button className="buy-btn" onClick={() => handlePlaceTrade('BUY')}>Buy / Long</button>
+          <button className="sell-btn" onClick={() => handlePlaceTrade('SELL')}>Sell / Short</button>
+        </div>
+      </div>
+
+      {/* Active Positions */}
+      <div className="positions-container card">
+        <h3>Active Positions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th>Entry</th>
+              <th>Stop Loss</th>
+              <th>Target (TP)</th>
+              <th>PnL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {positions.map(pos => (
+              <tr key={pos.id}>
+                <td>{pos.symbol}</td>
+                <td className={pos.type === 'BUY' ? 'text-green' : 'text-red'}>{pos.type}</td>
+                <td>{pos.entryPrice}</td>
+                <td>
+                  <input 
+                    className="editable-cell" 
+                    type="number" 
+                    placeholder="SL"
+                    value={pos.stopLoss} 
+                    onChange={(e) => handleUpdatePosition(pos.id, 'stopLoss', e.target.value)} 
+                  />
+                </td>
+                <td>
+                  <input 
+                    className="editable-cell" 
+                    type="number" 
+                    placeholder="Target"
+                    value={pos.takeProfit} 
+                    onChange={(e) => handleUpdatePosition(pos.id, 'takeProfit', e.target.value)} 
+                  />
+                </td>
+                <td>{pos.pnl}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Order Book / History */}
+      <div className="order-history card">
+        <h3>Order Book</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Symbol</th>
+              <th>Deployed Fund (Margin)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orderHistory.map(order => (
+              <tr key={order.id}>
+                <td>{order.time}</td>
+                <td>{order.symbol}</td>
+                <td>${order.margin.toFixed(2)}</td>
+                <td>{order.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
   
   const [dollarRate, setDollarRate] = useState(90);
 
