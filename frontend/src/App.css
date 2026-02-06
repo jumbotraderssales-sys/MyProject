@@ -5523,6 +5523,12 @@ body.profile-route .below-price-alert-section {
   .quick-trade-mobile {
     display: none !important;
   }
+  /* Hide the quick trade section in right panel on mobile */
+@media (max-width: 768px) {
+  .right-panel .top-right-trading.desktop-only {
+    display: none !important;
+  }
+}
 }
 
 /* End of CSS */
