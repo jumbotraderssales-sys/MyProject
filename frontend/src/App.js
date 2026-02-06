@@ -86,7 +86,6 @@ function App() {
   const [userAccount, setUserAccount] = useState({
     id: null,
     name: "",
-",
     email: "",
     realBalance: 0,
     paperBalance: 0,
@@ -2404,7 +2403,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountHolderName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
                             placeholder="Enter name as per bank records"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2415,7 +2414,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountNumber}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
                             placeholder="Enter your bank account number"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2424,7 +2423,7 @@ const syncUserWallet = async () => {
                           <select
                             value={userBankAccount.bankName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           >
                             <option value="">Select Bank</option>
                             <option value="HDFC Bank">HDFC Bank</option>
@@ -2442,7 +2441,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.ifscCode}
                             onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
                             placeholder="Enter IFSC code"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2483,7 +2482,7 @@ const syncUserWallet = async () => {
                             value={withdrawalAmount}
                             onChange={(e) => setWithdrawalAmount(e.target.value)}
                             placeholder="Enter amount"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -3036,7 +3035,7 @@ const syncUserWallet = async () => {
                       zIndex: '100',
                       padding: '0.5rem 1rem',
                       background: 'rgba(26, 31, 46, 0.9)',
-                      border: '1px solid '#2d3748',
+                      border: '1px solid #2d3748',
                       borderRadius: '8px',
                       color: '#e2e8f0',
                       cursor: 'pointer',
@@ -3050,7 +3049,7 @@ const syncUserWallet = async () => {
               </div>
 
               {activeDashboard === 'Trading' && (
-                <div className="trading-controls ${isFullScreen ? 'fullscreen-trading-controls' : ''}">
+                <div className="trading-controls">
                   <div className="advanced-stats">
                     <h3>Order History</h3>
                     <div className="order-history" style={{ maxHeight: isFullScreen ? '200px' : '300px', overflowY: 'auto' }}>
@@ -3614,7 +3613,7 @@ const syncUserWallet = async () => {
                       <strong>UPI ID:</strong> {upiSettings.upiId}
                     </div>
                   </div>
-                  
+                 
                   {/* Manual UPI Payment Option */}
                   <div className="manual-upi-option">
                     <h4>Send Payment Manually:</h4>
