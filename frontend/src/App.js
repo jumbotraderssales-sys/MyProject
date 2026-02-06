@@ -700,6 +700,10 @@ const syncUserWallet = async () => {
       if (isApproved) {
         updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
         
+        const paperMoneyAmount = payment.planName.includes('Plan A') ? 100000 :
+                                payment.planName.includes('Plan B') ? 250000 :
+                                payment.planName.includes('Plan C') ? 500000 : 100000;
+        
         const token = localStorage.getItem('token');
         if (token) {
           fetch('https://myproject1-d097.onrender.com/api/payments/' + paymentId + '/status', {
@@ -3049,7 +3053,13 @@ const syncUserWallet = async () => {
               </div>
 
               {activeDashboard === 'Trading' && (
-                <div className="trading-controls">
+                <div className="mobile-quick-trade-container">
+                   <QuickTradeComponent />
+                </div>
+              )}
+
+              {activeDashboard === 'Trading' && (
+                <div className={`trading-controls ${isFullScreen ? 'fullscreen-trading-controls' : ''}`}>
                   <div className="advanced-stats">
                     <h3>Order History</h3>
                     <div className="order-history" style={{ maxHeight: isFullScreen ? '200px' : '300px', overflowY: 'auto' }}>
@@ -3244,10 +3254,10 @@ const syncUserWallet = async () => {
         </div>
 
         {!isFullScreen && activeDashboard === 'Trading' && (
-          <div className="right-panel desktop-only">
-            <div className="top-right-trading desktop-only">
-              <QuickTradeComponent />
-            </div>
+  <div className="right-panel desktop-only">
+    <div className="top-right-trading desktop-only">
+      <QuickTradeComponent />
+    </div>
 
             <div className="trading-journal">
               <h3>Trading Journal</h3>
@@ -3613,7 +3623,7 @@ const syncUserWallet = async () => {
                       <strong>UPI ID:</strong> {upiSettings.upiId}
                     </div>
                   </div>
-                 
+                  
                   {/* Manual UPI Payment Option */}
                   <div className="manual-upi-option">
                     <h4>Send Payment Manually:</h4>
