@@ -5531,6 +5531,15 @@ body.profile-route .below-price-alert-section {
     display: none !important;
   }
 }
+  /* Force hide mobile quick trade on desktop even when visible */
+@media (min-width: 769px) {
+  .quick-trade-mobile,
+  [data-tab="trading"] .quick-trade-mobile,
+  [data-tab="trading"] .quick-trade-mobile.visible,
+  .quick-trade-mobile.visible {
+    display: none !important;
+  }
+}
 }
 
 /* End of CSS */
