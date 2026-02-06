@@ -199,7 +199,7 @@ function App() {
       return;
     }   
       type,
-      size: orderSize,
+      size: orderSize;
       entryPrice: currentPrice,
       leverage,
       margin: marginRequired,
