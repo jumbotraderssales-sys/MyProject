@@ -3253,7 +3253,13 @@ const syncUserWallet = async () => {
           )}
         </div>
 
-                  <div className="trading-journal">
+        {!isFullScreen && activeDashboard === 'Trading' && (
+  <div className="right-panel desktop-only">
+    <div className="top-right-trading desktop-only">
+      <QuickTradeComponent />
+    </div>
+
+            <div className="trading-journal">
               <h3>Trading Journal</h3>
               <div className="win-rate-circle">
                 <div className="circle-progress" style={{background: `conic-gradient(#3b82f6 0% ${stats.winRate}%, #1e293b ${stats.winRate}% 100%)`}}>
