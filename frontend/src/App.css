@@ -5525,35 +5525,15 @@ body.profile-route .below-price-alert-section {
     display: none !important;
   }
 }
-/* Hide mobile quick trade section on desktop */
+  /* NUCLEAR OPTION: Hide anything that looks like quick trade in center panel */
 @media (min-width: 769px) {
-  .quick-trade-mobile {
-    display: none !important;
-  }
-}
-  /* Force hide mobile quick trade on desktop even when visible */
-@media (min-width: 769px) {
-  .quick-trade-mobile,
-  [data-tab="trading"] .quick-trade-mobile,
-  [data-tab="trading"] .quick-trade-mobile.visible,
-  .quick-trade-mobile.visible {
-    display: none !important;
-  }
-}
-  /* Hide ALL quick trade sections in the center panel (below chart) on desktop */
-@media (min-width: 769px) {
-  .center-panel .trading-controls .quick-trade-section,
-  .center-panel .quick-trade-section,
-  .center-panel .trading-controls .trade-actions,
-  .center-panel > .trade-actions,
-  .center-panel .trading-controls .trading-panel,
-  .center-panel > .trading-panel {
+  .center-panel > div:not(.chart-container):not(.chart-header-simplified):not(.indicators-panel) {
     display: none !important;
   }
   
-  /* Also ensure mobile version is hidden */
-  .quick-trade-mobile {
-    display: none !important;
+  /* But make sure trading controls for order history stays visible */
+  .center-panel .trading-controls:not(:has(.quick-trade-section)) {
+    display: block !important;
   }
 }
 }
