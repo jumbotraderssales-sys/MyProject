@@ -1226,6 +1226,26 @@ const syncUserWallet = async () => {
       setIsFullScreen(false);
     }
   };
+  // Add this useEffect near your other useEffect hooks
+useEffect(() => {
+  const handleResize = () => {
+    if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
+      // Force a redraw of the TradingView widget
+      const container = document.getElementById('tradingview-chart-container');
+      if (container) {
+        // The widget will automatically resize when container dimensions change
+        window.dispatchEvent(new Event('resize'));
+      }
+    }
+  };
+
+  window.addEventListener('resize', handleResize);
+  handleResize(); // Initial call
+
+  return () => {
+    window.removeEventListener('resize', handleResize);
+  };
+}, [widgetScriptLoaded, activeDashboard, isFullScreen]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
