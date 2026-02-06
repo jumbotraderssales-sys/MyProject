@@ -5540,6 +5540,22 @@ body.profile-route .below-price-alert-section {
     display: none !important;
   }
 }
+  /* Hide ALL quick trade sections in the center panel (below chart) on desktop */
+@media (min-width: 769px) {
+  .center-panel .trading-controls .quick-trade-section,
+  .center-panel .quick-trade-section,
+  .center-panel .trading-controls .trade-actions,
+  .center-panel > .trade-actions,
+  .center-panel .trading-controls .trading-panel,
+  .center-panel > .trading-panel {
+    display: none !important;
+  }
+  
+  /* Also ensure mobile version is hidden */
+  .quick-trade-mobile {
+    display: none !important;
+  }
+}
 }
 
 /* End of CSS */
