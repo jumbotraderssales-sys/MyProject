@@ -87,14 +87,14 @@ function App() {
     id: null,
     name: "",
     email: "",
-    realBalance: 0, // ADD THIS LINE
+    realBalance: 0,
     paperBalance: 0,
     currentPlan: null,
     notifications: [],
     transactions: [],
     accountStatus: 'pending',
     role: 'user',
-    bankAccount: {  // ADD THIS OBJECT
+    bankAccount: {
       accountNumber: '',
       accountHolder: '',
       bankName: '',
@@ -109,7 +109,6 @@ function App() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [mode, setMode] = useState('DEMO');
   const [activeDashboard, setActiveDashboard] = useState('Home');
-   // Add these withdrawal states
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [userBankAccount, setUserBankAccount] = useState({
     accountNumber: '',
@@ -169,7 +168,6 @@ function App() {
   const [showOrderBook, setShowOrderBook] = useState(true);
   const [chartTheme, setChartTheme] = useState('dark');
   
-  // New state for chart lines and editing
   const [showChartLines, setShowChartLines] = useState(true);
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [editSL, setEditSL] = useState('');
@@ -178,36 +176,28 @@ function App() {
   const [editPositionSL, setEditPositionSL] = useState('');
   const [editPositionTP, setEditPositionTP] = useState('');
 
-  // Track if user needs to buy plan after registration
   const [pendingPlanPurchase, setPendingPlanPurchase] = useState(false);
 
-  // Prices state
   const [prices, setPrices] = useState({});
 
-  // TradingView widget container reference
   const [widgetScriptLoaded, setWidgetScriptLoaded] = useState(false);
 
-  // Chart lines state for horizontal lines
   const [chartHorizontalLines, setChartHorizontalLines] = useState([]);
 
-  // New state for UPI payment
   const [paymentReceipt, setPaymentReceipt] = useState(null);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
-  // New state for UPI QR code
   const [upiQrCode, setUpiQrCode] = useState(null);
   const [upiSettings, setUpiSettings] = useState({
-    upiId: '7799191208-2@ybl', // UPDATED: Your UPI ID
+    upiId: '7799191208-2@ybl',
     merchantName: 'Paper2Real Trading'
   });
   
-  // NEW: Dollar balance conversion rate
-  const [dollarRate, setDollarRate] = useState(90); // 1 USD = 90 INR
+  const [dollarRate, setDollarRate] = useState(90);
 
-  // NEW: Payment tracking state
   const [payments, setPayments] = useState([]);
-  const [paymentFilter, setPaymentFilter] = useState('all'); // 'all', 'pending', 'completed', 'rejected'
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [showPaymentDetails, setShowPaymentDetails] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -219,41 +209,34 @@ function App() {
     totalAmount: 0
   });
 
-  // Ref for checking stop loss and take profit
   const positionsRef = useRef(positions);
 
-    // Update ref when positions change
   useEffect(() => {
     positionsRef.current = positions;
   }, [positions]);
 
-  // Calculate dollar balance whenever paper balance changes
   const calculateDollarBalance = (paperBalance) => {
     return (paperBalance / dollarRate).toFixed(2);
   };
 
-  // Load payments when user logs in
   useEffect(() => {
     if (isLoggedIn && userAccount.id) {
       loadUserPayments();
       
-      // Set up interval to check payment status every 30 seconds
       const paymentCheckInterval = setInterval(() => {
         if (isLoggedIn) {
           loadUserPayments();
         }
-      }, 30000); // Check every 30 seconds
+      }, 30000);
       
       return () => clearInterval(paymentCheckInterval);
     }
   }, [isLoggedIn, userAccount.id]);
 
-  // Update payment stats when payments change
   useEffect(() => {
     calculatePaymentStats();
   }, [payments]);
 
-  // Update chart horizontal lines when positions change
   useEffect(() => {
     const lines = positions
       .filter(pos => pos.symbol === selectedSymbol)
@@ -272,7 +255,6 @@ function App() {
     setChartHorizontalLines(lines);
   }, [positions, selectedSymbol]);
 
-  // Check if user is already logged in
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn');
     const token = localStorage.getItem('token');
@@ -287,7 +269,6 @@ function App() {
       setBalance(userData.paperBalance || 0);
       setEquity(userData.paperBalance || 0);
       
-      // Load payments from localStorage if available
       if (paymentsStr) {
         try {
           const savedPayments = JSON.parse(paymentsStr);
@@ -298,12 +279,10 @@ function App() {
         }
       }
       
-      // Load user data
       loadUserData(token);
     }
   }, []);
 
-  // Initialize prices from cryptoData
   useEffect(() => {
     const initialPrices = {};
     cryptoData.forEach(crypto => {
@@ -312,7 +291,6 @@ function App() {
     setPrices(initialPrices);
   }, []);
 
-  // Load TradingView widget script
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
@@ -325,26 +303,22 @@ function App() {
     };
   }, []);
 
-  // Load UPI QR code when payment dialog is shown
   useEffect(() => {
     if (isLoggedIn && showUPIScanner) {
       loadUpiQrCode();
     }
   }, [isLoggedIn, showUPIScanner]);
 
-  // Create TradingView widget when dependencies change
   useEffect(() => {
     if (!widgetScriptLoaded || !window.TradingView || activeDashboard !== 'Trading') return;
     
     const container = document.getElementById('tradingview-chart-container');
     if (!container) return;
     
-    // Clear previous widget
     while (container.firstChild) {
       container.removeChild(container.firstChild);
     }
     
-    // Create widget
     new window.TradingView.widget({
       container_id: 'tradingview-chart-container',
       width: '100%',
@@ -370,7 +344,6 @@ function App() {
     });
   }, [widgetScriptLoaded, selectedSymbol, timeframe, chartType, chartTheme, activeIndicators, activeDashboard]);
 
-  // Generate trading signals
   useEffect(() => {
     const generateSignals = () => {
       const newSignals = SYMBOLS.map(symbol => {
@@ -403,7 +376,6 @@ function App() {
     return () => clearInterval(interval);
   }, [prices]);
 
-  // Initialize market news
   useEffect(() => {
     const news = [
       { id: 1, title: 'Bitcoin ETF Approval Expected Soon', source: 'Bloomberg', time: '2 hours ago', impact: 'High' },
@@ -415,7 +387,6 @@ function App() {
     setMarketNews(news);
   }, []);
 
-  // Live prices simulation and check for stop loss/take profit
   useEffect(() => {
     const checkSLTP = () => {
       const currentPositions = positionsRef.current;
@@ -423,20 +394,16 @@ function App() {
         const currentPrice = prices[position.symbol] || position.entryPrice;
         
         if (position.side === 'LONG') {
-          // Check stop loss for LONG position
           if (position.stopLoss && currentPrice <= position.stopLoss) {
             closePosition(position.id, 'STOP_LOSS');
           }
-          // Check take profit for LONG position
           if (position.takeProfit && currentPrice >= position.takeProfit) {
             closePosition(position.id, 'TAKE_PROFIT');
           }
         } else if (position.side === 'SHORT') {
-          // Check stop loss for SHORT position
           if (position.stopLoss && currentPrice >= position.stopLoss) {
             closePosition(position.id, 'STOP_LOSS');
           }
-          // Check take profit for SHORT position
           if (position.takeProfit && currentPrice <= position.takeProfit) {
             closePosition(position.id, 'TAKE_PROFIT');
           }
@@ -457,7 +424,6 @@ function App() {
           );
         });
         
-        // Check for stop loss/take profit after price update
         setTimeout(checkSLTP, 100);
         
         return newPrices;
@@ -467,7 +433,6 @@ function App() {
     return () => clearInterval(interval);
   }, [prices]);
 
-  // Calculate PnL
   useEffect(() => {
     let total = 0;
     positions.forEach(pos => {
@@ -480,7 +445,6 @@ function App() {
     setEquity(balance + total);
   }, [positions, prices, balance]);
 
-  // Function to calculate payment statistics
   const calculatePaymentStats = (paymentsList = payments) => {
     const stats = {
       total: paymentsList.length,
@@ -506,7 +470,6 @@ function App() {
     setPaymentStats(stats);
   };
 
-// Function to sync user wallet with backend
 const syncUserWallet = async () => {
   try {
     const token = localStorage.getItem('token');
@@ -521,7 +484,6 @@ const syncUserWallet = async () => {
     if (response.ok) {
       const data = await response.json();
       if (data.success) {
-        // Update user wallet balance
         setUserAccount(prev => ({
           ...prev,
           realBalance: data.user.realBalance,
@@ -532,8 +494,6 @@ const syncUserWallet = async () => {
         setBalance(data.user.paperBalance);
         setEquity(data.user.paperBalance + totalPnl);
         
-        
-        // Update localStorage
         localStorage.setItem('userData', JSON.stringify(data.user));
         
         console.log('Wallet synced:', data.user.paperBalance);
@@ -544,7 +504,6 @@ const syncUserWallet = async () => {
   }
 };
 
-  // Function to load user payments
   const loadUserPayments = async () => {
     if (!isLoggedIn) return;
     
@@ -553,7 +512,6 @@ const syncUserWallet = async () => {
     try {
       const token = localStorage.getItem('token');
       
-      // Try to load from backend API first
       const response = await fetch('https://myproject1-d097.onrender.com/api/payments', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -568,14 +526,12 @@ const syncUserWallet = async () => {
           calculatePaymentStats(data.payments);
           setLoadingPayments(false);
           
-          // ADD THIS ONE LINE:
-          await syncUserWallet(); // <-- ADD THIS
+          await syncUserWallet();
           
           return;
         }
       }
       
-      // Fallback: Load from localStorage
       const savedPayments = localStorage.getItem('userPayments');
       if (savedPayments) {
         const parsedPayments = JSON.parse(savedPayments);
@@ -584,7 +540,6 @@ const syncUserWallet = async () => {
       }
     } catch (error) {
       console.error('Error loading payments:', error);
-      // Fallback to localStorage
       const savedPayments = localStorage.getItem('userPayments');
       if (savedPayments) {
         const parsedPayments = JSON.parse(savedPayments);
@@ -596,10 +551,8 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Function to load user data
   const loadUserData = async (token) => {
     try {
-      // Load positions
       const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -613,7 +566,6 @@ const syncUserWallet = async () => {
         }
       }
       
-      // Load order history
       const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -627,7 +579,6 @@ const syncUserWallet = async () => {
         }
       }
       
-      // Load payments
       loadUserPayments();
       
     } catch (error) {
@@ -635,7 +586,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Function to load UPI QR code
   const loadUpiQrCode = async () => {
     try {
       const response = await fetch('https://myproject1-d097.onrender.com/api/upi-qr');
@@ -647,7 +597,6 @@ const syncUserWallet = async () => {
           const upiId = data.upiId || '7799191208-2@ybl';
           const merchantName = data.merchantName || 'Paper2Real Trading';
           
-          // Generate QR code using cleaned amount
           const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
           const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
           const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiString)}`;
@@ -661,7 +610,6 @@ const syncUserWallet = async () => {
       console.log('Using fallback UPI settings:', error);
     }
     
-    // Fallback
     const defaultUpiId = '7799191208-2@ybl';
     const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
     const upiString = `upi://pay?pa=${encodeURIComponent(defaultUpiId)}&pn=Paper2Real Trading&am=${amount}&cu=INR&tn=Paper2Real Payment`;
@@ -674,7 +622,6 @@ const syncUserWallet = async () => {
     setUpiQrCode(qrCodeUrl);
   };
 
-  // Function to add a new payment to tracking
   const addNewPayment = (paymentData) => {
     const newPayment = {
       id: `PAY${Date.now()}`,
@@ -695,7 +642,6 @@ const syncUserWallet = async () => {
     
     setPayments(prev => [newPayment, ...prev]);
     
-    // Save to localStorage
     const updatedPayments = [newPayment, ...payments];
     localStorage.setItem('userPayments', JSON.stringify(updatedPayments));
     
@@ -704,7 +650,6 @@ const syncUserWallet = async () => {
     return newPayment;
   };
 
-  // Function to update payment status
   const updatePaymentStatus = (paymentId, newStatus, adminNotes = null) => {
     const updatedPayments = payments.map(payment => {
       if (payment.id === paymentId) {
@@ -722,7 +667,6 @@ const syncUserWallet = async () => {
     localStorage.setItem('userPayments', JSON.stringify(updatedPayments));
     calculatePaymentStats(updatedPayments);
     
-    // If payment is approved, update user paper balance
     if (newStatus === 'approved' || newStatus === 'completed') {
       const approvedPayment = updatedPayments.find(p => p.id === paymentId);
       if (approvedPayment) {
@@ -739,7 +683,6 @@ const syncUserWallet = async () => {
         setBalance(prev => prev + paperMoneyAmount);
         setEquity(prev => prev + paperMoneyAmount);
         
-        // Show success notification
         setTimeout(() => {
           alert(`✅ Payment Approved!\n\nYour payment for ${approvedPayment.planName} has been approved.\n₹${paperMoneyAmount.toLocaleString()} paper money has been added to your account.\nYou can now start trading!`);
         }, 500);
@@ -747,24 +690,20 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Function to simulate admin approval (for demo purposes)
   const simulateAdminApproval = (paymentId) => {
     const payment = payments.find(p => p.id === paymentId);
     if (!payment) return;
     
-    // Simulate admin review process
     setTimeout(() => {
-      const isApproved = Math.random() > 0.1; // 90% approval rate
+      const isApproved = Math.random() > 0.1;
       
       if (isApproved) {
         updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
         
-        // In a real app, this would come from the backend
         const paperMoneyAmount = payment.planName.includes('Plan A') ? 100000 :
                                 payment.planName.includes('Plan B') ? 250000 :
                                 payment.planName.includes('Plan C') ? 500000 : 100000;
         
-        // Update backend if available
         const token = localStorage.getItem('token');
         if (token) {
           fetch('https://myproject1-d097.onrender.com/api/payments/' + paymentId + '/status', {
@@ -782,10 +721,9 @@ const syncUserWallet = async () => {
       } else {
         updatePaymentStatus(paymentId, 'rejected', 'Payment verification failed. Please contact support.');
       }
-    }, 5000); // Simulate 5 second admin review
+    }, 5000);
   };
 
-  // ========== NEW: Function to submit payment to backend ==========
   const submitPaymentToBackend = async (paymentData) => {
     try {
       const token = localStorage.getItem('token');
@@ -811,7 +749,7 @@ const syncUserWallet = async () => {
       const data = await response.json();
       
       if (data.success) {
-        return data.payment; // Return the payment object from backend
+        return data.payment;
       } else {
         throw new Error(data.error || 'Payment submission failed');
       }
@@ -821,7 +759,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // ========== NEW: Function to sync payments with backend ==========
   const syncPaymentsWithBackend = async () => {
     if (!isLoggedIn) return;
     
@@ -836,21 +773,17 @@ const syncUserWallet = async () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.payments) {
-          // Merge backend payments with local payments
           const backendPayments = data.payments;
           const localPayments = payments;
           
-          // Create a map of all payments by transactionId
           const allPaymentsMap = new Map();
           
-          // Add local payments
           localPayments.forEach(payment => {
             if (payment.transactionId) {
               allPaymentsMap.set(payment.transactionId, payment);
             }
           });
           
-          // Add/update with backend payments
           backendPayments.forEach(payment => {
             if (payment.transactionId) {
               allPaymentsMap.set(payment.transactionId, payment);
@@ -870,7 +803,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Handle registration with improved error handling
   const handleRegister = async (e) => {
     e.preventDefault();
     
@@ -895,7 +827,6 @@ const syncUserWallet = async () => {
         const data = await response.json();
         
         if (data.success) {
-            // Store token and user data
             localStorage.setItem('token', data.token);
             localStorage.setItem('userData', JSON.stringify(data.user));
             localStorage.setItem('isLoggedIn', 'true');
@@ -915,17 +846,14 @@ const syncUserWallet = async () => {
             
             alert('Registration successful!');
             
-            // If user was trying to buy a plan, show payment
             if (pendingPlanPurchase && selectedPlan) {
                 setTimeout(() => {
                     initiateUPIPayment(selectedPlan.price.replace('₹', ''));
                 }, 500);
             }
             
-            // Load user data
             loadUserData(data.token);
             
-            // Sync payments with backend
             syncPaymentsWithBackend();
             
         } else {
@@ -937,7 +865,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Handle login with improved error handling
   const handleLogin = async (e) => {
     e.preventDefault();
     
@@ -951,7 +878,6 @@ const syncUserWallet = async () => {
             body: JSON.stringify(loginData)
         });
         
-        // Check if response is ok
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -959,7 +885,6 @@ const syncUserWallet = async () => {
         const data = await response.json();
         
         if (data.success) {
-            // Store token and user data
             localStorage.setItem('token', data.token);
             localStorage.setItem('userData', JSON.stringify(data.user));
             localStorage.setItem('isLoggedIn', 'true');
@@ -971,15 +896,12 @@ const syncUserWallet = async () => {
             
             setShowLogin(false);
             
-            // Load user data including payments
             loadUserData(data.token);
             
-            // Sync payments with backend
             syncPaymentsWithBackend();
             
             alert('Login successful!');
             
-            // If user has no plan, show plan options
             if (!data.user.currentPlan) {
                 setActiveDashboard('Home');
             }
@@ -994,7 +916,6 @@ const syncUserWallet = async () => {
     setLoginData({ email: '', password: '' });
   };
 
-  // Handle trade - only allowed if user has purchased plan
   const handleTrade = async (side) => {
     if (!isLoggedIn) {
       alert('Please login to trade');
@@ -1036,7 +957,6 @@ const syncUserWallet = async () => {
         const data = await response.json();
         
         if (data.success) {
-            // Update local state
             const newPosition = {
                 id: data.trade.id,
                 ...tradeData,
@@ -1065,7 +985,6 @@ const syncUserWallet = async () => {
             
             setOrderHistory(prev => [newOrder, ...prev]);
             
-            // Clear trade inputs
             setStopLoss('');
             setTakeProfit('');
         } else {
@@ -1077,26 +996,21 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Handle plan buy - trigger registration if not logged in
   const handlePlanBuy = async (plan) => {
     setSelectedPlan(plan);
     
     if (!isLoggedIn) {
-      // Show registration dialog with plan purchase pending
       setPendingPlanPurchase(true);
       setShowRegister(true);
     } else {
-      // User is logged in, proceed to UPI payment
       initiateUPIPayment(plan.price.replace('₹', ''));
       
-      // Show info message about admin approval
       setTimeout(() => {
         alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${plan.paperMoney} paper money once admin approves your payment.`);
       }, 500);
     }
   };
 
-  // Handle cancel order
   const handleCancelOrder = async (orderId) => {
     const confirmCancel = window.confirm('Are you sure you want to cancel this order?');
     if (!confirmCancel) return;
@@ -1114,10 +1028,8 @@ const syncUserWallet = async () => {
       const data = await response.json();
       
       if (data.success) {
-        // Remove from positions if it's an open position
         setPositions(prev => prev.filter(p => p.id !== orderId));
         
-        // Update order history status
         setOrderHistory(prev => prev.map(order => 
           order.id === orderId ? {
             ...order,
@@ -1127,7 +1039,6 @@ const syncUserWallet = async () => {
           } : order
         ));
         
-        // Update balance if applicable
         if (data.newBalance !== undefined) {
           setBalance(data.newBalance);
           setUserAccount(prev => ({
@@ -1136,7 +1047,6 @@ const syncUserWallet = async () => {
           }));
         }
         
-        // Update equity
         if (data.newBalance !== undefined) {
           setEquity(data.newBalance + totalPnl);
         }
@@ -1151,7 +1061,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Close position function
   const closePosition = async (positionId, reason = 'MANUAL') => {
     const position = positions.find(p => p.id === positionId);
     if (position) {
@@ -1176,15 +1085,12 @@ const syncUserWallet = async () => {
         const data = await response.json();
         
         if (data.success) {
-          // Update balance from response
           const newBalance = data.user?.paperBalance || (balance + pnl + position.positionValue);
           setBalance(newBalance);
           setEquity(newBalance + (totalPnl - pnl));
           
-          // Remove position
           setPositions(prev => prev.filter(p => p.id !== positionId));
           
-          // Update user account
           if (data.user) {
             setUserAccount(prev => ({
               ...prev,
@@ -1192,7 +1098,6 @@ const syncUserWallet = async () => {
             }));
           }
           
-          // Update order history when closing position
           setOrderHistory(prev => prev.map(order => 
             order.id === positionId ? {
               ...order,
@@ -1212,7 +1117,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Close position from chart line
   const closePositionFromChart = async (positionId) => {
     const position = positions.find(p => p.id === positionId);
     if (position) {
@@ -1251,7 +1155,6 @@ const syncUserWallet = async () => {
         
         setPositions(updatedPositions);
         
-        // Also update order history
         setOrderHistory(prev => prev.map(order => 
           order.id === positionId ? {
             ...order,
@@ -1264,13 +1167,11 @@ const syncUserWallet = async () => {
       console.error('Error updating SL/TP:', error);
     }
     
-    // Exit edit mode
     setEditingPositionId(null);
     setEditPositionSL('');
     setEditPositionTP('');
   };
 
-  // Function to update order SL/TP from order history
   const updateOrderSLTP = async (orderId, sl, tp) => {
     try {
       const token = localStorage.getItem('token');
@@ -1297,7 +1198,6 @@ const syncUserWallet = async () => {
           } : order
         ));
         
-        // Also update position if it exists
         setPositions(prev => prev.map(pos => 
           pos.id === orderId ? {
             ...pos,
@@ -1310,7 +1210,6 @@ const syncUserWallet = async () => {
       console.error('Error updating order SL/TP:', error);
     }
     
-    // Exit edit mode
     setEditingOrderId(null);
     setEditSL('');
     setEditTP('');
@@ -1328,7 +1227,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Update fullscreen state when it changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
@@ -1375,7 +1273,6 @@ const syncUserWallet = async () => {
     };
   };
 
-  // Auth & Payment Functions
   const handleRegisterChange = (e) => {
     const { name, value } = e.target;
     setUserData(prev => ({
@@ -1419,10 +1316,9 @@ const syncUserWallet = async () => {
     setPendingPlanPurchase(false);
   };
 
-  // Handle file drop for receipt upload
   const handleFileDrop = (file) => {
     if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
-      if (file.size <= 5 * 1024 * 1024) { // 5MB limit
+      if (file.size <= 5 * 1024 * 1024) {
         setPaymentReceipt(file);
         setReceiptUploaded(true);
       } else {
@@ -1433,7 +1329,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Handle receipt upload
   const handleReceiptUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1441,16 +1336,13 @@ const syncUserWallet = async () => {
     }
   };
 
-  // UPI Payment Function
   const initiateUPIPayment = (amount) => {
-    // Clean the amount - remove ₹ and commas
     const cleanAmount = amount.toString().replace('₹', '').replace(/,/g, '');
     setUpiAmount(cleanAmount);
     setShowUPIScanner(true);
     setPaymentReceipt(null);
     setReceiptUploaded(false);
     
-    // Load QR code with cleaned amount
     loadUpiQrCode();
     
     if (Notification.permission === 'default') {
@@ -1458,22 +1350,18 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Simulate UPI payment (for demo)
   const simulateUPIPayment = (appName) => {
     if (window.confirm(`Open ${appName} to make payment of ₹${upiAmount}? `)) {
-      // Simulate payment process
       setTimeout(() => {
         alert(`✅ Payment of ₹${upiAmount} successful via ${appName}!\n\nNow please upload your payment receipt.`);
       }, 1500);
     }
   };
 
-  // Simulate test payment (for development)
   const simulateTestPayment = () => {
-    // Create a mock file for testing
     const mockFile = {
       name: 'test_payment_receipt.jpg',
-      size: 1024 * 1024, // 1MB
+      size: 1024 * 1024,
       type: 'image/jpeg'
     };
     
@@ -1483,7 +1371,6 @@ const syncUserWallet = async () => {
     window.alert('Test receipt uploaded! You can now submit for admin approval.');
   };
 
-  // ========== UPDATED: Handle payment submission - NOW SYNCED WITH BACKEND ==========
   const handlePaymentSubmit = async () => {
     if (!receiptUploaded || !paymentReceipt) {
       alert('Please upload your payment receipt first.');
@@ -1503,7 +1390,6 @@ const syncUserWallet = async () => {
         throw new Error('No authentication token found. Please login again.');
       }
       
-      // Clean the amount - remove ₹ and commas
       const rawAmount = selectedPlan.price.replace('₹', '').replace(/,/g, '');
       const amount = parseFloat(rawAmount);
       
@@ -1511,7 +1397,6 @@ const syncUserWallet = async () => {
         throw new Error(`Invalid amount: ${selectedPlan.price}`);
       }
       
-      // Create payment data for tracking
       const paymentData = {
         planName: selectedPlan.name,
         amount: amount,
@@ -1521,14 +1406,12 @@ const syncUserWallet = async () => {
         receiptUrl: paymentReceipt instanceof File ? URL.createObjectURL(paymentReceipt) : 'test_receipt_placeholder'
       };
       
-      // ========== SUBMIT TO BACKEND API ==========
       try {
         const backendPayment = await submitPaymentToBackend(paymentData);
         
-        // Use the payment data from backend response
         const newPayment = {
           ...paymentData,
-          id: backendPayment.id, // Use backend ID
+          id: backendPayment.id,
           userId: userAccount.id,
           userName: userAccount.name,
           userEmail: userAccount.email,
@@ -1538,10 +1421,8 @@ const syncUserWallet = async () => {
           adminNotes: null
         };
         
-        // Add payment to tracking system
         setPayments(prev => [newPayment, ...prev]);
         
-        // Save to localStorage
         const updatedPayments = [newPayment, ...payments];
         localStorage.setItem('userPayments', JSON.stringify(updatedPayments));
         calculatePaymentStats(updatedPayments);
@@ -1550,7 +1431,6 @@ const syncUserWallet = async () => {
         
         alert(`✅ Payment request submitted to admin!\n\nPayment ID: ${backendPayment.id}\nPlan: ${selectedPlan.name}\nAmount: ₹${amount}\nStatus: Pending Approval\n\nAdmin will review your payment within 24 hours.`);
         
-        // Close dialog
         setShowUPIScanner(false);
         setPaymentReceipt(null);
         setReceiptUploaded(false);
@@ -1558,7 +1438,6 @@ const syncUserWallet = async () => {
         setUpiAmount('');
         
       } catch (backendError) {
-        // If backend fails, fallback to local storage
         console.error('Backend submission failed:', backendError);
         
         const newPayment = addNewPayment(paymentData);
@@ -1567,7 +1446,6 @@ const syncUserWallet = async () => {
         
         alert(`⚠️ Payment saved locally (Backend connection failed)\n\nPayment ID: ${newPayment.id}\nPlease contact admin manually with transaction details.`);
         
-        // Close dialog
         setShowUPIScanner(false);
         setPaymentReceipt(null);
         setReceiptUploaded(false);
@@ -1582,20 +1460,16 @@ const syncUserWallet = async () => {
     }
   };
 
-  // ========== UPDATED: Simulate admin approval (now syncs with backend) ==========
   const simulateAdminApprovalUpdated = async (paymentId) => {
     const payment = payments.find(p => p.id === paymentId);
     if (!payment) return;
     
-    // Simulate admin review process
     setTimeout(async () => {
-      const isApproved = Math.random() > 0.1; // 90% approval rate
+      const isApproved = Math.random() > 0.1;
       
       if (isApproved) {
-        // Update local status
         updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
         
-        // Try to update backend
         const token = localStorage.getItem('token');
         if (token) {
           try {
@@ -1618,10 +1492,9 @@ const syncUserWallet = async () => {
       } else {
         updatePaymentStatus(paymentId, 'rejected', 'Payment verification failed. Please contact support.');
       }
-    }, 5000); // Simulate 5 second admin review
+    }, 5000);
   };
 
-  // Price Alert Functions
   const addAlert = () => {
     if (!newAlert.symbol || !newAlert.value) return;
     
@@ -1647,7 +1520,6 @@ const syncUserWallet = async () => {
     setAlerts(prev => prev.filter(alert => alert.id !== id));
   };
 
-  // Watchlist functions
   const toggleWatchlist = (symbol) => {
     if (watchlist.includes(symbol)) {
       setWatchlist(watchlist.filter(s => s !== symbol));
@@ -1656,7 +1528,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Handle trade button click from market tab
   const handleMarketTrade = (symbol) => {
     if (!isLoggedIn) {
       alert('Please login to trade');
@@ -1674,7 +1545,6 @@ const syncUserWallet = async () => {
     setActiveDashboard('Trading');
   };
 
-  // Indicator functions
   const addIndicator = (indicator) => {
     if (!activeIndicators.includes(indicator)) {
       setActiveIndicators([...activeIndicators, indicator]);
@@ -1689,7 +1559,6 @@ const syncUserWallet = async () => {
     setActiveIndicators(preset.indicators);
   };
 
-  // Calculate order book data
   const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const orderBookData = {
     bids: [
@@ -1708,7 +1577,6 @@ const syncUserWallet = async () => {
     ]
   };
 
-  // Calculate current PnL for a position
   const calculatePositionPnL = (position) => {
     const currentPrice = prices[position.symbol] || position.entryPrice;
     const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
@@ -1716,7 +1584,6 @@ const syncUserWallet = async () => {
     return pnl;
   };
 
-  // Calculate current PnL for an order
   const calculateOrderPnL = (order) => {
     if (order.status === 'CLOSED' || order.status === 'CANCELLED') {
       return order.pnl || 0;
@@ -1728,7 +1595,6 @@ const syncUserWallet = async () => {
     }
   };
 
-  // Calculate stop loss/take profit amounts
   const calculateSLAmount = (order) => {
     if (!order.stopLoss) return 'N/A';
     const amount = Math.abs(order.entryPrice - order.stopLoss) * order.size * order.leverage;
@@ -1741,16 +1607,13 @@ const syncUserWallet = async () => {
     return `$${amount.toFixed(2)}`;
   };
 
-  // Get active positions for current symbol
   const currentSymbolPositions = positions.filter(pos => pos.symbol === selectedSymbol);
 
-  // Filter crypto data based on search
   const filteredCryptoData = cryptoData.filter(crypto => 
     crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filter payments based on selected filter
   const filteredPayments = payments.filter(payment => {
     if (paymentFilter === 'all') return true;
     if (paymentFilter === 'pending') return payment.status === 'pending';
@@ -1761,10 +1624,8 @@ const syncUserWallet = async () => {
 
   const stats = calculateStats();
 
-  // Check if user can access trading features
   const canTrade = isLoggedIn && userAccount.paperBalance > 0;
 
-  // Function to format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', {
@@ -1777,13 +1638,11 @@ const syncUserWallet = async () => {
     });
   };
 
-  // Function to show payment details
   const showPaymentDetail = (payment) => {
     setSelectedPayment(payment);
     setShowPaymentDetails(true);
   };
 
-  // Quick Trade Component for reuse
   const QuickTradeComponent = () => (
     <div className="quick-trade-top mobile-quick-trade-component">
       <h3>Quick Trade</h3>
@@ -1819,7 +1678,6 @@ const syncUserWallet = async () => {
           ))}
         </div>
       </div>
-      {/* FIXED SL/TP SECTION - COMPACT DESIGN */}
       <div className="sl-tp-section-adjusted" style={{ 
         display: 'flex', 
         gap: '10px', 
@@ -1877,7 +1735,6 @@ const syncUserWallet = async () => {
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
-          {/* TOP HORIZONTAL NAVIGATION - BOLD TABS WITH USER INFO ON SAME ROW */}
           <div className="top-horizontal-nav">
             <div className="nav-tabs-container">
               <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
@@ -1935,7 +1792,6 @@ const syncUserWallet = async () => {
                 </div>
               )}
 
-              {/* 🔥 USER INFO MOVED HERE (same row) */}
               <div className="nav-user-info-container">
                 {isLoggedIn ? (
                   <>
@@ -1967,7 +1823,6 @@ const syncUserWallet = async () => {
             </div>
           </div>
 
-          {/* MAIN HEADER - Remove user info from here since it's now in navigation row */}
           <header className="advanced-header">
             <div className="connection-info">
               <span className="api-status">Connection to API</span>
@@ -1990,7 +1845,6 @@ const syncUserWallet = async () => {
 
             <div className="symbol-info">
               <h2 className="symbol-name">{selectedSymbol.replace('USDT', 'USD')}</h2>
-              {/* SHIFTED INDICATOR DISPLAY */}
               <div className="indicators-info-below-price">
                 <span>Indicator ({activeIndicators.length})</span>
                 <div className="indicators-list">
@@ -2004,7 +1858,6 @@ const syncUserWallet = async () => {
               </div>
             </div>
                       
-            {/* SHIFTED MARKET NEWS BUTTON */}
             <div className="news-indicator-below-alert">
               <button 
                 className="news-btn"
@@ -2016,7 +1869,6 @@ const syncUserWallet = async () => {
             </div>
           </header>
 
-          {/* SHIFT TO BELOW PRICE ALERT SECTION */}
           {activeDashboard === 'Trading' && (
             <div className="below-price-alert-section">
               <div className="total-balance-section">
@@ -2034,8 +1886,6 @@ const syncUserWallet = async () => {
                   <div>Used: ${(equity - balance).toFixed(2)}</div>
                 </div>
               </div>
-              
-              {/* ADDITIONAL SHIFTED CONTENT CAN GO HERE */}
             </div>
           )}
         </>
@@ -2044,7 +1894,6 @@ const syncUserWallet = async () => {
       <div className="advanced-main">
         {!isFullScreen && activeDashboard === 'Trading' && (
           <div className="left-panel desktop-only">
-            {/* ORDER BOOK SECTION - MOVED FROM BALANCE SECTION ABOVE */}
             <div className="order-book-section">
               <div className="order-book-header">
                 <h3>Order Book</h3>
@@ -2093,7 +1942,6 @@ const syncUserWallet = async () => {
               )}
             </div>
 
-            {/* ADDITIONAL TRADING TOOLS CAN GO HERE */}
             <div className="trading-tools-section">
               <h3>Trading Tools</h3>
               <div className="tools-grid">
@@ -2379,14 +2227,12 @@ const syncUserWallet = async () => {
                   {watchlist.length === 0 && (
                     <div className="no-watchlist">Add cryptocurrencies to your watchlist</div>
                   )}
-                  
                 </div>
               </div>
             </div>
             
           ) : activeDashboard === 'Profile' ? (
             <div className="profile-content">
-              
               <div className="profile-header">
                 <h2>Your Profile</h2>
                 <div className="profile-status">
@@ -2510,7 +2356,6 @@ const syncUserWallet = async () => {
                   </div>
                 </div>
                 
-                {/* WITHDRAWAL SECTION - MOVED INTO PROFILE PAGE */}
                 <div className="profile-card withdraw-card">
                   <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
                   
@@ -2539,7 +2384,6 @@ const syncUserWallet = async () => {
                     </div>
                     
                     <div className="withdrawal-card" onClick={() => {
-                      // Show withdrawal history
                       alert('Withdrawal history will be shown here');
                     }}>
                       <div className="card-icon">📜</div>
@@ -2548,7 +2392,6 @@ const syncUserWallet = async () => {
                     </div>
                   </div>
                   
-                  {/* Bank Account Setup Modal */}
                   {showAccountSetup && (
                     <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
                       <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
@@ -2564,7 +2407,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountHolderName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
                             placeholder="Enter name as per bank records"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2575,7 +2418,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountNumber}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
                             placeholder="Enter your bank account number"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2584,7 +2427,7 @@ const syncUserWallet = async () => {
                           <select
                             value={userBankAccount.bankName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           >
                             <option value="">Select Bank</option>
                             <option value="HDFC Bank">HDFC Bank</option>
@@ -2602,7 +2445,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.ifscCode}
                             onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
                             placeholder="Enter IFSC code"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2623,7 +2466,6 @@ const syncUserWallet = async () => {
                     </div>
                   )}
                   
-                  {/* Withdrawal Request Modal */}
                   {showWithdrawalRequest && (
                     <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
                       <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
@@ -2644,7 +2486,7 @@ const syncUserWallet = async () => {
                             value={withdrawalAmount}
                             onChange={(e) => setWithdrawalAmount(e.target.value)}
                             placeholder="Enter amount"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2675,7 +2517,6 @@ const syncUserWallet = async () => {
                               return;
                             }
                             
-                            // Create withdrawal request
                             const newRequest = {
                               id: `WD${Date.now()}`,
                               amount: amount,
@@ -2686,7 +2527,6 @@ const syncUserWallet = async () => {
                             
                             setWithdrawalRequests([newRequest, ...withdrawalRequests]);
                             
-                            // Update user balance
                             setUserAccount({
                               ...userAccount,
                               realBalance: balance - amount
@@ -2704,7 +2544,6 @@ const syncUserWallet = async () => {
                     </div>
                   )}
                   
-                  {/* Simple Withdrawal History */}
                   <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
                     <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
                     
@@ -2750,7 +2589,6 @@ const syncUserWallet = async () => {
                   </div>
                 </div>
 
-                {/* NEW PAYMENT HISTORY SECTION */}
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3>Payment History</h3>
@@ -2765,7 +2603,6 @@ const syncUserWallet = async () => {
                     </div>
                   </div>
                   
-                  {/* Payment Stats Summary */}
                   <div className="payment-summary-stats">
                     <div className="payment-stat">
                       <span className="payment-stat-label">Total Payments</span>
@@ -2785,7 +2622,6 @@ const syncUserWallet = async () => {
                     </div>
                   </div>
                   
-                  {/* Payment Filter Buttons */}
                   <div className="payment-filter-buttons">
                     <button 
                       className={`payment-filter-btn ${paymentFilter === 'all' ? 'active' : ''}`}
@@ -2813,7 +2649,6 @@ const syncUserWallet = async () => {
                     </button>
                   </div>
                   
-                  {/* Payment Tracking Steps */}
                   <div className="payment-tracking-steps">
                     <div className="payment-tracking-step completed">
                       <div className="payment-step-icon">1</div>
@@ -2833,7 +2668,6 @@ const syncUserWallet = async () => {
                     </div>
                   </div>
                   
-                  {/* Payments Table */}
                   <div style={{ overflowX: 'auto', marginTop: '1.5rem' }}>
                     <table className="payments-table">
                       <thead>
@@ -2888,7 +2722,6 @@ const syncUserWallet = async () => {
                     )}
                   </div>
                   
-                  {/* Recent Payments */}
                   <div className="payment-tracking-widget">
                     <h3>Recent Payment Status</h3>
                     <div className="recent-payments-list">
@@ -2958,7 +2791,6 @@ const syncUserWallet = async () => {
                       <div style={{display: 'flex', gap: '10px'}}>
                         <button
                           onClick={() => {
-                            // Approve withdrawal
                             const updatedRequests = withdrawalRequests.map(req => 
                               req.id === request.id ? {...req, status: 'approved'} : req
                             );
@@ -2972,7 +2804,6 @@ const syncUserWallet = async () => {
                         
                         <button
                           onClick={() => {
-                            // Reject withdrawal
                             const reason = prompt('Enter rejection reason:');
                             if (reason) {
                               const updatedRequests = withdrawalRequests.map(req => 
@@ -2980,7 +2811,6 @@ const syncUserWallet = async () => {
                               );
                               setWithdrawalRequests(updatedRequests);
                               
-                              // Return funds to user
                               setUserAccount({
                                 ...userAccount,
                                 realBalance: (userAccount.realBalance || 0) + request.amount
@@ -3161,7 +2991,6 @@ const syncUserWallet = async () => {
                   )}
                 </div>
                 
-                {/* Chart Horizontal Lines Overlay */}
                 {chartHorizontalLines.length > 0 && (
                   <div className="chart-horizontal-lines-overlay">
                     {chartHorizontalLines.map(line => (
@@ -3223,14 +3052,12 @@ const syncUserWallet = async () => {
                 )}
               </div>
 
-              {/* MOBILE QUICK TRADE SECTION - ADDED HERE */}
               {activeDashboard === 'Trading' && (
                 <div className="mobile-quick-trade-container">
                   <QuickTradeComponent />
                 </div>
               )}
 
-              {/* FULLSCREEN TRADING CONTROLS - NOW VISIBLE IN FULLSCREEN */}
               {activeDashboard === 'Trading' && (
                 <div className={`trading-controls ${isFullScreen ? 'fullscreen-trading-controls' : ''}`}>
                   <div className="advanced-stats">
@@ -3354,7 +3181,6 @@ const syncUserWallet = async () => {
                               <span className={`position-pnl ${positionPnl >= 0 ? 'positive' : 'negative'}`}>
                                 ${positionPnl.toFixed(2)}
                               </span>
-                              {/* CANCEL BUTTON FOR OPEN POSITIONS */}
                               <button 
                                 className="cancel-position-btn"
                                 onClick={() => handleCancelOrder(pos.id)}
@@ -3373,7 +3199,6 @@ const syncUserWallet = async () => {
                               >
                                 Cancel
                               </button>
-                              {/* CLOSE BUTTON - NOW VISIBLE IN FULLSCREEN */}
                               <button 
                                 className="close-position-btn"
                                 onClick={() => closePosition(pos.id)}
@@ -3498,7 +3323,6 @@ const syncUserWallet = async () => {
         )}
       </div>
 
-      {/* Market News Panel */}
       {showNews && (
         <div className="news-panel">
           <div className="news-header">
@@ -3524,7 +3348,6 @@ const syncUserWallet = async () => {
         </div>
       )}
 
-      {/* Register Dialog */}
       {showRegister && (
         <div className="dialog-overlay">
           <div className="dialog-box">
@@ -3606,7 +3429,6 @@ const syncUserWallet = async () => {
         </div>
       )}
 
-      {/* Login Dialog */}
       {showLogin && (
         <div className="dialog-overlay">
           <div className="dialog-box">
@@ -3661,7 +3483,6 @@ const syncUserWallet = async () => {
         </div>
       )}
 
-      {/* Price Alert Dialog */}
       {showAlertDialog && (
         <div className="dialog-overlay">
           <div className="dialog-box alert-dialog">
@@ -3694,7 +3515,7 @@ const syncUserWallet = async () => {
                   <option value="MACD">MACD</option>
                 </select>
               </div>
-              
+                          
               <div className="form-group">
                 <label>Condition</label>
                 <select 
