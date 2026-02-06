@@ -5474,32 +5474,6 @@ body.profile-route .below-price-alert-section {
   .user-balance-header {
     justify-content: center !important;
   }
-  /* Remove quick trade from below the chart in Desktop view */
-@media (min-width: 1024px) {
-  .chart-container + .quick-trade-section {
-    display: none !important;
-  }
+
 }
-
-/* Remove quick trade below order book/trading tool in Mobile view */
-@media (max-width: 1023px) {
-  .order-book-container + .quick-trade-section,
-  .trading-tools + .quick-trade-section {
-    display: none !important;
-  }
-}
-
-/* Style for the new editable fields in active positions */
-.editable-position-input {
-  background: #1e222d;
-  border: 1px solid #363a45;
-  color: #d1d4dc;
-  width: 80px;
-  padding: 4px;
-  border-radius: 4px;
-}
-}
-
-
-
 /* End of CSS */
