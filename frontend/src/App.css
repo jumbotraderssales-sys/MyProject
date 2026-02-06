@@ -5867,6 +5867,17 @@ body.profile-route .below-price-alert-section {
     min-height: 300px;
   }
 }
+  @media (max-width: 768px) {
+  .quick-trading-below-chart {
+    margin-bottom: 0 !important;
+    padding-bottom: 10px !important;
+  }
+  
+  .order-book-section {
+    margin-top: 0 !important;
+    padding-top: 10px !important;
+  }
+}
 }
 
 
