@@ -888,14 +888,14 @@ body {
   position: relative;
   margin-bottom: 1rem;
   width: 100%;
-  min-height: 500px;
+  min-height: 400px;
 }
 
 .tradingview-chart {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 500px;
+ 
 }
 
 .chart-fallback {
@@ -4603,10 +4603,11 @@ a {
   }
   
   /* Chart Container mobile optimization */
-  .chart-container {
-    min-height: 300px !important;
-    max-height: 60vh !important;
-    border-radius: 8px !important;
+ .chart-container {
+    height: 350px !important; /* Better mobile height */
+    max-height: 50vh !important; /* Limit to half viewport */
+    min-height: 300px !important; /* Minimum for mobile */
+     border-radius: 8px !important;
     margin-bottom: 0.5rem !important;
   }
   
@@ -5490,6 +5491,20 @@ body.profile-route .below-price-alert-section {
   .right-panel .top-right-trading.desktop-only {
     display: none !important;
   }
+}
+  /* Fix TradingView widget container */
+#tradingview-chart-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+  /* Fullscreen chart adjustments */
+.advanced-app.fullscreen .chart-container {
+  height: calc(100vh - 150px) !important;
+}
+
+.center-panel.fullscreen .chart-container {
+  height: calc(100vh - 100px) !important;
+  margin-bottom: 0 !important;
 }
  }
 
