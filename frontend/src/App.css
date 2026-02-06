@@ -4748,7 +4748,7 @@ a {
     margin-bottom: 1rem;
   }
   
-  .quick-trade-btn-mobie {
+  .quick-trade-btn-mobile {
     padding: 0.8rem;
     border: none;
     border-radius: 8px;
@@ -5368,7 +5368,7 @@ body.profile-route .below-price-alert-section {
 .nav-user-balance {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
   background: rgba(255, 255, 255, 0.1);
   padding: 6px 16px;
   border-radius: 20px;
@@ -5563,51 +5563,6 @@ body.profile-route .below-price-alert-section {
   
   .user-balance-header {
     justify-content: center !important;
-  }
-  /* Mobile Responsive Styles */
-@media (max-width: 768px) {
-  .desktop-only {
-    display: none !important;
-  }
-  
-  .mobile-quick-trade-container {
-    display: block;
-    margin: 20px 0;
-    background: #1e293b;
-    border-radius: 10px;
-    padding: 15px;
-  }
-  
-  .center-panel {
-    width: 100% !important;
-  }
-  
-  .advanced-main {
-    flex-direction: column;
-  }
-  
-  /* Adjust chart height for mobile */
-  .chart-container.tradingview-chart {
-    height: 300px !important;
-  }
-  
-  /* Make quick trade buttons bigger on mobile */
-  .mobile-quick-trade-component .trade-actions-top {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .mobile-quick-trade-component .trade-btn-top {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-  }
-
-
-/* Desktop Styles */
-@media (min-width: 769px) {
-  .mobile-quick-trade-container {
-    display: none !important;
   }
 }
 
