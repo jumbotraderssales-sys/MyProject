@@ -3052,11 +3052,11 @@ const syncUserWallet = async () => {
                 )}
               </div>
 
-              {activeDashboard === 'Trading' && (
-                <div className="mobile-quick-trade-container">
-                   <QuickTradeComponent />
-                </div>
-              )}
+              {activeDashboard === 'Trading' && window.innerWidth <= 768 && (
+  <div className="mobile-quick-trade-container">
+     <QuickTradeComponent />
+  </div>
+)}
 
               {activeDashboard === 'Trading' && (
                 <div className={`trading-controls ${isFullScreen ? 'fullscreen-trading-controls' : ''}`}>
