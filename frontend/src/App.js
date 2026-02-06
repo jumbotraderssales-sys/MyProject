@@ -197,11 +197,7 @@ function App() {
     if (marginRequired > userAccount.paperBalance) {
       alert("Insufficient Funds");
       return;
-    }
-
-    const newPosition = {
-      id: Date.now(),
-      symbol: selectedSymbol,
+    }   
       type,
       size: orderSize,
       entryPrice: currentPrice,
@@ -4059,6 +4055,6 @@ useEffect(() => {
       )}
     </div>
   );
-}
+
 
 export default App;
