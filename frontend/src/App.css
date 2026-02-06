@@ -284,12 +284,6 @@ body {
     height: 20px;
   }
 }
-/* Ensure Quick Trade doesn't show twice on Desktop */
-@media (min-width: 1024px) {
-  .mobile-only-trade-panel {
-    display: none !important;
-  }
-}
 
 /* Advanced App Container */
 .advanced-app {
@@ -4886,7 +4880,12 @@ a {
   }
 }
 
-
+/* Desktop: Hide mobile quick trade */
+@media (min-width: 769px) {
+  .quick-trade-mobile {
+    display: none !important;
+  }
+}
 
 /* PROFESSIONAL DESKTOP IMPROVEMENTS */
 @media (min-width: 1200px) {
@@ -4981,6 +4980,10 @@ a {
     display: none;
   }
   
+  /* Show mobile quick trade instead */
+  [data-tab="trading"] .quick-trade-mobile {
+    display: block !important;
+  }
   /* Hide DEMO MODE/LIVE toggle and Remove all This text */
 .mode-toggle,
 .mode-toggle + .separator + span {
@@ -5480,6 +5483,46 @@ body.profile-route .below-price-alert-section {
   .user-balance-header {
     justify-content: center !important;
   }
-
 }
+
+/* ============================================================================
+   REMOVE DUPLICATE QUICK TRADE SECTIONS
+   ============================================================================ */
+
+/* Remove the duplicate quick trade that appears in the center panel below the chart */
+.center-panel .quick-trade-section,
+.center-panel .trading-controls .quick-trade-panel,
+.center-panel .trading-controls .quick-trade-buttons {
+  display: none !important;
+}
+
+/* Remove the mobile quick trade that appears below order book/trading tools */
+.quick-trade-mobile {
+  display: none !important;
+}
+
+/* Remove any reference to making mobile quick trade visible */
+[data-tab="trading"] .quick-trade-mobile.visible {
+  display: none !important;
+}
+
+/* Ensure the right panel trading section stays visible on desktop */
+@media (min-width: 769px) {
+  .right-panel .top-right-trading {
+    display: block !important;
+  }
+}
+
+/* On mobile, ensure the right panel trading section is visible */
+@media (max-width: 768px) {
+  .right-panel .top-right-trading {
+    display: block !important;
+  }
+  
+  /* Remove the mobile duplicate */
+  .quick-trade-mobile {
+    display: none !important;
+  }
+}
+
 /* End of CSS */
