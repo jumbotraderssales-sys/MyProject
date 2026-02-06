@@ -5602,7 +5602,7 @@ body.profile-route .below-price-alert-section {
     padding: 12px;
     font-size: 16px;
   }
-}
+
 
 /* Desktop Styles */
 @media (min-width: 769px) {
@@ -5611,6 +5611,5 @@ body.profile-route .below-price-alert-section {
   }
 }
 }
-
 
 /* End of CSS */
