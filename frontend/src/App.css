@@ -5506,6 +5506,32 @@ body.profile-route .below-price-alert-section {
   height: calc(100vh - 100px) !important;
   margin-bottom: 0 !important;
 }
+  /* Ensure Quick Trade doesn't show twice on Desktop */
+@media (min-width: 1024px) {
+  .mobile-only-trade-panel {
+    display: none !important;
+  }
+}
+
+/* Style for Margin/Fund buttons in Trade Panel */
+.info-label-btn {
+  background: #1a237e;
+  color: white;
+  border: 1px solid #3949ab;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin: 5px;
+  cursor: default;
+}
+
+.editable-cell {
+  background: transparent;
+  border: 1px solid #444;
+  color: white;
+  width: 70px;
+  text-align: center;
+}
  }
 
 /* End of CSS */
