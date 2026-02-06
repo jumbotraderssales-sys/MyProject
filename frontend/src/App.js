@@ -3054,7 +3054,8 @@ const syncUserWallet = async () => {
 
               {activeDashboard === 'Trading' && (
                 <div className="mobile-quick-trade-container">
-                  <QuickTradeComponent />
+                    {/* Only show on mobile - removed for desktop view */}
+    {/* <QuickTradeComponent /> */}
                 </div>
               )}
 
