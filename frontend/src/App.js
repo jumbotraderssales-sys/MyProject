@@ -198,8 +198,12 @@ function App() {
       alert("Insufficient Funds");
       return;
     }   
+    
+      const newPosition = {
+      id: Date.now(),
+      symbol: selectedSymbol,
       type,
-      size: orderSize;
+      size: orderSize,
       entryPrice: currentPrice,
       leverage,
       margin: marginRequired,
