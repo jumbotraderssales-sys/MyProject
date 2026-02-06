@@ -2992,7 +2992,7 @@ useEffect(() => {
                 </div>
               )}
 
-              <div className="chart-container tradingview-chart" style={isFullScreen ? { height: 'calc(60vh - 60px)' } : {}}>
+              <div className="chart-container tradingview-chart" style={isFullScreen ? { height: 'calc(100vh - 100px)' } : {}}>
                 <div id="tradingview-chart-container" style={{ width: '100%', height: '100%' }}>
                   {!widgetScriptLoaded && (
                     <div className="chart-fallback">
