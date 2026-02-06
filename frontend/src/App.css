@@ -5485,76 +5485,12 @@ body.profile-route .below-price-alert-section {
   }
 }
 
-/* ============================================================================
-   REMOVE DUPLICATE QUICK TRADE SECTIONS
-   ============================================================================ */
-
-/* Remove the duplicate quick trade that appears in the center panel below the chart */
-.center-panel .quick-trade-section,
-.center-panel .trading-controls .quick-trade-panel,
-.center-panel .trading-controls .quick-trade-buttons {
-  display: none !important;
-}
-
-/* Remove the mobile quick trade that appears below order book/trading tools */
-.quick-trade-mobile {
-  display: none !important;
-}
-
-/* Remove any reference to making mobile quick trade visible */
-[data-tab="trading"] .quick-trade-mobile.visible {
-  display: none !important;
-}
-
-/* Ensure the right panel trading section stays visible on desktop */
-@media (min-width: 769px) {
-  .right-panel .top-right-trading {
-    display: block !important;
-  }
-}
-
-/* On mobile, ensure the right panel trading section is visible */
-@media (max-width: 768px) {
-  .right-panel .top-right-trading {
-    display: block !important;
-  }
-  
    /* Hide the quick trade section in right panel on mobile */
 @media (max-width: 768px) {
   .right-panel .top-right-trading.desktop-only {
     display: none !important;
   }
 }
-  /* NUCLEAR OPTION: Hide anything that looks like quick trade in center panel */
-@media (min-width: 769px) {
-  .center-panel > div:not(.chart-container):not(.chart-header-simplified):not(.indicators-panel) {
-    display: none !important;
-  }
-  
-  /* But make sure trading controls for order history stays visible */
-  .center-panel .trading-controls:not(:has(.quick-trade-section)) {
-    display: block !important;
-  }
-}
-  /* Hide duplicate quick trade in center panel on desktop */
-@media (min-width: 769px) {
-  .mobile-quick-trade-container {
-    display: none !important;
-  }
-}
-  /* Hide mobile quick trade container on desktop */
-@media (min-width: 769px) {
-  .mobile-quick-trade-container {
-    display: none !important;
-  }
-}
-
-/* Ensure right panel quick trade is visible on desktop */
-@media (min-width: 769px) {
-  .right-panel .top-right-trading.desktop-only {
-    display: block !important;
-  }
-}
-}
+ }
 
 /* End of CSS */
