@@ -1995,7 +1995,7 @@ const syncUserWallet = async () => {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const orderValue = currentPrice * orderSize;
     const challenge = userAccount.currentChallenge ? CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
-    const maxOrderValueUSD = (availableFundsUSD * 20) / 100 : 0;
+    const maxOrderValueUSD = (availableFundsUSD * 20) / 100;
     
     return (
       <div className="quick-trade-top mobile-quick-trade-component">
