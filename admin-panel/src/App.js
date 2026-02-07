@@ -10,9 +10,38 @@ const UsersPage = React.lazy(() => import('./pages/UsersPage'));
 const TradesPage = React.lazy(() => import('./pages/TradesPage'));
 const PaymentsPage = React.lazy(() => import('./pages/PaymentsPage'));
 const WithdrawalsPage = React.lazy(() => import('./pages/WithdrawalsPage'));
-const UPISettingsPage = React.lazy(() => import('./pages/UPISettingsPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
-const ChallengeManagement = React.lazy(() => import('./pages/ChallengeManagement'));
+
+// Create a placeholder for missing components
+const MissingComponent = () => (
+  <div className="error-container">
+    <i className="fas fa-exclamation-triangle"></i>
+    <h2>Component Not Found</h2>
+    <p>This page is under development.</p>
+  </div>
+);
+
+// For UPI Settings - if missing, use placeholder
+const UPISettingsPage = React.lazy(() => 
+  Promise.resolve().then(() => {
+    try {
+      return import('./pages/UPISettingsPage');
+    } catch (error) {
+      return { default: MissingComponent };
+    }
+  })
+);
+
+// For Challenge Management - if missing, use UsersPage as placeholder
+const ChallengeManagement = React.lazy(() => 
+  Promise.resolve().then(() => {
+    try {
+      return import('./pages/ChallengeManagement');
+    } catch (error) {
+      return { default: UsersPage }; // Fallback to UsersPage
+    }
+  })
+);
 
 // Loading component
 const Loading = () => (
