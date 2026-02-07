@@ -1,4 +1,4 @@
-/* App.css - Admin Panel Complete Styles (Updated for Challenge System) */
+/* App.css - Admin Panel Complete Styles (Fixed Imports) */
 /* ===== ROOT & BASE STYLES ===== */
 :root {
   --primary: #8b5cf6;
@@ -42,6 +42,7 @@ body {
   margin-left: 250px;
   background: transparent;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
 }
 
 .content-area {
@@ -62,6 +63,7 @@ body {
   z-index: 100;
   box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
   overflow-y: auto;
+  transition: width 0.3s ease;
 }
 
 .sidebar-header {
@@ -143,6 +145,32 @@ body {
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--primary);
+  transform: rotate(45deg);
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -173,6 +201,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  color: white;
 }
 
 /* ===== DASHBOARD STYLES ===== */
@@ -435,19 +464,6 @@ body {
   border: 1px solid rgba(107, 114, 128, 0.3);
 }
 
-/* Plan Badges */
-.plan-badge.plan-active {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.plan-badge.plan-none {
-  background: rgba(107, 114, 128, 0.2);
-  color: #6b7280;
-  border: 1px solid rgba(107, 114, 128, 0.3);
-}
-
 /* ===== BUTTONS ===== */
 .btn {
   padding: 10px 20px;
@@ -584,6 +600,7 @@ body {
 .search-box {
   position: relative;
   flex: 1;
+  max-width: 400px;
 }
 
 .search-box i {
@@ -614,6 +631,7 @@ body {
   display: flex;
   gap: 15px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .filter-select {
@@ -626,10 +644,16 @@ body {
   min-width: 150px;
 }
 
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 /* ===== ACTION BUTTONS ===== */
 .action-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -743,7 +767,7 @@ body {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 2rem;
+  font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
   padding: 0;
@@ -1077,11 +1101,45 @@ body {
 .margin-info {
   background: rgba(245, 158, 11, 0.1);
   border-left: 4px solid var(--warning);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
 }
 
 .available-funds {
   background: rgba(16, 185, 129, 0.1);
   border-left: 4px solid var(--success);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+/* Margin Calculator */
+.margin-calculator {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.margin-calculator h4 {
+  margin-bottom: 15px;
+  color: var(--warning);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.margin-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.margin-item {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
 /* ===== WALLET MANAGEMENT ===== */
@@ -1089,10 +1147,12 @@ body {
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .wallet-action-btn {
   flex: 1;
+  min-width: 120px;
   padding: 12px;
   border: none;
   border-radius: 8px;
@@ -1359,6 +1419,14 @@ body {
   
   .admin-header {
     padding: 15px 20px;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
   }
   
   .admin-header h1 {
@@ -1388,6 +1456,7 @@ body {
   
   .modal-content {
     width: 95%;
+    margin: 10px;
   }
   
   .qr-image-container {
@@ -1414,6 +1483,14 @@ body {
   .challenge-rules {
     grid-template-columns: 1fr;
   }
+  
+  .margin-calculator {
+    padding: 15px;
+  }
+  
+  .margin-breakdown {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1436,5 +1513,18 @@ body {
   .btn {
     padding: 8px 16px;
     font-size: 0.85rem;
+  }
+  
+  .wallet-action-btn {
+    min-width: 100px;
+  }
+  
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-select {
+    width: 100%;
   }
 }
