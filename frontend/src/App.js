@@ -48,37 +48,58 @@ const INDICATOR_PRESETS = [
   { name: 'All Oscillators', indicators: ['RSI', 'MACD', 'Stochastic'] },
 ];
 
-// Plans Data
-const PLANS = [
+// Challenges Data - Updated with new requirements
+const CHALLENGES = [
   {
-    name: "Beginner Challenge",
-    Challangefee: "₹1,000",
-    dailyLoss: "3%",
-    maxLoss: "10%",
-    winnerprofitPayout: "Paper Profit Hit 20% × Get 50% winner reaward = Real Money",
-    withdrawalType: "Immediate",
-    minimumtradingdays: "3",
-    paperMoney: "20,000"
+    id: 1,
+    name: "🚀 Beginner Challenge",
+    fee: "₹1,000",
+    paperBalance: 20000,
+    profitTarget: 10,
+    dailyLossLimit: 4,
+    maxLossLimit: 10,
+    maxOrderSize: 20, // percentage of capital
+    maxLeverage: 10,
+    autoStopLossTarget: 10, // percentage of order value
+    oneTradeAtTime: true,
+    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    color: "#22c55e",
+    icon: "🟢",
+    description: "Perfect for beginners to learn trading with minimal risk"
   },
   {
-    name: "Plan B", 
-    price: "₹2,500",
-    dailyLoss: "5%",
-    maxLoss: "50%",
-    profitPayout: "Paper Profit × 10% = Real Money",
-    minWithdrawal: "5%",
-    maxWithdrawal: "10,000",
-    paperMoney: "250,000"
+    id: 2,
+    name: "🟡 Intermediate Challenge",
+    fee: "₹2,500",
+    paperBalance: 50000,
+    profitTarget: 10,
+    dailyLossLimit: 4,
+    maxLossLimit: 10,
+    maxOrderSize: 20,
+    maxLeverage: 10,
+    autoStopLossTarget: 10,
+    oneTradeAtTime: true,
+    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    color: "#eab308",
+    icon: "🟡",
+    description: "For traders with some experience looking to grow"
   },
   {
-    name: "Plan C",
-    price: "₹5,000",
-    dailyLoss: "5%",
-    maxLoss: "50%",
-    profitPayout: "Paper Profit × 10% = Real Money",
-    minWithdrawal: "5%",
-    maxWithdrawal: "20,000",
-    paperMoney: "500,000"
+    id: 3,
+    name: "🔴 PRO Challenge",
+    fee: "₹5,000",
+    paperBalance: 100000,
+    profitTarget: 10,
+    dailyLossLimit: 4,
+    maxLossLimit: 10,
+    maxOrderSize: 20,
+    maxLeverage: 10,
+    autoStopLossTarget: 10,
+    oneTradeAtTime: true,
+    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    color: "#ef4444",
+    icon: "🔴",
+    description: "For advanced traders ready for maximum rewards"
   }
 ];
 
@@ -89,7 +110,7 @@ function App() {
     email: "",
     realBalance: 0,
     paperBalance: 0,
-    currentPlan: null,
+    currentChallenge: null,
     notifications: [],
     transactions: [],
     accountStatus: 'pending',
@@ -100,6 +121,18 @@ function App() {
       bankName: '',
       ifscCode: '',
       upiId: ''
+    },
+    challengeStats: {
+      startDate: null,
+      dailyLoss: 0,
+      totalLoss: 0,
+      totalProfit: 0,
+      currentProfit: 0,
+      maxDrawdown: 0,
+      tradesCount: 0,
+      winRate: 0,
+      status: 'not_started', // 'not_started', 'active', 'passed', 'failed'
+      dailyResetTime: null
     }
   });
  
@@ -108,7 +141,7 @@ function App() {
   const [equity, setEquity] = useState(0);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [mode, setMode] = useState('DEMO');
-  const [activeDashboard, setActiveDashboard] = useState('Home');
+  const [activeDashboard, setActiveDashboard] = useState('Challenges');
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [userBankAccount, setUserBankAccount] = useState({
     accountNumber: '',
@@ -150,7 +183,7 @@ function App() {
     email: '',
     password: ''
   });
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [newAlert, setNewAlert] = useState({
@@ -176,7 +209,7 @@ function App() {
   const [editPositionSL, setEditPositionSL] = useState('');
   const [editPositionTP, setEditPositionTP] = useState('');
 
-  const [pendingPlanPurchase, setPendingPlanPurchase] = useState(false);
+  const [pendingChallengePurchase, setPendingChallengePurchase] = useState(false);
 
   const [prices, setPrices] = useState({});
 
@@ -209,11 +242,155 @@ function App() {
     totalAmount: 0
   });
 
+  const [marginRequired, setMarginRequired] = useState(0);
+  const [availableFunds, setAvailableFunds] = useState(0);
+  const [maxOrderValue, setMaxOrderValue] = useState(0);
+  const [dailyLoss, setDailyLoss] = useState(0);
+  const [totalLoss, setTotalLoss] = useState(0);
+  const [challengeProgress, setChallengeProgress] = useState({
+    profit: 0,
+    dailyLoss: 0,
+    totalLoss: 0,
+    status: 'active'
+  });
+
   const positionsRef = useRef(positions);
 
   useEffect(() => {
     positionsRef.current = positions;
   }, [positions]);
+
+  // Calculate margin and available funds
+  useEffect(() => {
+    if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+      
+      // Calculate margin required
+      const orderValue = currentPrice * orderSize;
+      const margin = orderValue / leverage;
+      setMarginRequired(margin);
+      
+      // Calculate available funds (paper balance - margin of open positions)
+      const totalMarginUsed = positions.reduce((sum, pos) => {
+        const posValue = pos.entryPrice * pos.size;
+        return sum + (posValue / pos.leverage);
+      }, 0);
+      
+      const available = userAccount.paperBalance - totalMarginUsed;
+      setAvailableFunds(available);
+      
+      // Calculate max order value (20% of paper balance)
+      const maxOrder = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+      setMaxOrderValue(maxOrder);
+      
+      // Check if current order exceeds max order size
+      if (orderValue > maxOrder) {
+        const maxSize = maxOrder / currentPrice;
+        setOrderSize(maxSize);
+      }
+    }
+  }, [orderSize, leverage, selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]);
+
+  // Calculate daily and total loss
+  useEffect(() => {
+    if (userAccount.currentChallenge && userAccount.challengeStats) {
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+      if (!challenge) return;
+      
+      // Calculate daily loss from today's trades
+      const today = new Date().toDateString();
+      const todayTrades = orderHistory.filter(order => {
+        const orderDate = new Date(order.timestamp).toDateString();
+        return orderDate === today && order.status === 'CLOSED';
+      });
+      
+      const dailyLossAmount = Math.abs(todayTrades
+        .filter(order => order.pnl < 0)
+        .reduce((sum, order) => sum + order.pnl, 0));
+      
+      const dailyLossPercentage = (dailyLossAmount / userAccount.paperBalance) * 100;
+      setDailyLoss(dailyLossPercentage);
+      
+      // Calculate total loss from all trades
+      const allLosses = orderHistory
+        .filter(order => order.status === 'CLOSED' && order.pnl < 0)
+        .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
+      
+      const totalLossPercentage = (allLosses / userAccount.paperBalance) * 100;
+      setTotalLoss(totalLossPercentage);
+      
+      // Update challenge progress
+      const totalProfit = orderHistory
+        .filter(order => order.status === 'CLOSED' && order.pnl > 0)
+        .reduce((sum, order) => sum + order.pnl, 0);
+      
+      const profitPercentage = (totalProfit / userAccount.paperBalance) * 100;
+      
+      setChallengeProgress({
+        profit: profitPercentage,
+        dailyLoss: dailyLossPercentage,
+        totalLoss: totalLossPercentage,
+        status: userAccount.challengeStats.status
+      });
+      
+      // Check challenge rules
+      checkChallengeRules();
+    }
+  }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
+
+  // Check challenge rules
+  const checkChallengeRules = () => {
+    if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
+    
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    if (!challenge) return;
+    
+    // Check daily loss limit
+    if (dailyLoss >= challenge.dailyLossLimit) {
+      alert(`❌ Daily Loss Limit Reached!\n\nYou have reached the daily loss limit of ${challenge.dailyLossLimit}%.\nTrading is blocked for today.`);
+      updateChallengeStatus('failed', 'Daily loss limit exceeded');
+    }
+    
+    // Check max loss limit
+    if (totalLoss >= challenge.maxLossLimit) {
+      alert(`❌ Maximum Loss Limit Reached!\n\nYou have reached the maximum loss limit of ${challenge.maxLossLimit}%.\nChallenge failed.`);
+      updateChallengeStatus('failed', 'Maximum loss limit exceeded');
+    }
+    
+    // Check profit target
+    if (challengeProgress.profit >= challenge.profitTarget) {
+      alert(`🎉 Profit Target Achieved!\n\nCongratulations! You have reached the profit target of ${challenge.profitTarget}%.\nChallenge passed!`);
+      updateChallengeStatus('passed', 'Profit target achieved');
+    }
+  };
+
+  const updateChallengeStatus = (status, reason) => {
+    setUserAccount(prev => ({
+      ...prev,
+      challengeStats: {
+        ...prev.challengeStats,
+        status,
+        endReason: reason
+      }
+    }));
+    
+    // Update backend
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status,
+          reason
+        })
+      }).catch(console.error);
+    }
+  };
 
   const calculateDollarBalance = (paperBalance) => {
     return (paperBalance / dollarRate).toFixed(2);
@@ -488,7 +665,7 @@ const syncUserWallet = async () => {
           ...prev,
           realBalance: data.user.realBalance,
           paperBalance: data.user.paperBalance,
-          currentPlan: data.user.currentPlan
+          currentChallenge: data.user.currentChallenge
         }));
         
         setBalance(data.user.paperBalance);
@@ -628,7 +805,7 @@ const syncUserWallet = async () => {
       userId: userAccount.id,
       userName: userAccount.name,
       userEmail: userAccount.email,
-      planName: paymentData.planName,
+      challengeName: paymentData.challengeName,
       amount: paymentData.amount,
       status: 'pending',
       paymentMethod: 'UPI',
@@ -670,21 +847,34 @@ const syncUserWallet = async () => {
     if (newStatus === 'approved' || newStatus === 'completed') {
       const approvedPayment = updatedPayments.find(p => p.id === paymentId);
       if (approvedPayment) {
-        const paperMoneyAmount = approvedPayment.planName.includes('Plan A') ? 100000 :
-                                approvedPayment.planName.includes('Plan B') ? 250000 :
-                                approvedPayment.planName.includes('Plan C') ? 500000 : 100000;
+        const paperMoneyAmount = approvedPayment.challengeName.includes('Beginner') ? 20000 :
+                                approvedPayment.challengeName.includes('Intermediate') ? 50000 :
+                                approvedPayment.challengeName.includes('PRO') ? 100000 : 20000;
         
         setUserAccount(prev => ({
           ...prev,
           paperBalance: (prev.paperBalance || 0) + paperMoneyAmount,
-          currentPlan: approvedPayment.planName
+          currentChallenge: approvedPayment.challengeName,
+          challengeStats: {
+            ...prev.challengeStats,
+            startDate: new Date().toISOString(),
+            dailyLoss: 0,
+            totalLoss: 0,
+            totalProfit: 0,
+            currentProfit: 0,
+            maxDrawdown: 0,
+            tradesCount: 0,
+            winRate: 0,
+            status: 'active',
+            dailyResetTime: new Date().toISOString()
+          }
         }));
         
         setBalance(prev => prev + paperMoneyAmount);
         setEquity(prev => prev + paperMoneyAmount);
         
         setTimeout(() => {
-          alert(`✅ Payment Approved!\n\nYour payment for ${approvedPayment.planName} has been approved.\n₹${paperMoneyAmount.toLocaleString()} paper money has been added to your account.\nYou can now start trading!`);
+          alert(`✅ Challenge Approved!\n\nYour payment for ${approvedPayment.challengeName} has been approved.\n₹${paperMoneyAmount.toLocaleString()} paper money has been added to your account.\nYou can now start trading!`);
         }, 500);
       }
     }
@@ -700,9 +890,9 @@ const syncUserWallet = async () => {
       if (isApproved) {
         updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
         
-        const paperMoneyAmount = payment.planName.includes('Plan A') ? 100000 :
-                                payment.planName.includes('Plan B') ? 250000 :
-                                payment.planName.includes('Plan C') ? 500000 : 100000;
+        const paperMoneyAmount = payment.challengeName.includes('Beginner') ? 20000 :
+                                payment.challengeName.includes('Intermediate') ? 50000 :
+                                payment.challengeName.includes('PRO') ? 100000 : 20000;
         
         const token = localStorage.getItem('token');
         if (token) {
@@ -738,11 +928,11 @@ const syncUserWallet = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          planName: paymentData.planName,
+          challengeName: paymentData.challengeName,
           amount: paymentData.amount,
           paymentMethod: 'UPI',
           transactionId: paymentData.transactionId,
-          notes: paymentData.notes || `Payment for ${paymentData.planName}`
+          notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
         })
       });
 
@@ -846,9 +1036,9 @@ const syncUserWallet = async () => {
             
             alert('Registration successful!');
             
-            if (pendingPlanPurchase && selectedPlan) {
+            if (pendingChallengePurchase && selectedChallenge) {
                 setTimeout(() => {
-                    initiateUPIPayment(selectedPlan.price.replace('₹', ''));
+                    initiateUPIPayment(selectedChallenge.fee.replace('₹', ''));
                 }, 500);
             }
             
@@ -902,8 +1092,8 @@ const syncUserWallet = async () => {
             
             alert('Login successful!');
             
-            if (!data.user.currentPlan) {
-                setActiveDashboard('Home');
+            if (!data.user.currentChallenge) {
+                setActiveDashboard('Challenges');
             }
         } else {
             alert(data.error || 'Invalid credentials');
@@ -916,22 +1106,104 @@ const syncUserWallet = async () => {
     setLoginData({ email: '', password: '' });
   };
 
-  const handleTrade = async (side) => {
+  const validateTrade = () => {
     if (!isLoggedIn) {
-      alert('Please login to trade');
-      setShowLogin(true);
-      return;
+      return { valid: false, message: 'Please login to trade' };
     }
     
-    if (userAccount.paperBalance === 0) {
-      alert('Please purchase a plan to get paper balance for trading');
-      setActiveDashboard('Home');
+    if (!userAccount.currentChallenge || userAccount.paperBalance === 0) {
+      return { valid: false, message: 'Please purchase a challenge to start trading' };
+    }
+    
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    if (!challenge) {
+      return { valid: false, message: 'Invalid challenge configuration' };
+    }
+    
+    // Check challenge status
+    if (userAccount.challengeStats.status !== 'active') {
+      return { 
+        valid: false, 
+        message: `Challenge ${userAccount.challengeStats.status}. Cannot trade.` 
+      };
+    }
+    
+    // Check one trade at a time
+    if (challenge.oneTradeAtTime && positions.length > 0) {
+      return { valid: false, message: 'Only one trade allowed at a time for this challenge' };
+    }
+    
+    // Check daily loss limit
+    if (dailyLoss >= challenge.dailyLossLimit) {
+      return { valid: false, message: `Daily loss limit (${challenge.dailyLossLimit}%) reached` };
+    }
+    
+    // Check max loss limit
+    if (totalLoss >= challenge.maxLossLimit) {
+      return { valid: false, message: `Maximum loss limit (${challenge.maxLossLimit}%) reached` };
+    }
+    
+    // Check available funds
+    if (availableFunds <= 0) {
+      return { valid: false, message: 'Insufficient available funds' };
+    }
+    
+    // Check margin requirement
+    if (marginRequired > availableFunds) {
+      return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
+    }
+    
+    // Check max order size
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const orderValue = currentPrice * orderSize;
+    const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+    
+    if (orderValue > maxOrderValue) {
+      return { 
+        valid: false, 
+        message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
+      };
+    }
+    
+    // Check leverage limit
+    if (leverage > challenge.maxLeverage) {
+      return { 
+        valid: false, 
+        message: `Leverage exceeds maximum (${challenge.maxLeverage}x)` 
+      };
+    }
+    
+    return { valid: true, message: '' };
+  };
+
+  const handleTrade = async (side) => {
+    const validation = validateTrade();
+    if (!validation.valid) {
+      alert(validation.message);
       return;
     }
     
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const sl = stopLoss || (side === 'LONG' ? currentPrice * 0.98 : currentPrice * 1.02);
-    const tp = takeProfit || (side === 'LONG' ? currentPrice * 1.02 : currentPrice * 0.98);
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    
+    // Calculate auto SL and TP (10% of order value)
+    const slPercentage = challenge.autoStopLossTarget / 100;
+    const tpPercentage = challenge.autoStopLossTarget / 100;
+    
+    let sl = stopLoss;
+    let tp = takeProfit;
+    
+    if (!sl) {
+      sl = side === 'LONG' 
+        ? currentPrice * (1 - slPercentage)
+        : currentPrice * (1 + slPercentage);
+    }
+    
+    if (!tp) {
+      tp = side === 'LONG'
+        ? currentPrice * (1 + tpPercentage)
+        : currentPrice * (1 - tpPercentage);
+    }
     
     try {
         const token = localStorage.getItem('token');
@@ -942,7 +1214,8 @@ const syncUserWallet = async () => {
             leverage: leverage,
             entryPrice: currentPrice,
             stopLoss: parseFloat(sl) || 0,
-            takeProfit: parseFloat(tp) || 0
+            takeProfit: parseFloat(tp) || 0,
+            margin: marginRequired
         };
         
         const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
@@ -985,6 +1258,15 @@ const syncUserWallet = async () => {
             
             setOrderHistory(prev => [newOrder, ...prev]);
             
+            // Update challenge stats
+            setUserAccount(prev => ({
+              ...prev,
+              challengeStats: {
+                ...prev.challengeStats,
+                tradesCount: prev.challengeStats.tradesCount + 1
+              }
+            }));
+            
             setStopLoss('');
             setTakeProfit('');
         } else {
@@ -996,17 +1278,17 @@ const syncUserWallet = async () => {
     }
   };
 
-  const handlePlanBuy = async (plan) => {
-    setSelectedPlan(plan);
+  const handleChallengeBuy = async (challenge) => {
+    setSelectedChallenge(challenge);
     
     if (!isLoggedIn) {
-      setPendingPlanPurchase(true);
+      setPendingChallengePurchase(true);
       setShowRegister(true);
     } else {
-      initiateUPIPayment(plan.price.replace('₹', ''));
+      initiateUPIPayment(challenge.fee.replace('₹', ''));
       
       setTimeout(() => {
-        alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${plan.paperMoney} paper money once admin approves your payment.`);
+        alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${challenge.paperBalance.toLocaleString()} paper money once admin approves your payment.`);
       }, 500);
     }
   };
@@ -1109,6 +1391,30 @@ const syncUserWallet = async () => {
               updatedAt: new Date().toISOString()
             } : order
           ));
+          
+          // Update challenge stats
+          if (userAccount.currentChallenge) {
+            const updatedStats = { ...userAccount.challengeStats };
+            if (pnl > 0) {
+              updatedStats.totalProfit += pnl;
+              updatedStats.currentProfit += pnl;
+            } else {
+              updatedStats.totalLoss += Math.abs(pnl);
+            }
+            
+            // Calculate win rate
+            const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+            const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
+            updatedStats.winRate = (winningTrades / closedTrades) * 100;
+            
+            setUserAccount(prev => ({
+              ...prev,
+              challengeStats: updatedStats
+            }));
+            
+            // Check challenge rules after trade close
+            setTimeout(() => checkChallengeRules(), 100);
+          }
         }
       } catch (error) {
         console.error('Error closing position:', error);
@@ -1226,26 +1532,26 @@ const syncUserWallet = async () => {
       setIsFullScreen(false);
     }
   };
-  // Add this useEffect near your other useEffect hooks
-useEffect(() => {
-  const handleResize = () => {
-    if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
-      // Force a redraw of the TradingView widget
-      const container = document.getElementById('tradingview-chart-container');
-      if (container) {
-        // The widget will automatically resize when container dimensions change
-        window.dispatchEvent(new Event('resize'));
+  
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
+        // Force a redraw of the TradingView widget
+        const container = document.getElementById('tradingview-chart-container');
+        if (container) {
+          // The widget will automatically resize when container dimensions change
+          window.dispatchEvent(new Event('resize'));
+        }
       }
-    }
-  };
+    };
 
-  window.addEventListener('resize', handleResize);
-  handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial call
 
-  return () => {
-    window.removeEventListener('resize', handleResize);
-  };
-}, [widgetScriptLoaded, activeDashboard, isFullScreen]);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [widgetScriptLoaded, activeDashboard, isFullScreen]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -1315,25 +1621,36 @@ useEffect(() => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userPayments');
     setIsLoggedIn(false);
-    setActiveDashboard('Home');
+    setActiveDashboard('Challenges');
     setUserAccount({
       id: null,
       name: "",
       email: "",
       realBalance: 0,
       paperBalance: 0,
-      currentPlan: null,
+      currentChallenge: null,
       notifications: [],
       transactions: [],
       accountStatus: 'pending',
-      role: 'user'
+      role: 'user',
+      challengeStats: {
+        startDate: null,
+        dailyLoss: 0,
+        totalLoss: 0,
+        totalProfit: 0,
+        currentProfit: 0,
+        maxDrawdown: 0,
+        tradesCount: 0,
+        winRate: 0,
+        status: 'not_started'
+      }
     });
     setBalance(0);
     setEquity(0);
     setPositions([]);
     setOrderHistory([]);
     setPayments([]);
-    setPendingPlanPurchase(false);
+    setPendingChallengePurchase(false);
   };
 
   const handleFileDrop = (file) => {
@@ -1397,7 +1714,7 @@ useEffect(() => {
       return;
     }
     
-    if (!selectedPlan || !isLoggedIn) {
+    if (!selectedChallenge || !isLoggedIn) {
       alert('Invalid payment request. Please try again.');
       return;
     }
@@ -1410,19 +1727,19 @@ useEffect(() => {
         throw new Error('No authentication token found. Please login again.');
       }
       
-      const rawAmount = selectedPlan.price.replace('₹', '').replace(/,/g, '');
+      const rawAmount = selectedChallenge.fee.replace('₹', '').replace(/,/g, '');
       const amount = parseFloat(rawAmount);
       
       if (isNaN(amount)) {
-        throw new Error(`Invalid amount: ${selectedPlan.price}`);
+        throw new Error(`Invalid amount: ${selectedChallenge.fee}`);
       }
       
       const paymentData = {
-        planName: selectedPlan.name,
+        challengeName: selectedChallenge.name,
         amount: amount,
         paymentMethod: 'UPI',
         transactionId: `UPI${Date.now()}`,
-        notes: `Payment for ${selectedPlan.name} plan via UPI`,
+        notes: `Payment for ${selectedChallenge.name} via UPI`,
         receiptUrl: paymentReceipt instanceof File ? URL.createObjectURL(paymentReceipt) : 'test_receipt_placeholder'
       };
       
@@ -1449,12 +1766,12 @@ useEffect(() => {
         
         setUploadingReceipt(false);
         
-        alert(`✅ Payment request submitted to admin!\n\nPayment ID: ${backendPayment.id}\nPlan: ${selectedPlan.name}\nAmount: ₹${amount}\nStatus: Pending Approval\n\nAdmin will review your payment within 24 hours.`);
+        alert(`✅ Challenge payment submitted to admin!\n\nPayment ID: ${backendPayment.id}\nChallenge: ${selectedChallenge.name}\nAmount: ₹${amount}\nStatus: Pending Approval\n\nAdmin will review your payment within 24 hours.`);
         
         setShowUPIScanner(false);
         setPaymentReceipt(null);
         setReceiptUploaded(false);
-        setSelectedPlan(null);
+        setSelectedChallenge(null);
         setUpiAmount('');
         
       } catch (backendError) {
@@ -1469,7 +1786,7 @@ useEffect(() => {
         setShowUPIScanner(false);
         setPaymentReceipt(null);
         setReceiptUploaded(false);
-        setSelectedPlan(null);
+        setSelectedChallenge(null);
         setUpiAmount('');
       }
       
@@ -1549,15 +1866,9 @@ useEffect(() => {
   };
 
   const handleMarketTrade = (symbol) => {
-    if (!isLoggedIn) {
-      alert('Please login to trade');
-      setShowLogin(true);
-      return;
-    }
-    
-    if (userAccount.paperBalance === 0) {
-      alert('Please purchase a plan to get paper balance for trading');
-      setActiveDashboard('Home');
+    const validation = validateTrade();
+    if (!validation.valid) {
+      alert(validation.message);
       return;
     }
     
@@ -1644,7 +1955,7 @@ useEffect(() => {
 
   const stats = calculateStats();
 
-  const canTrade = isLoggedIn && userAccount.paperBalance > 0;
+  const canTrade = isLoggedIn && userAccount.paperBalance > 0 && userAccount.challengeStats.status === 'active';
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -1663,93 +1974,188 @@ useEffect(() => {
     setShowPaymentDetails(true);
   };
 
-  const QuickTradeComponent = () => (
-    <div className="quick-trade-top mobile-quick-trade-component">
-      <h3>Quick Trade</h3>
-      <div className="trade-actions-top">
-        <button 
-          className="trade-btn-top buy-btn-top"
-          onClick={() => handleTrade('LONG')}
-          disabled={!canTrade}
-        >
-          {canTrade ? 'BUY/LONG' : 'BUY PLAN'}
-        </button>
-        <button 
-          className="trade-btn-top sell-btn-top"
-          onClick={() => handleTrade('SHORT')}
-          disabled={!canTrade}
-        >
-          {canTrade ? 'SELL/SHORT' : 'BUY PLAN'}
-        </button>
-      </div>
-      
-      <div className="leverage-section-top">
-        <div className="section-label">Leverage</div>
-        <div className="leverage-buttons-top">
-          {[1, 5, 10, 20].map(lev => (
-            <button
-              key={lev}
-              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-              onClick={() => setLeverage(lev)}
+  const QuickTradeComponent = () => {
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const orderValue = currentPrice * orderSize;
+    const challenge = userAccount.currentChallenge ? CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
+    const maxOrderValue = challenge ? (userAccount.paperBalance * challenge.maxOrderSize) / 100 : 0;
+    
+    return (
+      <div className="quick-trade-top mobile-quick-trade-component">
+        <h3>Quick Trade</h3>
+        
+        {/* Trade Actions */}
+        <div className="trade-actions-top">
+          <button 
+            className="trade-btn-top buy-btn-top"
+            onClick={() => handleTrade('LONG')}
+            disabled={!canTrade}
+          >
+            {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
+          </button>
+          <button 
+            className="trade-btn-top sell-btn-top"
+            onClick={() => handleTrade('SHORT')}
+            disabled={!canTrade}
+          >
+            {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
+          </button>
+        </div>
+        
+        {/* Funds Information */}
+        <div className="funds-info-section">
+          <div className="funds-item">
+            <span className="funds-label">Margin Required:</span>
+            <span className="funds-value">${marginRequired.toFixed(2)}</span>
+          </div>
+          <div className="funds-item">
+            <span className="funds-label">Available Funds:</span>
+            <span className="funds-value available">${availableFunds.toFixed(2)}</span>
+          </div>
+          <div className="funds-item">
+            <span className="funds-label">Max Order Value:</span>
+            <span className="funds-value">${maxOrderValue.toFixed(2)}</span>
+          </div>
+          <div className="funds-item">
+            <span className="funds-label">Current Order Value:</span>
+            <span className={`funds-value ${orderValue > maxOrderValue ? 'warning' : ''}`}>
+              ${orderValue.toFixed(2)}
+              {orderValue > maxOrderValue && <span className="warning-text"> (Exceeds max!)</span>}
+            </span>
+          </div>
+        </div>
+        
+        {/* Leverage Section */}
+        <div className="leverage-section-top">
+          <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+          <div className="leverage-buttons-top">
+            {[1, 5, 10, 20].map(lev => (
+              <button
+                key={lev}
+                className={`leverage-btn-top ${leverage === lev ? 'active' : ''} ${lev > (challenge?.maxLeverage || 10) ? 'disabled' : ''}`}
+                onClick={() => {
+                  if (lev <= (challenge?.maxLeverage || 10)) {
+                    setLeverage(lev);
+                  }
+                }}
+                disabled={!canTrade || lev > (challenge?.maxLeverage || 10)}
+              >
+                {lev}x
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* SL/TP Section */}
+        <div className="sl-tp-section-adjusted" style={{ 
+          display: 'flex', 
+          gap: '10px', 
+          flexWrap: 'wrap' 
+        }}>
+          <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+            <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
+            <input 
+              type="number"
+              value={stopLoss}
+              onChange={(e) => setStopLoss(e.target.value)}
+              placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+              className="sl-input-adjusted"
               disabled={!canTrade}
-            >
-              {lev}x
-            </button>
-          ))}
+              style={{ 
+                width: '100%',
+                padding: '0.3rem',
+                fontSize: '0.85rem'
+              }}
+            />
+          </div>
+          <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+            <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
+            <input 
+              type="number"
+              value={takeProfit}
+              onChange={(e) => setTakeProfit(e.target.value)}
+              placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+              className="tp-input-adjusted"
+              disabled={!canTrade}
+              style={{ 
+                width: '100%',
+                padding: '0.3rem',
+                fontSize: '0.85rem'
+              }}
+            />
+          </div>
         </div>
-      </div>
-      <div className="sl-tp-section-adjusted" style={{ 
-        display: 'flex', 
-        gap: '10px', 
-        flexWrap: 'wrap' 
-      }}>
-        <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-          <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
-          <input 
-            type="number"
-            value={stopLoss}
-            onChange={(e) => setStopLoss(e.target.value)}
-            placeholder="Auto"
-            className="sl-input-adjusted"
-            disabled={!canTrade}
-            style={{ 
-              width: '100%',
-              padding: '0.3rem',
-              fontSize: '0.85rem'
-            }}
-          />
+        
+        {/* Order Size Section */}
+        <div className="order-size-section">
+          <div className="section-label">
+            Order Size (Max: {challenge ? `${challenge.maxOrderSize}% of capital` : '20%'})
+          </div>
+          <div className="order-size-controls">
+            <input 
+              type="number" 
+              step="0.001"
+              value={orderSize}
+              onChange={(e) => {
+                const newSize = parseFloat(e.target.value) || 0;
+                const maxSize = maxOrderValue / currentPrice;
+                setOrderSize(Math.min(newSize, maxSize));
+              }}
+              className="order-size-input"
+              disabled={!canTrade}
+            />
+            <div className="order-size-buttons">
+              <button 
+                className="order-size-btn"
+                onClick={() => {
+                  const newSize = orderSize * 0.5;
+                  const maxSize = maxOrderValue / currentPrice;
+                  setOrderSize(Math.min(newSize, maxSize));
+                }}
+                disabled={!canTrade}
+              >
+                ½
+              </button>
+              <button 
+                className="order-size-btn"
+                onClick={() => {
+                  const maxSize = maxOrderValue / currentPrice;
+                  setOrderSize(maxSize);
+                }}
+                disabled={!canTrade}
+              >
+                MAX
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-          <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
-          <input 
-            type="number"
-            value={takeProfit}
-            onChange={(e) => setTakeProfit(e.target.value)}
-            placeholder="Auto"
-            className="tp-input-adjusted"
-            disabled={!canTrade}
-            style={{ 
-              width: '100%',
-              padding: '0.3rem',
-              fontSize: '0.85rem'
-            }}
-          />
-        </div>
+        
+        {/* Challenge Limits */}
+        {challenge && (
+          <div className="challenge-limits">
+            <div className="limit-item">
+              <span>Daily Loss:</span>
+              <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
+                {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
+              </span>
+            </div>
+            <div className="limit-item">
+              <span>Max Loss:</span>
+              <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
+                {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
+              </span>
+            </div>
+            <div className="limit-item">
+              <span>Profit Target:</span>
+              <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
+                {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
+              </span>
+            </div>
+          </div>
+        )}
       </div>
-      
-      <div className="order-size-section">
-        <div className="section-label">Order Size</div>
-        <input 
-          type="number" 
-          step="0.001"
-          value={orderSize}
-          onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
-          className="order-size-input"
-          disabled={!canTrade}
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
@@ -1757,8 +2163,8 @@ useEffect(() => {
         <>
           <div className="top-horizontal-nav">
             <div className="nav-tabs-container">
-              <div className={`nav-tab ${activeDashboard === 'Home' ? 'active' : ''}`} onClick={() => setActiveDashboard('Home')}>
-                <span className="tab-text">HOME</span>
+              <div className={`nav-tab ${activeDashboard === 'Challenges' ? 'active' : ''}`} onClick={() => setActiveDashboard('Challenges')}>
+                <span className="tab-text">CHALLENGES</span>
               </div>
 
               <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
@@ -1777,8 +2183,8 @@ useEffect(() => {
                   alert('Please login to trade');
                   setShowLogin(true);
                 } else if (!canTrade) {
-                  alert('Please purchase a plan to start trading');
-                  setActiveDashboard('Home');
+                  alert('Please purchase a challenge to start trading');
+                  setActiveDashboard('Challenges');
                 } else {
                   setActiveDashboard('Trading');
                 }
@@ -1823,6 +2229,13 @@ useEffect(() => {
                           (${calculateDollarBalance(userAccount.paperBalance || 0)})
                         </span>
                       </div>
+                      {userAccount.currentChallenge && (
+                        <div className="nav-challenge-status">
+                          <span className={`challenge-badge ${userAccount.challengeStats.status}`}>
+                            {userAccount.currentChallenge.split(' ')[0]} - {userAccount.challengeStats.status.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <button className="nav-logout-btn" onClick={handleLogout}>
                       Logout
@@ -1832,7 +2245,7 @@ useEffect(() => {
                   <div className="nav-auth-buttons">
                     <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
                     <button className="nav-auth-btn register-btn" onClick={() => {
-                      setPendingPlanPurchase(false);
+                      setPendingChallengePurchase(false);
                       setShowRegister(true);
                     }}>
                       Register
@@ -1906,6 +2319,28 @@ useEffect(() => {
                   <div>Used: ${(equity - balance).toFixed(2)}</div>
                 </div>
               </div>
+              
+              {/* Challenge Progress Bar */}
+              {userAccount.currentChallenge && (
+                <div className="challenge-progress-bar">
+                  <div className="progress-bar-container">
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill profit"
+                        style={{ width: `${Math.min(challengeProgress.profit, 100)}%` }}
+                      ></div>
+                      <div 
+                        className="progress-fill loss"
+                        style={{ width: `${Math.min(challengeProgress.totalLoss, 100)}%` }}
+                      ></div>
+                    </div>
+                    <div className="progress-labels">
+                      <span>Profit: {challengeProgress.profit.toFixed(1)}%</span>
+                      <span>Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
@@ -1974,72 +2409,99 @@ useEffect(() => {
           </div>
         )}
 
-        <div className={`center-panel ${isFullScreen ? 'fullscreen' : ''} ${activeDashboard === 'Home' || activeDashboard === 'Market' || activeDashboard === 'Profile' ? 'full-width' : ''}`}>
-          {activeDashboard === 'Home' ? (
-            <div className="home-content">
-              <div className="home-hero">
-                <h1>Trade Your Crypto on Paper2Real with Confidence</h1>
-                <p className="home-subtitle">Paper Trading, make profit and earn real Money</p>
+        <div className={`center-panel ${isFullScreen ? 'fullscreen' : ''} ${activeDashboard === 'Challenges' || activeDashboard === 'Market' || activeDashboard === 'Profile' ? 'full-width' : ''}`}>
+          {activeDashboard === 'Challenges' ? (
+            <div className="challenges-content">
+              <div className="challenges-hero">
+                <h1>🚀 Paper2Real Trading Challenges</h1>
+                <p className="challenges-subtitle">Paper Trading, Make Profit and Earn Real Money</p>
                 {!isLoggedIn && (
                   <div className="discount-banner">
-                    <span>Sign up to get 50% Discount</span>
+                    <span>Sign up to start your trading journey</span>
                   </div>
                 )}
-                {isLoggedIn && !userAccount.currentPlan && (
-                  <div className="no-plan-banner">
-                    <span>⚠️ Purchase a plan to start trading</span>
+                {isLoggedIn && !userAccount.currentChallenge && (
+                  <div className="no-challenge-banner">
+                    <span>⚠️ Purchase a challenge to start trading</span>
                   </div>
                 )}
-                {isLoggedIn && userAccount.currentPlan && (
-                  <div className="active-plan-banner">
-                    <span>✅ Active Plan: {userAccount.currentPlan} | Paper Balance: ₹{userAccount.paperBalance?.toLocaleString()} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                {isLoggedIn && userAccount.currentChallenge && (
+                  <div className="active-challenge-banner">
+                    <div className="challenge-status-info">
+                      <span className="challenge-name">✅ Active Challenge: {userAccount.currentChallenge}</span>
+                      <span className="challenge-paper-balance">Paper Balance: ₹{userAccount.paperBalance?.toLocaleString()} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                      <span className={`challenge-status ${userAccount.challengeStats.status}`}>
+                        Status: {userAccount.challengeStats.status.toUpperCase()}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="home-section">
-                <h2>Start Trading with Paper2Real</h2>
+              <div className="challenges-section">
+                <h2>Choose Your Trading Challenge</h2>
                 
-                <div className="plans-container">
-                  {PLANS.map((plan, index) => (
-                    <div key={index} className="plan-card">
-                      <div className="plan-header">
-                        <h3>{plan.name}</h3>
-                        <div className="plan-price">{plan.price}</div>
+                <div className="challenges-container">
+                  {CHALLENGES.map((challenge, index) => (
+                    <div key={index} className="challenge-card" style={{ borderColor: challenge.color }}>
+                      <div className="challenge-header" style={{ background: challenge.color }}>
+                        <h3>{challenge.icon} {challenge.name}</h3>
+                        <div className="challenge-fee">{challenge.fee}</div>
                       </div>
                       
-                      <div className="plan-features">
+                      <div className="challenge-features">
                         <div className="feature">
-                          <span className="feature-label">Daily Loss Limit</span>
-                          <span className="feature-value">{plan.dailyLoss}</span>
+                          <span className="feature-label">💵 Fee</span>
+                          <span className="feature-value">{challenge.fee}</span>
                         </div>
                         <div className="feature">
-                          <span className="feature-label">Max Loss Limit</span>
-                          <span className="feature-value">{plan.maxLoss}</span>
+                          <span className="feature-label">📊 Paper Balance</span>
+                          <span className="feature-value">₹{challenge.paperBalance.toLocaleString()}</span>
                         </div>
                         <div className="feature">
-                          <span className="feature-label">Profit Payout</span>
-                          <span className="feature-value small-text">{plan.profitPayout}</span>
+                          <span className="feature-label">🎯 Profit Target</span>
+                          <span className="feature-value">{challenge.profitTarget}%</span>
                         </div>
                         <div className="feature">
-                          <span className="feature-label">Min Withdrawal</span>
-                          <span className="feature-value">{plan.minWithdrawal}</span>
+                          <span className="feature-label">⚠ Daily Loss Limit</span>
+                          <span className="feature-value">{challenge.dailyLossLimit}%</span>
                         </div>
                         <div className="feature">
-                          <span className="feature-label">Max Withdrawal</span>
-                          <span className="feature-value">{plan.maxWithdrawal}</span>
+                          <span className="feature-label">🛑 Maximum Loss</span>
+                          <span className="feature-value">{challenge.maxLossLimit}%</span>
+                        </div>
+                        <div className="feature">
+                          <span className="feature-label">📈 Max Order Size</span>
+                          <span className="feature-value">{challenge.maxOrderSize}% of capital</span>
+                        </div>
+                        <div className="feature">
+                          <span className="feature-label">⚡ Leverage</span>
+                          <span className="feature-value">Upto {challenge.maxLeverage}x</span>
+                        </div>
+                        <div className="feature">
+                          <span className="feature-label">🎯 Auto SL & Target</span>
+                          <span className="feature-value">{challenge.autoStopLossTarget}% of order value</span>
+                        </div>
+                        <div className="feature">
+                          <span className="feature-label">🔄 Trades at a Time</span>
+                          <span className="feature-value">{challenge.oneTradeAtTime ? '1' : 'Multiple'}</span>
                         </div>
                         <div className="feature highlight">
-                          <span className="feature-label">Get Paper Money</span>
-                          <span className="feature-value highlight-value">{plan.paperMoney}</span>
+                          <span className="feature-label">💰 Reward</span>
+                          <span className="feature-value highlight-value">{challenge.reward}</span>
                         </div>
+                      </div>
+                      
+                      <div className="challenge-description">
+                        <p>{challenge.description}</p>
                       </div>
                       
                       <button 
-                        className="get-plan-btn"
-                        onClick={() => handlePlanBuy(plan)}
+                        className="get-challenge-btn"
+                        style={{ background: challenge.color }}
+                        onClick={() => handleChallengeBuy(challenge)}
                       >
-                        {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'} - {plan.price}
+                        {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'} - {challenge.fee}
                       </button>
                     </div>
                   ))}
@@ -2048,9 +2510,9 @@ useEffect(() => {
 
               <div className="cta-section">
                 <p className="cta-text">
-                  {isLoggedIn && userAccount.currentPlan 
+                  {isLoggedIn && userAccount.currentChallenge 
                     ? 'Start trading with your paper balance now!' 
-                    : 'Practice with virtual money: earn real cash rewards'}
+                    : 'Practice with virtual money: Earn real cash rewards'}
                 </p>
                 <button 
                   className="cta-btn"
@@ -2058,7 +2520,7 @@ useEffect(() => {
                     if (!isLoggedIn) {
                       setShowLogin(true);
                     } else if (!canTrade) {
-                      alert('Please purchase a plan to start trading');
+                      alert('Please purchase a challenge to start trading');
                     } else {
                       setActiveDashboard('Market');
                     }
@@ -2069,7 +2531,7 @@ useEffect(() => {
               </div>
 
               <div className="features-section">
-                <h3>Why Choose Paper2Real?</h3>
+                <h3>Why Choose Paper2Real Challenges?</h3>
                 <div className="features-grid">
                   <div className="feature-card">
                     <div className="feature-icon">📊</div>
@@ -2090,6 +2552,29 @@ useEffect(() => {
                     <div className="feature-icon">🛡️</div>
                     <h4>Loss Protection</h4>
                     <p>Daily and maximum loss limits to protect your capital</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Additional Info Section */}
+              <div className="additional-info-section">
+                <h3>📋 Additional Information</h3>
+                <div className="info-grid">
+                  <div className="info-card">
+                    <h4>📈 Paper Trading Only</h4>
+                    <p>All trades are executed with virtual money. No real funds are at risk during the challenge.</p>
+                  </div>
+                  <div className="info-card">
+                    <h4>💰 Fee Refund + 20% Profit</h4>
+                    <p>Successfully complete the challenge and get your fee refunded plus 20% of your paper profits as real money reward.</p>
+                  </div>
+                  <div className="info-card">
+                    <h4>⚡ Auto Stop-Loss & Target</h4>
+                    <p>Each trade automatically gets stop-loss and take-profit set at 10% of order value to manage risk.</p>
+                  </div>
+                  <div className="info-card">
+                    <h4>🔄 One Trade at a Time</h4>
+                    <p>Focus on quality over quantity. Only one open position is allowed at any time during the challenge.</p>
                   </div>
                 </div>
               </div>
@@ -2170,7 +2655,7 @@ useEffect(() => {
                             onClick={() => handleMarketTrade(crypto.symbol)}
                             disabled={!canTrade}
                           >
-                            {canTrade ? 'Trade' : 'Buy Plan to Trade'}
+                            {canTrade ? 'Trade' : 'Buy Challenge to Trade'}
                           </button>
                         </td>
                       </tr>
@@ -2211,7 +2696,7 @@ useEffect(() => {
                         onClick={() => handleMarketTrade(signal.symbol)}
                         disabled={!canTrade}
                       >
-                        {canTrade ? 'Trade' : 'Buy Plan'}
+                        {canTrade ? 'Trade' : 'Buy Challenge'}
                       </button>
                     </div>
                   ))}
@@ -2257,7 +2742,7 @@ useEffect(() => {
                 <h2>Your Profile</h2>
                 <div className="profile-status">
                   <span className="profile-badge">{isLoggedIn ? 'ACTIVE ACCOUNT' : 'DEMO ACCOUNT'}</span>
-                  <span className="profile-tier">{userAccount.currentPlan || 'NO PLAN'}</span>
+                  <span className="profile-tier">{userAccount.currentChallenge || 'NO CHALLENGE'}</span>
                 </div>
               </div>
 
@@ -2269,7 +2754,7 @@ useEffect(() => {
                     </div>
                     <div className="profile-info">
                       <h3>{isLoggedIn ? userAccount.name : 'Guest User'}</h3>
-                      <p>Status: {isLoggedIn ? (userAccount.currentPlan ? 'Premium Member' : 'Free Account') : 'Not Logged In'}</p>
+                      <p>Status: {isLoggedIn ? (userAccount.currentChallenge ? 'Challenge Member' : 'Free Account') : 'Not Logged In'}</p>
                       <p>Email: {isLoggedIn ? userAccount.email : 'guest@example.com'}</p>
                       <p>User ID: {userAccount.id || 'Not Available'}</p>
                     </div>
@@ -2277,7 +2762,7 @@ useEffect(() => {
                   <div className="profile-stats">
                     <div className="profile-stat">
                       <span className="stat-label">Account Level</span>
-                      <span className="stat-value">{userAccount.currentPlan ? 'Premium' : 'Basic'}</span>
+                      <span className="stat-value">{userAccount.currentChallenge ? 'Premium' : 'Basic'}</span>
                     </div>
                     <div className="profile-stat">
                       <span className="stat-label">Trading Days</span>
@@ -2320,8 +2805,14 @@ useEffect(() => {
                   <h3>Account Settings</h3>
                   <div className="settings-list">
                     <div className="setting-item">
-                      <span className="setting-label">Current Plan</span>
-                      <span className="setting-value">{userAccount.currentPlan || 'None'}</span>
+                      <span className="setting-label">Current Challenge</span>
+                      <span className="setting-value">{userAccount.currentChallenge || 'None'}</span>
+                    </div>
+                    <div className="setting-item">
+                      <span className="setting-label">Challenge Status</span>
+                      <span className={`setting-value challenge-status-${userAccount.challengeStats.status}`}>
+                        {userAccount.challengeStats.status.toUpperCase()}
+                      </span>
                     </div>
                     <div className="setting-item">
                       <span className="setting-label">Paper Balance</span>
@@ -2337,12 +2828,12 @@ useEffect(() => {
                     </div>
                   </div>
                   <div className="settings-buttons">
-                    {!userAccount.currentPlan && (
-                      <button className="settings-btn upgrade-btn" onClick={() => setActiveDashboard('Home')}>
-                        Buy Trading Plan
+                    {!userAccount.currentChallenge && (
+                      <button className="settings-btn upgrade-btn" onClick={() => setActiveDashboard('Challenges')}>
+                        Buy Trading Challenge
                       </button>
                     )}
-                    {userAccount.currentPlan && (
+                    {userAccount.currentChallenge && userAccount.challengeStats.status === 'active' && (
                       <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
                         Start Trading
                       </button>
@@ -2375,6 +2866,74 @@ useEffect(() => {
                     )}
                   </div>
                 </div>
+                
+                {/* Challenge Progress Card */}
+                {userAccount.currentChallenge && (
+                  <div className="profile-card challenge-card">
+                    <h3>Challenge Progress</h3>
+                    <div className="challenge-progress-details">
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Challenge:</span>
+                        <span className="progress-value">{userAccount.currentChallenge}</span>
+                      </div>
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Status:</span>
+                        <span className={`progress-value challenge-status-${userAccount.challengeStats.status}`}>
+                          {userAccount.challengeStats.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Profit Target:</span>
+                        <span className="progress-value">
+                          {challengeProgress.profit.toFixed(2)}% / 
+                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.profitTarget || 10}%
+                        </span>
+                      </div>
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Daily Loss:</span>
+                        <span className={`progress-value ${dailyLoss >= (CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.dailyLossLimit || 4) ? 'danger' : ''}`}>
+                          {dailyLoss.toFixed(2)}% / 
+                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.dailyLossLimit || 4}%
+                        </span>
+                      </div>
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Total Loss:</span>
+                        <span className={`progress-value ${totalLoss >= (CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.maxLossLimit || 10) ? 'danger' : ''}`}>
+                          {totalLoss.toFixed(2)}% / 
+                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.maxLossLimit || 10}%
+                        </span>
+                      </div>
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Trades Count:</span>
+                        <span className="progress-value">{userAccount.challengeStats.tradesCount}</span>
+                      </div>
+                      <div className="challenge-progress-item">
+                        <span className="progress-label">Win Rate:</span>
+                        <span className="progress-value">{userAccount.challengeStats.winRate.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="challenge-progress-visual">
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill profit"
+                          style={{ width: `${Math.min(challengeProgress.profit, 100)}%` }}
+                          title={`Profit: ${challengeProgress.profit.toFixed(1)}%`}
+                        ></div>
+                        <div 
+                          className="progress-fill loss"
+                          style={{ width: `${Math.min(challengeProgress.totalLoss, 100)}%` }}
+                          title={`Loss: ${challengeProgress.totalLoss.toFixed(1)}%`}
+                        ></div>
+                      </div>
+                      <div className="progress-labels">
+                        <span className="profit-label">Profit: {challengeProgress.profit.toFixed(1)}%</span>
+                        <span className="loss-label">Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="profile-card withdraw-card">
                   <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
@@ -2427,7 +2986,7 @@ useEffect(() => {
                             value={userBankAccount.accountHolderName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
                             placeholder="Enter name as per bank records"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2438,7 +2997,7 @@ useEffect(() => {
                             value={userBankAccount.accountNumber}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
                             placeholder="Enter your bank account number"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2447,7 +3006,7 @@ useEffect(() => {
                           <select
                             value={userBankAccount.bankName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           >
                             <option value="">Select Bank</option>
                             <option value="HDFC Bank">HDFC Bank</option>
@@ -2465,7 +3024,7 @@ useEffect(() => {
                             value={userBankAccount.ifscCode}
                             onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
                             placeholder="Enter IFSC code"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2506,7 +3065,7 @@ useEffect(() => {
                             value={withdrawalAmount}
                             onChange={(e) => setWithdrawalAmount(e.target.value)}
                             placeholder="Enter amount"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -2693,7 +3252,7 @@ useEffect(() => {
                       <thead>
                         <tr>
                           <th>Date</th>
-                          <th>Plan</th>
+                          <th>Challenge</th>
                           <th>Amount</th>
                           <th>Status</th>
                           <th>Transaction ID</th>
@@ -2704,7 +3263,7 @@ useEffect(() => {
                         {filteredPayments.slice(0, 10).map(payment => (
                           <tr key={payment.id}>
                             <td>{formatDate(payment.createdAt || payment.submittedAt)}</td>
-                            <td>{payment.planName}</td>
+                            <td>{payment.challengeName || payment.planName}</td>
                             <td>₹{typeof payment.amount === 'string' ? payment.amount : payment.amount?.toLocaleString() || '0'}</td>
                             <td>
                               <span className={`payment-status-badge ${payment.status}`}>
@@ -2748,7 +3307,7 @@ useEffect(() => {
                       {payments.slice(0, 3).map(payment => (
                         <div key={payment.id} className="recent-payment-item">
                           <div className="recent-payment-info">
-                            <div className="recent-payment-plan">{payment.planName}</div>
+                            <div className="recent-payment-plan">{payment.challengeName || payment.planName}</div>
                             <div className="recent-payment-date">{formatDate(payment.createdAt || payment.submittedAt)}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -3073,10 +3632,10 @@ useEffect(() => {
               </div>
 
               {activeDashboard === 'Trading' && window.innerWidth <= 768 && (
-  <div className="mobile-quick-trade-container">
-     <QuickTradeComponent />
-  </div>
-)}
+                <div className="mobile-quick-trade-container">
+                  <QuickTradeComponent />
+                </div>
+              )}
 
               {activeDashboard === 'Trading' && (
                 <div className={`trading-controls ${isFullScreen ? 'fullscreen-trading-controls' : ''}`}>
@@ -3274,10 +3833,10 @@ useEffect(() => {
         </div>
 
         {!isFullScreen && activeDashboard === 'Trading' && (
-  <div className="right-panel desktop-only">
-    <div className="top-right-trading desktop-only">
-      <QuickTradeComponent />
-    </div>
+          <div className="right-panel desktop-only">
+            <div className="top-right-trading desktop-only">
+              <QuickTradeComponent />
+            </div>
 
             <div className="trading-journal">
               <h3>Trading Journal</h3>
@@ -3343,6 +3902,7 @@ useEffect(() => {
         )}
       </div>
 
+      {/* Modals and Dialogs remain the same */}
       {showNews && (
         <div className="news-panel">
           <div className="news-header">
@@ -3372,7 +3932,7 @@ useEffect(() => {
         <div className="dialog-overlay">
           <div className="dialog-box">
             <h2 className="dialog-title">
-              {pendingPlanPurchase ? 'Register & Buy Plan' : 'Create Account'}
+              {pendingChallengePurchase ? 'Register & Buy Challenge' : 'Create Account'}
             </h2>
             <form onSubmit={handleRegister}>
               <div className="form-group">
@@ -3421,7 +3981,7 @@ useEffect(() => {
               </div>
               <div className="dialog-buttons">
                 <button type="submit" className="dialog-btn primary">
-                  {pendingPlanPurchase ? 'Register & Continue to Payment' : 'Register'}
+                  {pendingChallengePurchase ? 'Register & Continue to Payment' : 'Register'}
                 </button>
                 <button
                   type="button"
@@ -3438,7 +3998,7 @@ useEffect(() => {
                   className="dialog-btn cancel"
                   onClick={() => {
                     setShowRegister(false);
-                    setPendingPlanPurchase(false);
+                    setPendingChallengePurchase(false);
                   }}
                 >
                   Cancel
@@ -3577,7 +4137,7 @@ useEffect(() => {
       {showUPIScanner && (
         <div className="dialog-overlay">
           <div className="dialog-box upi-dialog">
-            <h2 className="dialog-title">UPI Payment - {selectedPlan?.name}</h2>
+            <h2 className="dialog-title">UPI Payment - {selectedChallenge?.name}</h2>
             
             <div className="payment-instructions">
               <div className="instruction-alert">
@@ -3589,18 +4149,18 @@ useEffect(() => {
               </div>
               
               <div className="plan-summary">
-                <h4>Plan Summary:</h4>
+                <h4>Challenge Summary:</h4>
                 <div className="summary-item">
-                  <span>Plan:</span>
-                  <span>{selectedPlan?.name}</span>
+                  <span>Challenge:</span>
+                  <span>{selectedChallenge?.name}</span>
                 </div>
                 <div className="summary-item">
                   <span>Amount to Pay:</span>
-                  <span>{selectedPlan?.price}</span>
+                  <span>{selectedChallenge?.fee}</span>
                 </div>
                 <div className="summary-item">
                   <span>Paper Money After Approval:</span>
-                  <span>₹{selectedPlan?.paperMoney?.replace(/,/g, '') || '0'}</span>
+                  <span>₹{selectedChallenge?.paperBalance?.toLocaleString() || '0'}</span>
                 </div>
               </div>
             </div>
@@ -3678,11 +4238,11 @@ useEffect(() => {
                       </div>
                       <div className="upi-field">
                         <span>Note:</span>
-                        <code className="upi-value">Paper2Real - {selectedPlan?.name} - {userAccount.name || userAccount.email || 'User'}</code>
+                        <code className="upi-value">Paper2Real - {selectedChallenge?.name} - {userAccount.name || userAccount.email || 'User'}</code>
                         <button 
                           className="copy-btn"
                           onClick={() => {
-                            const note = `Paper2Real - ${selectedPlan?.name} - ${userAccount.name || userAccount.email || 'User'}`;
+                            const note = `Paper2Real - ${selectedChallenge?.name} - ${userAccount.name || userAccount.email || 'User'}`;
                             navigator.clipboard.writeText(note);
                             alert('Payment note copied!');
                           }}
@@ -3795,7 +4355,7 @@ useEffect(() => {
                   setShowUPIScanner(false);
                   setPaymentReceipt(null);
                   setReceiptUploaded(false);
-                  setSelectedPlan(null);
+                  setSelectedChallenge(null);
                 }}
               >
                 Cancel Payment
@@ -3842,8 +4402,8 @@ useEffect(() => {
                 <span style={{ fontFamily: 'monospace' }}>{selectedPayment.transactionId}</span>
               </div>
               <div className="summary-item">
-                <span>Plan:</span>
-                <span>{selectedPayment.planName}</span>
+                <span>Challenge:</span>
+                <span>{selectedPayment.challengeName || selectedPayment.planName}</span>
               </div>
               <div className="summary-item">
                 <span>Amount:</span>
