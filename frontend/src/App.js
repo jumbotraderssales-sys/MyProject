@@ -3018,7 +3018,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountNumber}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
                             placeholder="Enter your bank account number"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -3027,7 +3027,7 @@ const syncUserWallet = async () => {
                           <select
                             value={userBankAccount.bankName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           >
                             <option value="">Select Bank</option>
                             <option value="HDFC Bank">HDFC Bank</option>
@@ -3045,7 +3045,7 @@ const syncUserWallet = async () => {
                             value={userBankAccount.ifscCode}
                             onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
                             placeholder="Enter IFSC code"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
@@ -3086,7 +3086,7 @@ const syncUserWallet = async () => {
                             value={withdrawalAmount}
                             onChange={(e) => setWithdrawalAmount(e.target.value)}
                             placeholder="Enter amount"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
                           />
                         </div>
                         
