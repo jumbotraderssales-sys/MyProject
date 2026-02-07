@@ -51,14 +51,14 @@ const INDICATOR_PRESETS = [
 // Plans Data
 const PLANS = [
   {
-    name: "Plan A",
-    price: "₹1,000",
-    dailyLoss: "5%",
-    maxLoss: "50%",
-    profitPayout: "Paper Profit × 10% = Real Money",
-    minWithdrawal: "5%",
-    maxWithdrawal: "4,000",
-    paperMoney: "100,000"
+    name: "Beginner Challenge",
+    Challangefee: "₹1,000",
+    dailyLoss: "3%",
+    maxLoss: "10%",
+    winnerprofitPayout: "Paper Profit Hit 20% × Get 50% winner reaward = Real Money",
+    withdrawalType: "Immediate",
+    minimumtradingdays: "3",
+    paperMoney: "20,000"
   },
   {
     name: "Plan B", 
