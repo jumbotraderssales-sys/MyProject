@@ -129,7 +129,7 @@ function App() {
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const [orderSize, setOrderSize] = useState(0.001);
-  const [leverage, setLeverage] = useState(10);
+  const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
   const [chartType, setChartType] = useState('0');
@@ -1686,7 +1686,7 @@ useEffect(() => {
       <div className="leverage-section-top">
         <div className="section-label">Leverage</div>
         <div className="leverage-buttons-top">
-          {[1, 5, 10, 20, 50, 100].map(lev => (
+          {[1, 5, 10, 20].map(lev => (
             <button
               key={lev}
               className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
