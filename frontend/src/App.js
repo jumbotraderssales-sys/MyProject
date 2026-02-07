@@ -1170,7 +1170,7 @@ const syncUserWallet = async () => {
     // Check max order size
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const orderValue = currentPrice * orderSize;
-     const maxOrderValue = challenge ? (userAccount.paperBalance * challenge.maxOrderSize) / 100 : 0;
+     const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
     
     if (orderValue > maxOrderValue) {
       return { 
@@ -1995,7 +1995,7 @@ const syncUserWallet = async () => {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const orderValue = currentPrice * orderSize;
     const challenge = userAccount.currentChallenge ? CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
-     const maxOrderValue = challenge ? (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+      const maxOrderValue = challenge ? (userAccount.paperBalance * challenge.maxOrderSize) / 100 : 0;
     
     return (
       <div className="quick-trade-top mobile-quick-trade-component">
