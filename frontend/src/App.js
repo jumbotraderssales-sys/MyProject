@@ -2027,7 +2027,7 @@ const syncUserWallet = async () => {
           </div>
           <div className="funds-item">
             <span className="funds-label">Available Funds:</span>
-            <span className="funds-value available">${availableFunds.toFixed(2)}</span>
+            <span className="funds-value available">${calculateDollarBalance(userAccount.paperBalance || 0)}</span>
           </div>
           <div className="funds-item">
             <span className="funds-label">Max Order Value:</span>
