@@ -9,6 +9,7 @@ const Sidebar = () => {
     { path: '/users', icon: 'fas fa-users', label: 'Users' },
     { path: '/trades', icon: 'fas fa-exchange-alt', label: 'Trades' },
     { path: '/challenges', icon: 'fas fa-trophy', label: 'Challenges' },
+    { path: '/challenge-history', icon: 'fas fa-history', label: 'Challenge History' },
     { path: '/orders', icon: 'fas fa-clipboard-list', label: 'Orders' },
     { path: '/payments', icon: 'fas fa-credit-card', label: 'Payments' },
     { path: '/withdrawals', icon: 'fas fa-money-bill-wave', label: 'Withdrawals' },
