@@ -2005,6 +2005,10 @@ const syncUserWallet = async () => {
   
   const orderValue = currentPrice * orderSize;
   
+  // Get the current challenge
+  const challenge = userAccount.currentChallenge ? 
+    CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
+  
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
       <h3>Quick Trade</h3>
@@ -2089,34 +2093,33 @@ const syncUserWallet = async () => {
           </div>
         </div>
       </div>
-        
-        {/* Challenge Limits */}
-        {challenge && (
-          <div className="challenge-limits">
-            <div className="limit-item">
-              <span>Daily Loss:</span>
-              <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
-                {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
-              </span>
-            </div>
-            <div className="limit-item">
-              <span>Max Loss:</span>
-              <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
-                {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
-              </span>
-            </div>
-            <div className="limit-item">
-              <span>Profit Target:</span>
-              <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
-                {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
-              </span>
-            </div>
+      
+      {/* Challenge Limits */}
+      {challenge && (
+        <div className="challenge-limits">
+          <div className="limit-item">
+            <span>Daily Loss:</span>
+            <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
+              {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
+            </span>
           </div>
-        )}
-      </div>
-    );
-  };
-
+          <div className="limit-item">
+            <span>Max Loss:</span>
+            <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
+              {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
+            </span>
+          </div>
+          <div className="limit-item">
+            <span>Profit Target:</span>
+            <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
+              {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
