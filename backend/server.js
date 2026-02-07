@@ -1933,5 +1933,5 @@ app.listen(PORT, () => {
   console.log('  GET  /api/admin/withdrawals    - Get all withdrawals');
   console.log('  POST /api/admin/withdrawal/:id/approve - Approve withdrawal');
   console.log('  POST /api/admin/withdrawal/:id/reject  - Reject withdrawal');
-  console.log('==========================================');
+  console.log('===========================================');
 });
