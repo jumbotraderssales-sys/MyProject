@@ -1991,6 +1991,18 @@ const syncUserWallet = async () => {
     setShowPaymentDetails(true);
   };
 
+  const QuickTradeComponent = () => {
+  const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  
+  // Calculate max order value as 20% of available funds (not total balance)
+  const availableFundsUSD = (userAccount.paperBalance / dollarRate) - 
+    positions.reduce((sum, pos) => {
+      const posValue = pos.entryPrice * pos.size;
+      return sum + (posValue / pos.leverage);
+    }, 0);
+  
+  const maxOrderValueUSD = (availableFundsUSD * 20) / 100; // 20% of available funds
+  
   const orderValue = currentPrice * orderSize;
   
   return (
@@ -2077,6 +2089,7 @@ const syncUserWallet = async () => {
           </div>
         </div>
       </div>
+        
         {/* Challenge Limits */}
         {challenge && (
           <div className="challenge-limits">
