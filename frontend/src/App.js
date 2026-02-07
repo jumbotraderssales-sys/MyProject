@@ -3000,7 +3000,14 @@ const syncUserWallet = async () => {
                             value={userBankAccount.accountHolderName}
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
                             placeholder="Enter name as per bank records"
-                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid '#4a5568', borderRadius: '5px', color: 'white'}}
+                            style={{
+  width: '100%',
+  padding: '10px',
+  background: '#2d3748',
+  border: '1px solid #4a5568',
+  borderRadius: '5px',
+  color: 'white'
+}}
                           />
                         </div>
                         
