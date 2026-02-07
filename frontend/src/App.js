@@ -1969,7 +1969,10 @@ const syncUserWallet = async () => {
 
   const stats = calculateStats();
 
-  const canTrade = isLoggedIn && userAccount.paperBalance > 0 && userAccount.challengeStats.status === 'active';
+ const canTrade =
+  isLoggedIn &&
+  userAccount?.paperBalance > 0 &&
+  userAccount?.challengeStats?.status === 'active';
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -2847,7 +2850,7 @@ const syncUserWallet = async () => {
                         Buy Trading Challenge
                       </button>
                     )}
-                    {userAccount.currentChallenge && userAccount.challengeStats.status === 'active' && (
+                    {userAccount.currentChallenge && userAccount?.challengeStats?.status === 'active' && (
                       <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
                         Start Trading
                       </button>
