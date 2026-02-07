@@ -10,9 +10,6 @@ import './App.css';
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
-// Updated Leverage Constants
-const LEVERAGE_OPTIONS = [5, 10, 15, 20];
-
 // Crypto data with details
 const cryptoData = [
   { symbol: 'BTCUSDT', name: 'Bitcoin', price: 91391.5, change24h: 2.34, volume: '42.5B', marketCap: '1.8T', color: '#F7931A' },
