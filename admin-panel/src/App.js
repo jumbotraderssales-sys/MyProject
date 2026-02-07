@@ -2,46 +2,23 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import AdminWithdrawalPanel from './AdminWithdrawalPanel'; // This is in the root
 import './App.css';
 
-// Lazy load all pages for better performance
+// Lazy load pages from the pages folder
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const UsersPage = React.lazy(() => import('./pages/UsersPage'));
 const TradesPage = React.lazy(() => import('./pages/TradesPage'));
 const PaymentsPage = React.lazy(() => import('./pages/PaymentsPage'));
-const WithdrawalsPage = React.lazy(() => import('./pages/WithdrawalsPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
+const OrdersPage = React.lazy(() => import('./pages/OrdersPage'));
+const P2PPage = React.lazy(() => import('./pages/P2PPage'));
+const UserDetailPage = React.lazy(() => import('./pages/UserDetailPage'));
+const ChallengeManagement = React.lazy(() => import('./pages/ChallengeManagement')); // Added
 
-// Create a placeholder for missing components
-const MissingComponent = () => (
-  <div className="error-container">
-    <i className="fas fa-exclamation-triangle"></i>
-    <h2>Component Not Found</h2>
-    <p>This page is under development.</p>
-  </div>
-);
-
-// For UPI Settings - if missing, use placeholder
-const UPISettingsPage = React.lazy(() => 
-  Promise.resolve().then(() => {
-    try {
-      return import('./pages/UPISettingsPage');
-    } catch (error) {
-      return { default: MissingComponent };
-    }
-  })
-);
-
-// For Challenge Management - if missing, use UsersPage as placeholder
-const ChallengeManagement = React.lazy(() => 
-  Promise.resolve().then(() => {
-    try {
-      return import('./pages/ChallengeManagement');
-    } catch (error) {
-      return { default: UsersPage }; // Fallback to UsersPage
-    }
-  })
-);
+// Lazy load components from the components folder
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const UPISettings = React.lazy(() => import('./components/UPISettings'));
 
 // Loading component
 const Loading = () => (
@@ -59,13 +36,17 @@ function App() {
     pendingPayments: 0,
     pendingWithdrawals: 0,
     totalRevenue: 0,
-    activeChallenges: 0
+    activeChallenges: 0,
+    challengeStats: {
+      beginner: { total: 0, active: 0, passed: 0, failed: 0 },
+      intermediate: { total: 0, active: 0, passed: 0, failed: 0 },
+      pro: { total: 0, active: 0, passed: 0, failed: 0 }
+    }
   });
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch initial system stats
     fetchSystemStats();
   }, []);
 
@@ -109,13 +90,46 @@ function App() {
           .filter(p => p.status === 'approved')
           .reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0;
       
-      // Calculate active challenges (users with current challenge)
-      const activeChallenges = Array.isArray(users) ? 
-        users.filter(user => 
-          user.currentChallenge && 
-          user.currentChallenge !== 'No Challenge' &&
-          user.challengeStats?.status === 'active'
-        ).length : 0;
+      // Calculate challenge statistics
+      const challengeStats = {
+        beginner: { total: 0, active: 0, passed: 0, failed: 0 },
+        intermediate: { total: 0, active: 0, passed: 0, failed: 0 },
+        pro: { total: 0, active: 0, passed: 0, failed: 0 }
+      };
+      
+      let activeChallenges = 0;
+      
+      if (Array.isArray(users)) {
+        users.forEach(user => {
+          if (user.currentChallenge && user.currentChallenge !== 'No Challenge') {
+            const challengeName = user.currentChallenge.toLowerCase();
+            const status = user.challengeStats?.status || 'not_started';
+            
+            if (challengeName.includes('beginner')) {
+              challengeStats.beginner.total++;
+              if (status === 'active') {
+                challengeStats.beginner.active++;
+                activeChallenges++;
+              } else if (status === 'passed') challengeStats.beginner.passed++;
+              else if (status === 'failed') challengeStats.beginner.failed++;
+            } else if (challengeName.includes('intermediate')) {
+              challengeStats.intermediate.total++;
+              if (status === 'active') {
+                challengeStats.intermediate.active++;
+                activeChallenges++;
+              } else if (status === 'passed') challengeStats.intermediate.passed++;
+              else if (status === 'failed') challengeStats.intermediate.failed++;
+            } else if (challengeName.includes('pro')) {
+              challengeStats.pro.total++;
+              if (status === 'active') {
+                challengeStats.pro.active++;
+                activeChallenges++;
+              } else if (status === 'passed') challengeStats.pro.passed++;
+              else if (status === 'failed') challengeStats.pro.failed++;
+            }
+          }
+        });
+      }
 
       setSystemStats({
         totalUsers: Array.isArray(users) ? users.length : 0,
@@ -123,7 +137,8 @@ function App() {
         pendingPayments,
         pendingWithdrawals,
         totalRevenue,
-        activeChallenges
+        activeChallenges,
+        challengeStats
       });
       
     } catch (error) {
@@ -135,7 +150,12 @@ function App() {
         pendingPayments: 8,
         pendingWithdrawals: 12,
         totalRevenue: 125000,
-        activeChallenges: 42
+        activeChallenges: 42,
+        challengeStats: {
+          beginner: { total: 65, active: 25, passed: 20, failed: 20 },
+          intermediate: { total: 45, active: 12, passed: 18, failed: 15 },
+          pro: { total: 46, active: 5, passed: 25, failed: 16 }
+        }
       });
     } finally {
       setLoading(false);
@@ -155,6 +175,7 @@ function App() {
           <div className="content-area">
             <Suspense fallback={<Loading />}>
               <Routes>
+                {/* Main dashboard using DashboardPage */}
                 <Route 
                   path="/" 
                   element={<DashboardPage systemStats={systemStats} loading={loading} />} 
@@ -163,15 +184,26 @@ function App() {
                   path="/dashboard" 
                   element={<DashboardPage systemStats={systemStats} loading={loading} />} 
                 />
-                <Route path="/users" element={<UsersPage />} />
-                <Route path="/trades" element={<TradesPage />} />
-                <Route path="/payments" element={<PaymentsPage />} />
-                <Route path="/withdrawals" element={<WithdrawalsPage />} />
-                <Route path="/upi-settings" element={<UPISettingsPage />} />
-                <Route path="/challenges" element={<ChallengeManagement />} />
-                <Route path="/settings" element={<SettingsPage />} />
                 
-                {/* Fallback routes */}
+                {/* Alternative dashboard using Dashboard component */}
+                <Route 
+                  path="/dashboard-alt" 
+                  element={<Dashboard systemStats={systemStats} loading={loading} />} 
+                />
+                
+                {/* Other pages */}
+                <Route path="/users" element={<UsersPage />} />
+                <Route path="/user/:id" element={<UserDetailPage />} />
+                <Route path="/trades" element={<TradesPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/p2p" element={<P2PPage />} />
+                <Route path="/payments" element={<PaymentsPage />} />
+                <Route path="/withdrawals" element={<AdminWithdrawalPanel />} />
+                <Route path="/upi-settings" element={<UPISettings />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/challenges" element={<ChallengeManagement systemStats={systemStats} />} />
+                
+                {/* Fallback route */}
                 <Route path="*" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
               </Routes>
             </Suspense>
