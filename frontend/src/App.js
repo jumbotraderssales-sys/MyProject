@@ -2773,7 +2773,7 @@ const syncUserWallet = async () => {
                     <div className="setting-item">
                       <span className="setting-label">Challenge Status</span>
                       <span className={`setting-value challenge-status-${userAccount.challengeStats?.status || 'N/A'}`}>
-                        {userAccount.challengeStats.status.toUpperCase()}
+                        {userAccount.challengeStats?.status || 'N/A'.toUpperCase()}
                       </span>
                     </div>
                     <div className="setting-item">
