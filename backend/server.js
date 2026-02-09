@@ -389,6 +389,11 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('Backend is running 🚀');
+});
+
+
 // Get user profile
 app.get('/api/user/profile', async (req, res) => {
   try {
