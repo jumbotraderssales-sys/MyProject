@@ -56,16 +56,14 @@ function App() {
       setLoading(true);
       
       // Using the correct endpoints from your backend
-    
- const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/';
-    
-const [usersRes, tradesRes, paymentsRes, withdrawalsRes] = await Promise.all([
-  fetch(`${baseURL}admin/users`),
-  fetch(`${baseURL}admin/trades`),
-  fetch(`${baseURL}admin/payments`),
-  fetch(`${baseURL}admin/withdrawals`)
-]);
-]);
+      const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/';
+      
+      const [usersRes, tradesRes, paymentsRes, withdrawalsRes] = await Promise.all([
+        fetch(`${baseURL}/api/admin/users`),
+        fetch(`${baseURL}/api/admin/trades`),
+        fetch(`${baseURL}/api/admin/payments`),
+        fetch(`${baseURL}/api/admin/withdrawals`)
+      ]);
 
       // Check if responses are ok
       if (!usersRes.ok || !tradesRes.ok || !paymentsRes.ok || !withdrawalsRes.ok) {
