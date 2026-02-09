@@ -4,7 +4,7 @@ REACT_APP_PORT=3000
 VITE_PORT=3000
 
 # API Configuration (This is the key - will update to Render URL)
-REACT_APP_API_URL=http://localhost:3001/api
+REACT_APP_API_URL=https://myproject1-d097.onrender.com/api
 VITE_API_URL=https://myproject1-d097.onrender.com/api
 
 # Application Configuration
