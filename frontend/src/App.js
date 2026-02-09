@@ -935,19 +935,19 @@ const syncUserWallet = async () => {
       }
 
       const response = await fetch('https://myproject1-d097.onrender.com/api/payments/request', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          challengeName: paymentData.challengeName,
-          amount: paymentData.amount,
-          paymentMethod: 'UPI',
-          transactionId: paymentData.transactionId,
-          notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
-        })
-      });
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    planName: paymentData.challengeName,   // 🔥 FIX HERE
+    amount: paymentData.amount,
+    paymentMethod: 'UPI',
+    transactionId: paymentData.transactionId,
+    notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
+  })
+});
 
       const data = await response.json();
       
