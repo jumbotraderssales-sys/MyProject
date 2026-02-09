@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AdminWithdrawalPanel from './AdminWithdrawalPanel'; // This is in the root
-import adminApi from './services/api';
 import './App.css';
 
 // Lazy load pages from the pages folder
@@ -58,12 +57,14 @@ function App() {
       
       // Using the correct endpoints from your backend
     
- const baseURL = 'https://myproject1-d097.onrender.com/';     
-   const [users, trades, payments, stats] = await Promise.all([
-  adminApi.getAllUsers(),
-  adminApi.getAllTrades(),
-  adminApi.getAllPayments(),
-  adminApi.getAdminStats()
+ const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/';
+    
+const [usersRes, tradesRes, paymentsRes, withdrawalsRes] = await Promise.all([
+  fetch(`${baseURL}admin/users`),
+  fetch(`${baseURL}admin/trades`),
+  fetch(`${baseURL}admin/payments`),
+  fetch(`${baseURL}admin/withdrawals`)
+]);
 ]);
 
       // Check if responses are ok
