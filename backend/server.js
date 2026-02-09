@@ -1924,6 +1924,11 @@ app.listen(PORT, () => {
   console.log('  GET  /api/payments             - Get user payments');
   console.log('  PUT  /api/payments/:id/status  - Update payment status');
   console.log('');
+  console.log('🏦 WALLET MANAGEMENT:');
+  console.log('  POST /api/admin/users/:id/wallet/add    - Add funds');
+  console.log('  POST /api/admin/users/:id/wallet/deduct - Deduct funds');
+  console.log('  GET  /api/admin/users/:id/wallet        - Get wallet info');
+  console.log('');
   console.log('💸 WITHDRAWAL ENDPOINTS:');
   console.log('  POST /api/withdrawals/request  - Submit withdrawal request');
   console.log('  GET  /api/withdrawals/history  - Get withdrawal history');
