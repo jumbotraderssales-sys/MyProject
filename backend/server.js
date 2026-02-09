@@ -1896,7 +1896,7 @@ app.listen(PORT, () => {
   console.log('==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 API URL: http://localhost:${PORT}`);
+  console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
     console.log(`✅ Paper2Real Backend with Challenge System`);
   console.log('');
   console.log('👥 USER ENDPOINTS:');
