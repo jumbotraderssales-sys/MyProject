@@ -666,11 +666,11 @@ const syncUserWallet = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     
-    const response = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const res = await fetch(`${API_URL}/api/user/profile`, {
+  headers: {
+    "Authorization": `Bearer ${localStorage.getItem("token")}`
+  }
+});
     
     if (response.ok) {
       const data = await response.json();
