@@ -2267,12 +2267,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: http://localhost:${PORT}`);
-  console.log(`🎯 CORS allowed origins:`, [
-    'https://myproject-frontend1.onrender.com',
-    'https://myproject-admin1.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:3002'
-  ]);
   console.log(`✅ Paper2Real Backend running on port ${PORT}`);
   console.log('📁 Data directory: backend/data/');
   console.log('📁 Uploads directory: backend/public/uploads/');
