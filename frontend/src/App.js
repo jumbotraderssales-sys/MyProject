@@ -941,11 +941,11 @@ const syncUserWallet = async () => {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    planName: paymentData.challengeName,   // 🔥 FIX HERE
-    amount: paymentData.amount,
-    paymentMethod: 'UPI',
-    transactionId: paymentData.transactionId,
-    notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
+  challengeName: paymentData.challengeName,
+  amount: paymentData.amount,
+  paymentMethod: 'UPI',
+  transactionId: paymentData.transactionId,
+  notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
   })
 });
 
