@@ -56,7 +56,7 @@ function App() {
       setLoading(true);
       
       // Using the correct endpoints from your backend
-     const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
+     const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/';
       
      const [usersRes, tradesRes, paymentsRes, withdrawalsRes] = await Promise.all([
   fetch(`${baseURL}admin/users`),
