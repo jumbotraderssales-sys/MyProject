@@ -2046,20 +2046,20 @@ app.put('/api/payments/:id/status', async (req, res) => {
         users[userIndex].currentPlan = payment.planName;
         
         // Add paper money based on plan
-        let paperMoneyAmount = 0;
-        switch (payment.planName.toLowerCase()) {
-          case 'plan a':
-            paperMoneyAmount = 100000;
-            break;
-          case 'plan b':
-            paperMoneyAmount = 250000;
-            break;
-          case 'plan c':
-            paperMoneyAmount = 500000;
-            break;
-          default:
-            paperMoneyAmount = 100000;
-        }
+        let challengeBalance = 0;
+
+if (payment.planName === 'Beginner') {
+  challengeBalance = 20000;
+} else if (payment.planName === 'Intermediate') {
+  challengeBalance = 50000;
+} else if (payment.planName === 'Pro') {
+  challengeBalance = 100000;
+} else {
+  return res.status(400).json({
+    success: false,
+    error: 'Invalid challenge plan'
+  });
+}
         
         users[userIndex].paperBalance += paperMoneyAmount;
         users[userIndex].updatedAt = new Date().toISOString();
