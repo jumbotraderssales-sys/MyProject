@@ -58,7 +58,7 @@ function App() {
       
       // Using the correct endpoints from your backend
     
-      
+ const baseURL = 'https://myproject1-d097.onrender.com/';     
    const [users, trades, payments, stats] = await Promise.all([
   adminApi.getAllUsers(),
   adminApi.getAllTrades(),
