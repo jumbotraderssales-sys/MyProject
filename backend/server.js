@@ -2066,16 +2066,19 @@ app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
 });
 
 // ================= ADMIN DEDUCT WALLET =================
+// ================= ADMIN DEDUCT WALLET =================
 app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
   try {
     const userId = req.params.id;
-    const { amount } = req.body;
+    let { amount } = req.body;
+
+    amount = Number(amount);
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Invalid amount' });
     }
 
-    const users = await readUsers(); // your existing function
+    const users = await readUsers();
     const userIndex = users.findIndex(u => String(u.id) === String(userId));
 
     if (userIndex === -1) {
@@ -2083,24 +2086,27 @@ app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
     }
 
     const user = users[userIndex];
+    user.balance = Number(user.balance) || 0;
 
-    if (Number(user.balance) < Number(amount)) {
+    if (user.balance < amount) {
       return res.status(400).json({ success: false, error: 'Insufficient balance' });
     }
 
-    user.balance = Number(user.balance) - Number(amount);
-    users[userIndex] = user;
+    // 🔴 REAL DEDUCTION
+    user.balance = user.balance - amount;
 
-    await writeUsers(users); // your existing function
+    users[userIndex] = user;
+    await writeUsers(users);
 
     res.json({
       success: true,
-      message: 'Wallet deducted successfully',
+      message: 'Funds deducted successfully',
+      newBalance: user.balance,
       user
     });
 
   } catch (error) {
-    console.error('Wallet deduct error:', error);
+    console.error('Deduct error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
