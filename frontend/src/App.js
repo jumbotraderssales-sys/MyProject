@@ -927,41 +927,41 @@ const syncUserWallet = async () => {
     }, 5000);
   };
 
-  const submitPaymentToBackend = async (paymentData) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('https://myproject1-d097.onrender.com/api/payments/request', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-  challengeName: paymentData.challengeName,
-  amount: paymentData.amount,
-  paymentMethod: 'UPI',
-  transactionId: paymentData.transactionId,
-  notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
-  })
-});
-
-      const data = await response.json();
-      
-      if (data.success) {
-        return data.payment;
-      } else {
-        throw new Error(data.error || 'Payment submission failed');
-      }
-    } catch (error) {
-      console.error('Error submitting payment to backend:', error);
-      throw error;
+// ✅ FIXED - Update this function in your frontend
+const submitPaymentToBackend = async (paymentData) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
     }
-  };
 
+    const response = await fetch('https://myproject1-d097.onrender.com/api/payments/request', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        challengeName: paymentData.challengeName,   // ✅ CORRECT FIELD NAME
+        amount: paymentData.amount,
+        paymentMethod: 'UPI',
+        transactionId: paymentData.transactionId,
+        notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      return data.payment;
+    } else {
+      throw new Error(data.error || 'Payment submission failed');
+    }
+  } catch (error) {
+    console.error('Error submitting payment to backend:', error);
+    throw error;
+  }
+};
   const syncPaymentsWithBackend = async () => {
     if (!isLoggedIn) return;
     
