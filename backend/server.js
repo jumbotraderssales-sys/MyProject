@@ -1,4 +1,3 @@
-// server.js - Paper2Real Trading Platform Backend (Updated with Challenge Logic)
 const express = require('express');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -41,7 +40,7 @@ const DEPOSITS_FILE = path.join(__dirname, 'data', 'deposits.json');
 const WITHDRAWALS_FILE = path.join(__dirname, 'data', 'withdrawals.json');
 const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 
-// Challenge Configuration (Matching Frontend)
+// Challenge Configuration
 const CHALLENGES = {
   "🚀 Beginner Challenge": {
     id: 1,
@@ -87,216 +86,47 @@ const CHALLENGES = {
   }
 };
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fsSync.existsSync(uploadsDir)) {
-  fsSync.mkdirSync(uploadsDir, { recursive: true });
-}
+// ========== ADD THESE MISSING ENDPOINTS ==========
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
+// Get user profile
+app.get('/api/user/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const users = await readUsers();
+    const user = users.find(u => u.id === userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    const userResponse = { ...user };
+    delete userResponse.password;
+    
+    res.json({
+      success: true,
+      user: userResponse
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Error: Only images (JPEG, JPG, PNG, GIF) and PDF files are allowed!'));
-    }
-  }
-});
-
-// Create directories if they don't exist
-const createDirectories = async () => {
-  const dirs = [
-    path.join(__dirname, 'data'),
-    path.join(__dirname, 'public', 'uploads')
-  ];
-  
-  for (const dir of dirs) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-    } catch (error) {
-      // Directory already exists
-    }
-  }
-};
-
-// Initialize directories
-createDirectories();
-
-// Serve static files
-app.use('/uploads', express.static(uploadsDir, {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    }
-  }
-}));
-
-// Helper functions
-const readUsers = async () => {
-  try {
-    const data = await fs.readFile(USERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading users:', error.message);
-    return [];
-  }
-};
-
-const writeUsers = async (users) => {
-  try {
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing users:', error.message);
-    return false;
-  }
-};
-
-const readTrades = async () => {
-  try {
-    const data = await fs.readFile(TRADES_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading trades:', error.message);
-    return [];
-  }
-};
-
-const writeTrades = async (trades) => {
-  try {
-    await fs.writeFile(TRADES_FILE, JSON.stringify(trades, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing trades:', error.message);
-    return false;
-  }
-};
-
-const readOrders = async () => {
-  try {
-    const data = await fs.readFile(ORDERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading orders:', error.message);
-    return [];
-  }
-};
-
-const writeOrders = async (orders) => {
-  try {
-    await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing orders:', error.message);
-    return false;
-  }
-};
-
-const readPayments = async () => {
-  try {
-    const data = await fs.readFile(PAYMENTS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading payments:', error.message);
-    return [];
-  }
-};
-
-const writePayments = async (payments) => {
-  try {
-    await fs.writeFile(PAYMENTS_FILE, JSON.stringify(payments, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing payments:', error.message);
-    return false;
-  }
-};
-
-const readWithdrawals = async () => {
-  try {
-    if (!fsSync.existsSync(WITHDRAWALS_FILE)) {
-      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
-      return [];
-    }
-    
-    const data = await fs.readFile(WITHDRAWALS_FILE, 'utf8');
-    if (!data || data.trim() === '') {
-      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
-      return [];
-    }
-    
-    const withdrawals = JSON.parse(data);
-    if (!Array.isArray(withdrawals)) {
-      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
-      return [];
-    }
-    
-    return withdrawals;
-    
-  } catch (error) {
-    console.error('Error reading withdrawals:', error.message);
-    return [];
-  }
-};
-
-const writeWithdrawals = async (withdrawals) => {
-  try {
-    const dataDir = path.join(__dirname, 'data');
-    if (!fsSync.existsSync(dataDir)) {
-      await fs.mkdir(dataDir, { recursive: true });
-    }
-    
-    await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify(withdrawals, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing withdrawals:', error.message);
-    return false;
-  }
-};
-
-const readSettings = async () => {
-  try {
-    const data = await fs.readFile(SETTINGS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return {
-      upiQrCode: null,
-      upiId: '7799191208-2@ybl',
-      merchantName: 'Paper2Real Trading',
-      updatedAt: new Date().toISOString()
-    };
-  }
-};
-
-const writeSettings = async (settings) => {
-  try {
-    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing settings:', error.message);
-    return false;
-  }
-};
-
-// ========== USER MANAGEMENT ROUTES ==========
 // Handle GET requests to /api/register
 app.get('/api/register', (req, res) => {
   res.status(405).json({
@@ -364,6 +194,10 @@ app.get('/api/trades', async (req, res) => {
   }
 });
 
+// ========== OTHER EXISTING ENDPOINTS ==========
+// ... (your existing code for register, login, trades, payments, etc.)
+
+// Keep all your existing code below this point
 // Register route
 app.post('/api/register', async (req, res) => {
   try {
