@@ -4362,21 +4362,7 @@ console.log('Payment request headers:', response.headers);
         </div>
       )}
 
-
-    
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(`https://myproject1-d097.onrender.com${endpoint}`);
-        console.log(`${endpoint}: ${response.status} ${response.statusText}`);
-      } catch (error) {
-        console.error(`${endpoint}: ERROR - ${error.message}`);
-      }
-    }
-  };
-  
-  testEndpoints();
-}, []);
-      {/* Payment Details Dialog */}
+    {/* Payment Details Dialog */}
       {showPaymentDetails && selectedPayment && (
         <div className="dialog-overlay">
           <div className="dialog-box upi-dialog">
