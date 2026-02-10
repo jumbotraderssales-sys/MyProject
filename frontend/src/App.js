@@ -4362,6 +4362,38 @@ console.log('Payment request headers:', response.headers);
         </div>
       )}
 
+// Add this at the beginning of your App.js or in a useEffect
+useEffect(() => {
+  console.log('Frontend trying to access endpoints...');
+  
+  // Test all endpoints
+  const testEndpoints = async () => {
+    const endpoints = [
+      '/api/test',
+      '/api/health', 
+      '/api/challenges',
+      '/api/upi-qr',
+      '/api/admin/users',
+      '/api/admin/trades',
+      '/api/admin/payments',
+      '/api/admin/withdrawals',
+      '/api/admin/stats',
+      '/api/admin/orders',
+      '/api/payments/stats'
+    ];
+    
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`https://myproject1-d097.onrender.com${endpoint}`);
+        console.log(`${endpoint}: ${response.status} ${response.statusText}`);
+      } catch (error) {
+        console.error(`${endpoint}: ERROR - ${error.message}`);
+      }
+    }
+  };
+  
+  testEndpoints();
+}, []);
       {/* Payment Details Dialog */}
       {showPaymentDetails && selectedPayment && (
         <div className="dialog-overlay">
