@@ -949,7 +949,13 @@ const submitPaymentToBackend = async (paymentData) => {
         notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
       })
     });
+    
+console.log('Payment request status:', response.status);
+console.log('Payment request headers:', response.headers);
 
+const data = await response.json();
+console.log('Payment response:', data);
+    
     const data = await response.json();
     
     if (data.success) {
