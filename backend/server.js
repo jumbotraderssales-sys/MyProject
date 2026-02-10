@@ -1,3 +1,4 @@
+// server.js - Paper2Real Trading Platform Backend (Complete Updated Version)
 const express = require('express');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -10,7 +11,7 @@ const app = express();
 // Load environment variables
 dotenv.config();
 
-// CORS Configuration
+// ========== CORS CONFIGURATION ==========
 app.use(cors({
   origin: [
     'https://myproject-frontend1.onrender.com',
@@ -19,18 +20,19 @@ app.use(cors({
     'http://localhost:3002'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type']
 }));
 
 // Handle preflight requests
 app.options('*', cors());
 
-// Middleware
+// ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// File paths
+// ========== FILE PATHS ==========
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const TRADES_FILE = path.join(__dirname, 'data', 'trades.json');
 const ORDERS_FILE = path.join(__dirname, 'data', 'orders.json');
@@ -40,7 +42,7 @@ const DEPOSITS_FILE = path.join(__dirname, 'data', 'deposits.json');
 const WITHDRAWALS_FILE = path.join(__dirname, 'data', 'withdrawals.json');
 const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 
-// Challenge Configuration
+// ========== CHALLENGE CONFIGURATION ==========
 const CHALLENGES = {
   "🚀 Beginner Challenge": {
     id: 1,
@@ -86,119 +88,267 @@ const CHALLENGES = {
   }
 };
 
-// ========== ADD THESE MISSING ENDPOINTS ==========
+// ========== FILE UPLOAD CONFIGURATION ==========
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fsSync.existsSync(uploadsDir)) {
+  fsSync.mkdirSync(uploadsDir, { recursive: true });
+}
 
-// Get user profile
-app.get('/api/user/profile', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const users = await readUsers();
-    const user = users.find(u => u.id === userId);
-    
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
-    
-    const userResponse = { ...user };
-    delete userResponse.password;
-    
-    res.json({
-      success: true,
-      user: userResponse
-    });
-    
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
   }
 });
 
-// Handle GET requests to /api/register
-app.get('/api/register', (req, res) => {
-  res.status(405).json({
-    success: false,
-    error: 'Method Not Allowed',
-    message: 'Use POST method to register',
-    example: {
-      method: 'POST',
-      url: '/api/register',
-      body: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        password: 'yourpassword'
-      }
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Error: Only images (JPEG, JPG, PNG, GIF) and PDF files are allowed!'));
+    }
+  }
+});
+
+// ========== CREATE DIRECTORIES ==========
+const createDirectories = async () => {
+  const dirs = [
+    path.join(__dirname, 'data'),
+    path.join(__dirname, 'public', 'uploads')
+  ];
+  
+  for (const dir of dirs) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+    } catch (error) {
+      // Directory already exists
+    }
+  }
+};
+
+// Initialize directories
+createDirectories();
+
+// Serve static files
+app.use('/uploads', express.static(uploadsDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    }
+  }
+}));
+
+// ========== HELPER FUNCTIONS ==========
+const readUsers = async () => {
+  try {
+    const data = await fs.readFile(USERS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading users:', error.message);
+    return [];
+  }
+};
+
+const writeUsers = async (users) => {
+  try {
+    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing users:', error.message);
+    return false;
+  }
+};
+
+const readTrades = async () => {
+  try {
+    const data = await fs.readFile(TRADES_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading trades:', error.message);
+    return [];
+  }
+};
+
+const writeTrades = async (trades) => {
+  try {
+    await fs.writeFile(TRADES_FILE, JSON.stringify(trades, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing trades:', error.message);
+    return false;
+  }
+};
+
+const readOrders = async () => {
+  try {
+    const data = await fs.readFile(ORDERS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading orders:', error.message);
+    return [];
+  }
+};
+
+const writeOrders = async (orders) => {
+  try {
+    await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing orders:', error.message);
+    return false;
+  }
+};
+
+const readPayments = async () => {
+  try {
+    const data = await fs.readFile(PAYMENTS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading payments:', error.message);
+    return [];
+  }
+};
+
+const writePayments = async (payments) => {
+  try {
+    await fs.writeFile(PAYMENTS_FILE, JSON.stringify(payments, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing payments:', error.message);
+    return false;
+  }
+};
+
+const readWithdrawals = async () => {
+  try {
+    if (!fsSync.existsSync(WITHDRAWALS_FILE)) {
+      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
+      return [];
+    }
+    
+    const data = await fs.readFile(WITHDRAWALS_FILE, 'utf8');
+    if (!data || data.trim() === '') {
+      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
+      return [];
+    }
+    
+    const withdrawals = JSON.parse(data);
+    if (!Array.isArray(withdrawals)) {
+      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
+      return [];
+    }
+    
+    return withdrawals;
+    
+  } catch (error) {
+    console.error('Error reading withdrawals:', error.message);
+    return [];
+  }
+};
+
+const writeWithdrawals = async (withdrawals) => {
+  try {
+    const dataDir = path.join(__dirname, 'data');
+    if (!fsSync.existsSync(dataDir)) {
+      await fs.mkdir(dataDir, { recursive: true });
+    }
+    
+    await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify(withdrawals, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing withdrawals:', error.message);
+    return false;
+  }
+};
+
+const readSettings = async () => {
+  try {
+    const data = await fs.readFile(SETTINGS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return {
+      upiQrCode: null,
+      upiId: '7799191208-2@ybl',
+      merchantName: 'Paper2Real Trading',
+      updatedAt: new Date().toISOString()
+    };
+  }
+};
+
+const writeSettings = async (settings) => {
+  try {
+    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing settings:', error.message);
+    return false;
+  }
+};
+
+// ========== GENERAL ENDPOINTS ==========
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    service: 'Paper2Real Trading Platform API',
+    version: '1.1.0',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      user: '/api/user/profile',
+      auth: '/api/login, /api/register',
+      challenges: '/api/challenges',
+      trading: '/api/trades',
+      payments: '/api/payments',
+      withdrawals: '/api/withdrawals',
+      admin: '/api/admin/*'
     }
   });
 });
 
-// Handle GET requests to /api/login
-app.get('/api/login', (req, res) => {
-  res.status(405).json({
-    success: false,
-    error: 'Method Not Allowed',
-    message: 'Use POST method to login',
-    example: {
-      method: 'POST',
-      url: '/api/login',
-      body: {
-        email: 'john@example.com',
-        password: 'yourpassword'
-      }
-    }
+// API root
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'Paper2Real Trading Platform API',
+    version: '1.1.0',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Handle GET requests to /api/trades
-app.get('/api/trades', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const trades = await readTrades();
-    
-    const userTrades = trades.filter(t => t.userId === userId);
-    
-    res.json({
-      success: true,
-      message: 'Use /api/trades/positions for open positions or /api/trades/history for order history',
-      trades: userTrades,
-      count: userTrades.length
-    });
-    
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Paper2Real Trading Platform Backend is running!',
+    timestamp: new Date().toISOString(),
+    version: '1.1.0',
+    features: ['Challenge System', 'Trading with Rules', 'UPI Payments', 'Withdrawals']
+  });
 });
 
-// ========== OTHER EXISTING ENDPOINTS ==========
-// ... (your existing code for register, login, trades, payments, etc.)
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'Backend is running',
+    timestamp: new Date(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
-// Keep all your existing code below this point
-// Register route
+// ========== USER MANAGEMENT ROUTES ==========
+
+// Register route (POST)
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -273,7 +423,25 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Login route
+// Register route (GET) - Handle browser GET requests
+app.get('/api/register', (req, res) => {
+  res.status(405).json({
+    success: false,
+    error: 'Method Not Allowed',
+    message: 'Use POST method to register',
+    example: {
+      method: 'POST',
+      url: '/api/register',
+      body: {
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'yourpassword'
+      }
+    }
+  });
+});
+
+// Login route (POST)
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -317,6 +485,23 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Login route (GET) - Handle browser GET requests
+app.get('/api/login', (req, res) => {
+  res.status(405).json({
+    success: false,
+    error: 'Method Not Allowed',
+    message: 'Use POST method to login',
+    example: {
+      method: 'POST',
+      url: '/api/login',
+      body: {
+        email: 'john@example.com',
+        password: 'yourpassword'
+      }
+    }
+  });
+});
+
 // Get user profile
 app.get('/api/user/profile', async (req, res) => {
   try {
@@ -345,6 +530,105 @@ app.get('/api/user/profile', async (req, res) => {
     
     res.json({
       success: true,
+      user: userResponse
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Alternative user endpoint
+app.get('/api/user', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const users = await readUsers();
+    const user = users.find(u => u.id === userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    const userResponse = { ...user };
+    delete userResponse.password;
+    
+    res.json({
+      success: true,
+      user: userResponse
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Update user profile
+app.put('/api/user/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const { name, email } = req.body;
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    // Update user fields
+    if (name) users[userIndex].name = name;
+    if (email) {
+      // Check if email is already taken by another user
+      const emailExists = users.some(u => u.email === email && u.id !== userId);
+      if (emailExists) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Email already in use' 
+        });
+      }
+      users[userIndex].email = email;
+    }
+    
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    await writeUsers(users);
+    
+    const userResponse = { ...users[userIndex] };
+    delete userResponse.password;
+    
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
       user: userResponse
     });
     
@@ -477,7 +761,7 @@ app.put('/api/challenge/status', async (req, res) => {
   }
 });
 
-// ========== TRADING SYSTEM ROUTES (UPDATED WITH CHALLENGE RULES) ==========
+// ========== TRADING SYSTEM ROUTES ==========
 
 // Validate trade against challenge rules
 const validateTrade = (user, tradeData) => {
@@ -561,7 +845,7 @@ const validateTrade = (user, tradeData) => {
   };
 };
 
-// Create a new trade with challenge validation
+// Create a new trade with challenge validation (POST)
 app.post('/api/trades', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -710,6 +994,38 @@ app.post('/api/trades', async (req, res) => {
     
   } catch (error) {
     console.error('Error creating trade:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Get all trades for user (GET)
+app.get('/api/trades', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const trades = await readTrades();
+    
+    const userTrades = trades.filter(t => t.userId === userId);
+    
+    res.json({
+      success: true,
+      message: 'Use /api/trades/positions for open positions or /api/trades/history for order history',
+      trades: userTrades,
+      count: userTrades.length
+    });
+    
+  } catch (error) {
     res.status(500).json({ 
       success: false, 
       error: error.message 
@@ -1056,7 +1372,7 @@ app.get('/api/trades/history', async (req, res) => {
   }
 });
 
-// ========== PAYMENT SYSTEM ROUTES (UPDATED FOR CHALLENGES) ==========
+// ========== PAYMENT SYSTEM ROUTES ==========
 
 // Submit payment request for challenge
 app.post('/api/payments/request', async (req, res) => {
@@ -1154,7 +1470,7 @@ app.post('/api/payments/request', async (req, res) => {
   }
 });
 
-// Get all payments
+// Get all payments for user
 app.get('/api/payments', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -1185,6 +1501,29 @@ app.get('/api/payments', async (req, res) => {
       success: false, 
       error: error.message 
     });
+  }
+});
+
+// Get payment statistics
+app.get('/api/payments/stats', async (req, res) => {
+  try {
+    const payments = await readPayments();
+    
+    const stats = {
+      total: payments.length,
+      pending: payments.filter(p => p.status === 'pending').length,
+      approved: payments.filter(p => p.status === 'approved' || p.status === 'completed').length,
+      rejected: payments.filter(p => p.status === 'rejected').length,
+      totalAmount: payments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    };
+    
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('Error getting payment stats:', error);
+    res.status(500).json({ error: 'Failed to get payment statistics' });
   }
 });
 
@@ -1269,277 +1608,6 @@ app.put('/api/payments/:id/status', async (req, res) => {
 });
 
 // ========== UPI QR CODE MANAGEMENT ==========
-// ========== ADD THESE MISSING ENDPOINTS ==========
-// ========== ADD THESE MISSING ENDPOINTS ==========
-
-// Get admin orders (for admin panel)
-app.get('/api/admin/orders', async (req, res) => {
-  try {
-    const orders = await readOrders();
-    
-    const normalizedOrders = orders.map(order => ({
-      id: order.id || '',
-      userId: order.userId || '',
-      userName: order.userName || 'Unknown',
-      symbol: order.symbol || 'N/A',
-      side: order.side || 'buy',
-      size: order.size || 0,
-      entryPrice: order.entryPrice || 0,
-      currentPrice: order.currentPrice || 0,
-      pnl: order.pnl || 0,
-      status: order.status || 'open',
-      createdAt: order.createdAt || order.timestamp || '',
-      ...order
-    }));
-    
-    res.json(normalizedOrders);
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    res.status(500).json([]);
-  }
-});
-
-// Get platform statistics
-app.get('/api/admin/stats', async (req, res) => {
-  try {
-    const users = await readUsers();
-    const trades = await readTrades();
-    const payments = await readPayments();
-    const withdrawals = await readWithdrawals();
-    
-    const stats = {
-      totalUsers: users.length,
-      activeUsers: users.filter(u => u.accountStatus === 'active').length,
-      totalTrades: trades.length,
-      openTrades: trades.filter(t => t.status === 'open').length,
-      totalPayments: payments.length,
-      pendingPayments: payments.filter(p => p.status === 'pending').length,
-      totalWithdrawals: withdrawals.length,
-      pendingWithdrawals: withdrawals.filter(w => w.status === 'pending').length,
-      totalRealBalance: users.reduce((sum, user) => sum + (user.realBalance || 0), 0),
-      totalPaperBalance: users.reduce((sum, user) => sum + (user.paperBalance || 0), 0),
-      activeChallenges: users.filter(u => u.currentChallenge).length
-    };
-    
-    res.json(stats);
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
-  }
-});
-
-// Get payment statistics
-app.get('/api/payments/stats', async (req, res) => {
-  try {
-    const payments = await readPayments();
-    
-    const stats = {
-      total: payments.length,
-      pending: payments.filter(p => p.status === 'pending').length,
-      approved: payments.filter(p => p.status === 'approved' || p.status === 'completed').length,
-      rejected: payments.filter(p => p.status === 'rejected').length,
-      totalAmount: payments.reduce((sum, p) => sum + (p.amount || 0), 0)
-    };
-    
-    res.json({
-      success: true,
-      stats
-    });
-  } catch (error) {
-    console.error('Error getting payment stats:', error);
-    res.status(500).json({ error: 'Failed to get payment statistics' });
-  }
-});
-
-// Get all deposits (if needed)
-app.get('/api/admin/deposits', async (req, res) => {
-  try {
-    // Since you don't have a deposits file, return empty array
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching deposits:', error);
-    res.status(500).json([]);
-  }
-});
-
-// Get user by ID (for admin)
-app.get('/api/admin/users/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const users = await readUsers();
-    
-    const user = users.find(u => u.id === id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const userResponse = { ...user };
-    delete userResponse.password;
-    
-    res.json(userResponse);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-});
-
-// Update user account status
-app.put('/api/admin/users/:id/status', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { accountStatus } = req.body;
-    
-    if (!accountStatus || !['active', 'suspended', 'inactive'].includes(accountStatus)) {
-      return res.status(400).json({ error: 'Valid account status is required' });
-    }
-    
-    const users = await readUsers();
-    const userIndex = users.findIndex(u => u.id === id);
-    
-    if (userIndex === -1) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    users[userIndex].accountStatus = accountStatus;
-    users[userIndex].updatedAt = new Date().toISOString();
-    
-    await writeUsers(users);
-    
-    const userResponse = { ...users[userIndex] };
-    delete userResponse.password;
-    
-    res.json({
-      success: true,
-      message: `User status updated to ${accountStatus}`,
-      user: userResponse
-    });
-  } catch (error) {
-    console.error('Error updating user status:', error);
-    res.status(500).json({ error: 'Failed to update user status' });
-  }
-});
-
-// Update UPI settings without QR
-app.put('/api/admin/upi-settings', async (req, res) => {
-  try {
-    const { upiId, merchantName } = req.body;
-    const settings = await readSettings();
-    
-    if (upiId) settings.upiId = upiId;
-    if (merchantName) settings.merchantName = merchantName;
-    settings.updatedAt = new Date().toISOString();
-    
-    await writeSettings(settings);
-    
-    res.json({
-      success: true,
-      message: 'UPI settings updated successfully',
-      settings
-    });
-  } catch (error) {
-    console.error('Error updating UPI settings:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Delete UPI QR code
-app.delete('/api/admin/upi-qr', async (req, res) => {
-  try {
-    const settings = await readSettings();
-    
-    if (settings.upiQrCode) {
-      try {
-        const oldFilePath = path.join(uploadsDir, settings.upiQrCode);
-        if (fsSync.existsSync(oldFilePath)) {
-          await fs.unlink(oldFilePath);
-        }
-      } catch (error) {
-        console.error('Error deleting QR code:', error.message);
-      }
-    }
-    
-    settings.upiQrCode = null;
-    settings.updatedAt = new Date().toISOString();
-    
-    await writeSettings(settings);
-    
-    res.json({
-      success: true,
-      message: 'UPI QR code deleted successfully',
-      settings
-    });
-  } catch (error) {
-    console.error('Error deleting UPI QR code:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-// Wallet management endpoints
-app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { amount, type, notes } = req.body; // type: 'real' or 'paper'
-    
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Valid amount required' });
-    }
-    
-    const users = await readUsers();
-    const userIndex = users.findIndex(u => u.id === id);
-    
-    if (userIndex === -1) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    if (type === 'real') {
-      users[userIndex].realBalance += parseFloat(amount);
-    } else if (type === 'paper') {
-      users[userIndex].paperBalance += parseFloat(amount);
-    } else {
-      return res.status(400).json({ error: 'Invalid type (must be real or paper)' });
-    }
-    
-    users[userIndex].updatedAt = new Date().toISOString();
-    
-    await writeUsers(users);
-    
-    res.json({
-      success: true,
-      message: `Added ${amount} to ${type} balance`,
-      user: users[userIndex]
-    });
-  } catch (error) {
-    console.error('Error adding to wallet:', error);
-    res.status(500).json({ error: 'Failed to add funds' });
-  }
-});
-
-app.get('/api/payments/stats', async (req, res) => {
-  try {
-    const payments = await readPayments();
-    
-    const stats = {
-      total: payments.length,
-      pending: payments.filter(p => p.status === 'pending').length,
-      approved: payments.filter(p => p.status === 'approved').length,
-      rejected: payments.filter(p => p.status === 'rejected').length,
-      totalAmount: payments.reduce((sum, p) => sum + (p.amount || 0), 0)
-    };
-    
-    res.json({
-      success: true,
-      stats
-    });
-  } catch (error) {
-    console.error('Error getting payment stats:', error);
-    res.status(500).json({ error: 'Failed to get payment statistics' });
-  }
-});
 
 // Get UPI settings
 app.get('/api/admin/upi-settings', async (req, res) => {
@@ -1655,6 +1723,67 @@ app.get('/api/upi-qr', async (req, res) => {
     
   } catch (error) {
     console.error('Error fetching UPI QR code:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Update UPI settings without QR
+app.put('/api/admin/upi-settings', async (req, res) => {
+  try {
+    const { upiId, merchantName } = req.body;
+    const settings = await readSettings();
+    
+    if (upiId) settings.upiId = upiId;
+    if (merchantName) settings.merchantName = merchantName;
+    settings.updatedAt = new Date().toISOString();
+    
+    await writeSettings(settings);
+    
+    res.json({
+      success: true,
+      message: 'UPI settings updated successfully',
+      settings
+    });
+  } catch (error) {
+    console.error('Error updating UPI settings:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Delete UPI QR code
+app.delete('/api/admin/upi-qr', async (req, res) => {
+  try {
+    const settings = await readSettings();
+    
+    if (settings.upiQrCode) {
+      try {
+        const oldFilePath = path.join(uploadsDir, settings.upiQrCode);
+        if (fsSync.existsSync(oldFilePath)) {
+          await fs.unlink(oldFilePath);
+        }
+      } catch (error) {
+        console.error('Error deleting QR code:', error.message);
+      }
+    }
+    
+    settings.upiQrCode = null;
+    settings.updatedAt = new Date().toISOString();
+    
+    await writeSettings(settings);
+    
+    res.json({
+      success: true,
+      message: 'UPI QR code deleted successfully',
+      settings
+    });
+  } catch (error) {
+    console.error('Error deleting UPI QR code:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
@@ -1836,6 +1965,105 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
+// Get user by ID (for admin)
+app.get('/api/admin/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const users = await readUsers();
+    
+    const user = users.find(u => u.id === id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userResponse = { ...user };
+    delete userResponse.password;
+    
+    res.json(userResponse);
+    
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// Update user account status
+app.put('/api/admin/users/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { accountStatus } = req.body;
+    
+    if (!accountStatus || !['active', 'suspended', 'inactive'].includes(accountStatus)) {
+      return res.status(400).json({ error: 'Valid account status is required' });
+    }
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === id);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    users[userIndex].accountStatus = accountStatus;
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    await writeUsers(users);
+    
+    const userResponse = { ...users[userIndex] };
+    delete userResponse.password;
+    
+    res.json({
+      success: true,
+      message: `User status updated to ${accountStatus}`,
+      user: userResponse
+    });
+    
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+// Add funds to user wallet
+app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, type, notes } = req.body; // type: 'real' or 'paper'
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount required' });
+    }
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === id);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (type === 'real') {
+      users[userIndex].realBalance += parseFloat(amount);
+    } else if (type === 'paper') {
+      users[userIndex].paperBalance += parseFloat(amount);
+    } else {
+      return res.status(400).json({ error: 'Invalid type (must be real or paper)' });
+    }
+    
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    await writeUsers(users);
+    
+    res.json({
+      success: true,
+      message: `Added ${amount} to ${type} balance`,
+      user: users[userIndex]
+    });
+  } catch (error) {
+    console.error('Error adding to wallet:', error);
+    res.status(500).json({ error: 'Failed to add funds' });
+  }
+});
+
 // Get all trades (for admin panel)
 app.get('/api/admin/trades', async (req, res) => {
   try {
@@ -1864,6 +2092,62 @@ app.get('/api/admin/trades', async (req, res) => {
   } catch (error) {
     console.error('Error fetching trades:', error);
     res.status(500).json([]);
+  }
+});
+
+// Get all orders (for admin panel)
+app.get('/api/admin/orders', async (req, res) => {
+  try {
+    const orders = await readOrders();
+    
+    const normalizedOrders = orders.map(order => ({
+      id: order.id || '',
+      userId: order.userId || '',
+      userName: order.userName || 'Unknown',
+      symbol: order.symbol || 'N/A',
+      side: order.side || 'buy',
+      size: order.size || 0,
+      entryPrice: order.entryPrice || 0,
+      currentPrice: order.currentPrice || 0,
+      pnl: order.pnl || 0,
+      status: order.status || 'open',
+      createdAt: order.createdAt || order.timestamp || '',
+      ...order
+    }));
+    
+    res.json(normalizedOrders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json([]);
+  }
+});
+
+// Get platform statistics
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const users = await readUsers();
+    const trades = await readTrades();
+    const payments = await readPayments();
+    const withdrawals = await readWithdrawals();
+    
+    const stats = {
+      totalUsers: users.length,
+      activeUsers: users.filter(u => u.accountStatus === 'active').length,
+      totalTrades: trades.length,
+      openTrades: trades.filter(t => t.status === 'open').length,
+      totalPayments: payments.length,
+      pendingPayments: payments.filter(p => p.status === 'pending').length,
+      totalWithdrawals: withdrawals.length,
+      pendingWithdrawals: withdrawals.filter(w => w.status === 'pending').length,
+      totalRealBalance: users.reduce((sum, user) => sum + (user.realBalance || 0), 0),
+      totalPaperBalance: users.reduce((sum, user) => sum + (user.paperBalance || 0), 0),
+      activeChallenges: users.filter(u => u.currentChallenge).length
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 
@@ -1902,6 +2186,17 @@ app.get('/api/admin/withdrawals', async (req, res) => {
     res.json(withdrawals);
   } catch (error) {
     console.error('Error fetching withdrawals:', error);
+    res.status(500).json([]);
+  }
+});
+
+// Get all deposits (for admin panel)
+app.get('/api/admin/deposits', async (req, res) => {
+  try {
+    // Since you don't have a deposits file, return empty array
+    res.json([]);
+  } catch (error) {
+    console.error('Error fetching deposits:', error);
     res.status(500).json([]);
   }
 });
@@ -2027,58 +2322,11 @@ app.post('/api/admin/withdrawal/:id/reject', async (req, res) => {
   }
 });
 
-// ========== GENERAL ROUTES ==========
-// Add this near the top of your routes (after middleware)
-app.get('/', (req, res) => {
-  res.json({
-    status: 'online',
-    service: 'Paper2Real Trading Platform API',
-    version: '1.1.0',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      user: '/api/user/profile',
-      auth: '/api/login, /api/register',
-      challenges: '/api/challenges',
-      trading: '/api/trades',
-      payments: '/api/payments',
-      withdrawals: '/api/withdrawals',
-      admin: '/api/admin/*'
-    }
-  });
-});
+// ========== ERROR HANDLING ==========
 
-app.get('/api', (req, res) => {
-  res.json({
-    message: 'Paper2Real Trading Platform API',
-    version: '1.1.0',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'Paper2Real Trading Platform Backend is running!',
-    timestamp: new Date().toISOString(),
-    version: '1.1.0',
-    features: ['Challenge System', 'Trading with Rules', 'UPI Payments', 'Withdrawals']
-  });
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'Backend is running',
-    timestamp: new Date(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Handle 404 - Add logging
+// Handle 404
 app.use((req, res) => {
   console.error(`404 - Endpoint not found: ${req.method} ${req.url}`);
-  console.error('Headers:', req.headers);
   res.status(404).json({ 
     error: 'Endpoint not found',
     requestedUrl: req.url,
@@ -2086,6 +2334,17 @@ app.use((req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    success: false,
+    error: 'Something went wrong!',
+    message: err.message
+  });
+});
+
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
@@ -2094,7 +2353,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
-    console.log(`✅ Paper2Real Backend with Challenge System`);
+  console.log(`✅ Paper2Real Backend with Challenge System`);
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
@@ -2119,20 +2378,17 @@ app.listen(PORT, () => {
   console.log('💳 PAYMENT SYSTEM:');
   console.log('  POST /api/payments/request     - Submit payment for challenge');
   console.log('  GET  /api/payments             - Get user payments');
+  console.log('  GET  /api/payments/stats       - Get payment statistics');
   console.log('  PUT  /api/payments/:id/status  - Update payment status');
   console.log('');
   console.log('🏦 WALLET MANAGEMENT:');
   console.log('  POST /api/admin/users/:id/wallet/add    - Add funds');
-  console.log('  POST /api/admin/users/:id/wallet/deduct - Deduct funds');
-  console.log('  GET  /api/admin/users/:id/wallet        - Get wallet info');
   console.log('');
   console.log('💸 WITHDRAWAL ENDPOINTS:');
   console.log('  POST /api/withdrawals/request  - Submit withdrawal request');
   console.log('  GET  /api/withdrawals/history  - Get withdrawal history');
   console.log('  POST /api/admin/withdrawal/:id/approve - Approve withdrawal');
   console.log('  POST /api/admin/withdrawal/:id/reject  - Reject withdrawal');
-  console.log('  POST /api/withdrawals/request      - User withdrawal request');
-
   console.log('');
   console.log('👑 ADMIN ENDPOINTS:');
   console.log('  GET  /api/admin/users          - Get all users');
@@ -2142,12 +2398,15 @@ app.listen(PORT, () => {
   console.log('  GET  /api/admin/deposits       - Get all deposits');
   console.log('  GET  /api/admin/payments       - Get all payments');
   console.log('  GET  /api/admin/withdrawals    - Get all withdrawals');
-  console.log('  GET  /api/payments/stats       - Get payment statistics');
   console.log('  GET  /api/admin/upi-settings   - Get UPI settings');
-  console.log('  POST /api/admin/upi-qr/upload  - Upload UPI QR code (with settings)');
-  console.log('  PUT  /api/admin/upi-settings   - Update UPI settings (without QR)');
+  console.log('  POST /api/admin/upi-qr/upload  - Upload UPI QR code');
+  console.log('  PUT  /api/admin/upi-settings   - Update UPI settings');
   console.log('  DELETE /api/admin/upi-qr       - Delete UPI QR code');
-  console.log('  POST /api/admin/withdrawal/:id/approve - Approve withdrawal');
-  console.log('  POST /api/admin/withdrawal/:id/reject  - Reject withdrawal');
+  console.log('');
+  console.log('🌐 GENERAL ENDPOINTS:');
+  console.log('  GET  /                         - API root');
+  console.log('  GET  /api                      - API info');
+  console.log('  GET  /api/test                 - Test endpoint');
+  console.log('  GET  /api/health               - Health check');
   console.log('==========================================');
 });
