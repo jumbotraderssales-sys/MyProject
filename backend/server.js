@@ -1889,20 +1889,30 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// ========== SERVER START ==========
-const PORT = process.env.PORT || 3001;
-
+// Start server
 app.listen(PORT, () => {
   console.log('==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: http://localhost:${PORT}`);
-  console.log(`✅ Paper2Real Backend with Challenge System`);
+  console.log(`🎯 CORS allowed origins:`, [
+    'https://myproject-frontend1.onrender.com',
+    'https://myproject-admin1.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ]);
+  console.log(`✅ Paper2Real Backend running on port ${PORT}`);
+  console.log('📁 Data directory: backend/data/');
+  console.log('📁 Uploads directory: backend/public/uploads/');
+  console.log('🌐 Test endpoint: https://https://myproject-frontend1.onrender.com/api/test');
+  console.log('🔍 Debug endpoint: https://https://myproject-frontend1.onrender.com/api/debug/withdrawals');
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
   console.log('  POST /api/login                - User login');
   console.log('  GET  /api/user/profile         - Get user profile');
+  console.log('  GET  /api/upi-qr               - Get UPI QR code');
+  console.log('  GET  /api/withdrawals/history  - Get user withdrawal history');
   console.log('  PUT  /api/user/bank-account    - Update bank account');
   console.log('');
   console.log('🎯 CHALLENGE ENDPOINTS:');
@@ -1922,16 +1932,33 @@ app.listen(PORT, () => {
   console.log('  GET  /api/payments             - Get user payments');
   console.log('  PUT  /api/payments/:id/status  - Update payment status');
   console.log('');
+  console.log('🏦 WALLET MANAGEMENT:');
+  console.log('  POST /api/admin/users/:id/wallet/add    - Add funds');
+  console.log('  POST /api/admin/users/:id/wallet/deduct - Deduct funds');
+  console.log('  GET  /api/admin/users/:id/wallet        - Get wallet info');
+  console.log('');
   console.log('💸 WITHDRAWAL ENDPOINTS:');
   console.log('  POST /api/withdrawals/request  - Submit withdrawal request');
   console.log('  GET  /api/withdrawals/history  - Get withdrawal history');
+  console.log('  POST /api/admin/withdrawal/:id/approve - Approve withdrawal');
+  console.log('  POST /api/admin/withdrawal/:id/reject  - Reject withdrawal');
+  console.log('  POST /api/withdrawals/request      - User withdrawal request');
+
   console.log('');
   console.log('👑 ADMIN ENDPOINTS:');
   console.log('  GET  /api/admin/users          - Get all users');
   console.log('  GET  /api/admin/trades         - Get all trades');
+  console.log('  GET  /api/admin/orders         - Get all orders');
+  console.log('  GET  /api/admin/stats          - Get platform statistics');
+  console.log('  GET  /api/admin/deposits       - Get all deposits');
   console.log('  GET  /api/admin/payments       - Get all payments');
   console.log('  GET  /api/admin/withdrawals    - Get all withdrawals');
+  console.log('  GET  /api/payments/stats       - Get payment statistics');
+  console.log('  GET  /api/admin/upi-settings   - Get UPI settings');
+  console.log('  POST /api/admin/upi-qr/upload  - Upload UPI QR code (with settings)');
+  console.log('  PUT  /api/admin/upi-settings   - Update UPI settings (without QR)');
+  console.log('  DELETE /api/admin/upi-qr       - Delete UPI QR code');
   console.log('  POST /api/admin/withdrawal/:id/approve - Approve withdrawal');
   console.log('  POST /api/admin/withdrawal/:id/reject  - Reject withdrawal');
-  console.log('===========================================');
+  console.log('==========================================');
 });
