@@ -2175,17 +2175,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Handle 404
+// Handle 404 - Add logging
 app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+  console.error(`404 - Endpoint not found: ${req.method} ${req.url}`);
+  console.error('Headers:', req.headers);
+  res.status(404).json({ 
+    error: 'Endpoint not found',
+    requestedUrl: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
 });
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
-
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
