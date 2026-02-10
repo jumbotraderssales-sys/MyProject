@@ -2025,6 +2025,46 @@ app.put('/api/admin/users/:id/status', async (req, res) => {
 });
 
 // Add funds to user wallet
+// ================= ADMIN DEDUCT WALLET =================
+app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { amount } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid amount' });
+    }
+
+    const users = await readUsers(); // your existing function
+    const userIndex = users.findIndex(u => String(u.id) === String(userId));
+
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const user = users[userIndex];
+
+    if (Number(user.balance) < Number(amount)) {
+      return res.status(400).json({ success: false, error: 'Insufficient balance' });
+    }
+
+    user.balance = Number(user.balance) - Number(amount);
+    users[userIndex] = user;
+
+    await writeUsers(users); // your existing function
+
+    res.json({
+      success: true,
+      message: 'Wallet deducted successfully',
+      user
+    });
+
+  } catch (error) {
+    console.error('Wallet deduct error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
   try {
     const { id } = req.params;
