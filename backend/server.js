@@ -1889,23 +1889,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
+// ========== SERVER START ==========
+const PORT = process.env.PORT || 3001;
+
 app.listen(PORT, () => {
   console.log('==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 API URL: http://localhost:${PORT}`);
-  console.log(`🎯 CORS allowed origins:`, [
-    'https://myproject-frontend1.onrender.com',
-    'https://myproject-admin1.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:3002'
-  ]);
-  console.log(`✅ Paper2Real Backend running on port ${PORT}`);
-  console.log('📁 Data directory: backend/data/');
-  console.log('📁 Uploads directory: backend/public/uploads/');
-  console.log('🌐 Test endpoint: https://https://myproject-frontend1.onrender.com/api/test');
-  console.log('🔍 Debug endpoint: https://https://myproject-frontend1.onrender.com/api/debug/withdrawals');
+  console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
+    console.log(`✅ Paper2Real Backend with Challenge System`);
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration');
