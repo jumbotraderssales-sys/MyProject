@@ -1266,24 +1266,21 @@ app.get('/api/payments', async (req, res) => {
       });
     }
     
-    const userId = token.replace('token-', '');
-    const payments = await readPayments();
-    
-    const userPayments = payments.filter(p => p.userId === userId);
-    
-    // Sort by latest first
-    userPayments.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-    
+// ================= PAYMENT STATS =================
+app.get('/api/payments/stats', async (req, res) => {
+  try {
+    const payments = await readPayments(); // your existing function
+    const totalAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
     res.json({
       success: true,
-      payments: userPayments,
-      count: userPayments.length
+      totalPayments: payments.length,
+      totalAmount
     });
-    
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
