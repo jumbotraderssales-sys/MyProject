@@ -1369,6 +1369,170 @@ app.put('/api/payments/:id/status', async (req, res) => {
 });
 
 // ========== UPI QR CODE MANAGEMENT ==========
+// ========== ADD THESE MISSING ENDPOINTS ==========
+
+// Get admin orders (mentioned in console log but not implemented)
+app.get('/api/admin/orders', async (req, res) => {
+  try {
+    const orders = await readOrders();
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json([]);
+  }
+});
+
+// Get admin stats (mentioned in console log)
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const users = await readUsers();
+    const trades = await readTrades();
+    const payments = await readPayments();
+    const withdrawals = await readWithdrawals();
+    
+    const stats = {
+      totalUsers: users.length,
+      activeUsers: users.filter(u => u.accountStatus === 'active').length,
+      totalTrades: trades.length,
+      openTrades: trades.filter(t => t.status === 'open').length,
+      totalPayments: payments.length,
+      pendingPayments: payments.filter(p => p.status === 'pending').length,
+      totalWithdrawals: withdrawals.length,
+      pendingWithdrawals: withdrawals.filter(w => w.status === 'pending').length,
+      totalRealBalance: users.reduce((sum, user) => sum + (user.realBalance || 0), 0),
+      totalPaperBalance: users.reduce((sum, user) => sum + (user.paperBalance || 0), 0),
+      activeChallenges: users.filter(u => u.currentChallenge).length
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Update UPI settings without QR code
+app.put('/api/admin/upi-settings', async (req, res) => {
+  try {
+    const { upiId, merchantName } = req.body;
+    const settings = await readSettings();
+    
+    if (upiId) settings.upiId = upiId;
+    if (merchantName) settings.merchantName = merchantName;
+    settings.updatedAt = new Date().toISOString();
+    
+    await writeSettings(settings);
+    
+    res.json({
+      success: true,
+      message: 'UPI settings updated successfully',
+      settings
+    });
+  } catch (error) {
+    console.error('Error updating UPI settings:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Delete UPI QR code
+app.delete('/api/admin/upi-qr', async (req, res) => {
+  try {
+    const settings = await readSettings();
+    
+    if (settings.upiQrCode) {
+      try {
+        const oldFilePath = path.join(uploadsDir, settings.upiQrCode);
+        if (fsSync.existsSync(oldFilePath)) {
+          await fs.unlink(oldFilePath);
+        }
+      } catch (error) {
+        console.error('Error deleting QR code:', error.message);
+      }
+    }
+    
+    settings.upiQrCode = null;
+    settings.updatedAt = new Date().toISOString();
+    
+    await writeSettings(settings);
+    
+    res.json({
+      success: true,
+      message: 'UPI QR code deleted successfully',
+      settings
+    });
+  } catch (error) {
+    console.error('Error deleting UPI QR code:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Wallet management endpoints
+app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, type, notes } = req.body; // type: 'real' or 'paper'
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount required' });
+    }
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === id);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (type === 'real') {
+      users[userIndex].realBalance += parseFloat(amount);
+    } else if (type === 'paper') {
+      users[userIndex].paperBalance += parseFloat(amount);
+    } else {
+      return res.status(400).json({ error: 'Invalid type (must be real or paper)' });
+    }
+    
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    await writeUsers(users);
+    
+    res.json({
+      success: true,
+      message: `Added ${amount} to ${type} balance`,
+      user: users[userIndex]
+    });
+  } catch (error) {
+    console.error('Error adding to wallet:', error);
+    res.status(500).json({ error: 'Failed to add funds' });
+  }
+});
+
+app.get('/api/payments/stats', async (req, res) => {
+  try {
+    const payments = await readPayments();
+    
+    const stats = {
+      total: payments.length,
+      pending: payments.filter(p => p.status === 'pending').length,
+      approved: payments.filter(p => p.status === 'approved').length,
+      rejected: payments.filter(p => p.status === 'rejected').length,
+      totalAmount: payments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    };
+    
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('Error getting payment stats:', error);
+    res.status(500).json({ error: 'Failed to get payment statistics' });
+  }
+});
 
 // Get UPI settings
 app.get('/api/admin/upi-settings', async (req, res) => {
@@ -1857,6 +2021,32 @@ app.post('/api/admin/withdrawal/:id/reject', async (req, res) => {
 });
 
 // ========== GENERAL ROUTES ==========
+// Add this near the top of your routes (after middleware)
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    service: 'Paper2Real Trading Platform API',
+    version: '1.1.0',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      user: '/api/user/profile',
+      auth: '/api/login, /api/register',
+      challenges: '/api/challenges',
+      trading: '/api/trades',
+      payments: '/api/payments',
+      withdrawals: '/api/withdrawals',
+      admin: '/api/admin/*'
+    }
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'Paper2Real Trading Platform API',
+    version: '1.1.0',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Test route
 app.get('/api/test', (req, res) => {
