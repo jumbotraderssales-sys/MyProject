@@ -577,6 +577,44 @@ app.put('/api/challenge/status', async (req, res) => {
   }
 });
 
+// USER PROFILE
+app.get('/api/user/profile', (req, res) => {
+  res.json({
+    success: true,
+    user: {
+      username: "DemoUser",
+      balance: 10000
+    }
+  });
+});
+
+// PAYMENT STATS
+app.get('/api/payments/stats', async (req, res) => {
+  const payments = await Payment.find();
+  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+
+  res.json({
+    success: true,
+    totalPayments: payments.length,
+    totalAmount
+  });
+});
+
+// ADMIN / PLATFORM STATS
+app.get('/api/admin/stats', async (req, res) => {
+  const users = await User.countDocuments();
+  const trades = await Trade.countDocuments();
+  const payments = await Payment.countDocuments();
+
+  res.json({
+    success: true,
+    users,
+    trades,
+    payments
+  });
+});
+
+
 // ========== TRADING SYSTEM ROUTES (UPDATED WITH CHALLENGE RULES) ==========
 
 // Validate trade against challenge rules
