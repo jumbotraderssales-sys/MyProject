@@ -1370,19 +1370,36 @@ app.put('/api/payments/:id/status', async (req, res) => {
 
 // ========== UPI QR CODE MANAGEMENT ==========
 // ========== ADD THESE MISSING ENDPOINTS ==========
+// ========== ADD THESE MISSING ENDPOINTS ==========
 
-// Get admin orders (mentioned in console log but not implemented)
+// Get admin orders (for admin panel)
 app.get('/api/admin/orders', async (req, res) => {
   try {
     const orders = await readOrders();
-    res.json(orders);
+    
+    const normalizedOrders = orders.map(order => ({
+      id: order.id || '',
+      userId: order.userId || '',
+      userName: order.userName || 'Unknown',
+      symbol: order.symbol || 'N/A',
+      side: order.side || 'buy',
+      size: order.size || 0,
+      entryPrice: order.entryPrice || 0,
+      currentPrice: order.currentPrice || 0,
+      pnl: order.pnl || 0,
+      status: order.status || 'open',
+      createdAt: order.createdAt || order.timestamp || '',
+      ...order
+    }));
+    
+    res.json(normalizedOrders);
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json([]);
   }
 });
 
-// Get admin stats (mentioned in console log)
+// Get platform statistics
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const users = await readUsers();
@@ -1411,7 +1428,98 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-// Update UPI settings without QR code
+// Get payment statistics
+app.get('/api/payments/stats', async (req, res) => {
+  try {
+    const payments = await readPayments();
+    
+    const stats = {
+      total: payments.length,
+      pending: payments.filter(p => p.status === 'pending').length,
+      approved: payments.filter(p => p.status === 'approved' || p.status === 'completed').length,
+      rejected: payments.filter(p => p.status === 'rejected').length,
+      totalAmount: payments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    };
+    
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('Error getting payment stats:', error);
+    res.status(500).json({ error: 'Failed to get payment statistics' });
+  }
+});
+
+// Get all deposits (if needed)
+app.get('/api/admin/deposits', async (req, res) => {
+  try {
+    // Since you don't have a deposits file, return empty array
+    res.json([]);
+  } catch (error) {
+    console.error('Error fetching deposits:', error);
+    res.status(500).json([]);
+  }
+});
+
+// Get user by ID (for admin)
+app.get('/api/admin/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const users = await readUsers();
+    
+    const user = users.find(u => u.id === id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userResponse = { ...user };
+    delete userResponse.password;
+    
+    res.json(userResponse);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// Update user account status
+app.put('/api/admin/users/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { accountStatus } = req.body;
+    
+    if (!accountStatus || !['active', 'suspended', 'inactive'].includes(accountStatus)) {
+      return res.status(400).json({ error: 'Valid account status is required' });
+    }
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === id);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    users[userIndex].accountStatus = accountStatus;
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    await writeUsers(users);
+    
+    const userResponse = { ...users[userIndex] };
+    delete userResponse.password;
+    
+    res.json({
+      success: true,
+      message: `User status updated to ${accountStatus}`,
+      user: userResponse
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+// Update UPI settings without QR
 app.put('/api/admin/upi-settings', async (req, res) => {
   try {
     const { upiId, merchantName } = req.body;
@@ -1471,7 +1579,6 @@ app.delete('/api/admin/upi-qr', async (req, res) => {
     });
   }
 });
-
 // Wallet management endpoints
 app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
   try {
