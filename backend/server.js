@@ -2066,11 +2066,10 @@ app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
 });
 
 // ================= ADMIN DEDUCT WALLET =================
-// ================= ADMIN DEDUCT WALLET =================
 app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
   try {
     const userId = req.params.id;
-    let { amount } = req.body;
+    let { amount, type } = req.body; // type = "paper" or "real"
 
     amount = Number(amount);
 
@@ -2086,22 +2085,30 @@ app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
     }
 
     const user = users[userIndex];
-    user.balance = Number(user.balance) || 0;
 
-    if (user.balance < amount) {
-      return res.status(400).json({ success: false, error: 'Insufficient balance' });
+    // Ensure fields exist
+    user.paperBalance = Number(user.paperBalance || 0);
+    user.balance = Number(user.balance || 0); // real balance
+
+    if (type === 'paper') {
+      if (user.paperBalance < amount) {
+        return res.status(400).json({ success: false, error: 'Insufficient paper balance' });
+      }
+      user.paperBalance -= amount;
+    } else {
+      // default = real balance
+      if (user.balance < amount) {
+        return res.status(400).json({ success: false, error: 'Insufficient real balance' });
+      }
+      user.balance -= amount;
     }
-
-    // 🔴 REAL DEDUCTION
-    user.balance = user.balance - amount;
 
     users[userIndex] = user;
     await writeUsers(users);
 
     res.json({
       success: true,
-      message: 'Funds deducted successfully',
-      newBalance: user.balance,
+      message: `Funds deducted from ${type === 'paper' ? 'paper balance' : 'real balance'}`,
       user
     });
 
@@ -2110,7 +2117,6 @@ app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
 
 // Get all trades (for admin panel)
 app.get('/api/admin/trades', async (req, res) => {
