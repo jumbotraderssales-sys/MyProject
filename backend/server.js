@@ -297,6 +297,72 @@ const writeSettings = async (settings) => {
 };
 
 // ========== USER MANAGEMENT ROUTES ==========
+// Handle GET requests to /api/register
+app.get('/api/register', (req, res) => {
+  res.status(405).json({
+    success: false,
+    error: 'Method Not Allowed',
+    message: 'Use POST method to register',
+    example: {
+      method: 'POST',
+      url: '/api/register',
+      body: {
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'yourpassword'
+      }
+    }
+  });
+});
+
+// Handle GET requests to /api/login
+app.get('/api/login', (req, res) => {
+  res.status(405).json({
+    success: false,
+    error: 'Method Not Allowed',
+    message: 'Use POST method to login',
+    example: {
+      method: 'POST',
+      url: '/api/login',
+      body: {
+        email: 'john@example.com',
+        password: 'yourpassword'
+      }
+    }
+  });
+});
+
+// Handle GET requests to /api/trades
+app.get('/api/trades', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const trades = await readTrades();
+    
+    const userTrades = trades.filter(t => t.userId === userId);
+    
+    res.json({
+      success: true,
+      message: 'Use /api/trades/positions for open positions or /api/trades/history for order history',
+      trades: userTrades,
+      count: userTrades.length
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
 
 // Register route
 app.post('/api/register', async (req, res) => {
