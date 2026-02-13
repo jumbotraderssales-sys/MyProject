@@ -578,31 +578,7 @@ useEffect(() => {
     setMarketNews(news);
   }, []);
 
-  useEffect(() => {
-    const checkSLTP = () => {
-      const currentPositions = positionsRef.current;
-      currentPositions.forEach(position => {
-        const currentPrice = prices[position.symbol] || position.entryPrice;
-        
-        if (position.side === 'LONG') {
-          if (position.stopLoss && currentPrice <= position.stopLoss) {
-            closePosition(position.id, 'STOP_LOSS');
-          }
-          if (position.takeProfit && currentPrice >= position.takeProfit) {
-            closePosition(position.id, 'TAKE_PROFIT');
-          }
-        } else if (position.side === 'SHORT') {
-          if (position.stopLoss && currentPrice >= position.stopLoss) {
-            closePosition(position.id, 'STOP_LOSS');
-          }
-          if (position.takeProfit && currentPrice <= position.takeProfit) {
-            closePosition(position.id, 'TAKE_PROFIT');
-          }
-        }
-      });
-    };
-
-   const fetchRealPrices = async () => {
+  const fetchRealPrices = async () => {
   try {
     // Prepare symbols in Binance format (e.g., BTCUSDT)
     const symbols = SYMBOLS.map(s => s);  // Already correct
@@ -624,7 +600,7 @@ useEffect(() => {
     console.error('Failed to fetch real prices:', error);
   }
 };
-    seEffect(() => {
+  useEffect(() => {
   // Initial fetch
   fetchRealPrices();
 
