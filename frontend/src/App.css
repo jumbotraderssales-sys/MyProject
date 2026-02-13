@@ -565,13 +565,13 @@ body {
 }
 
 .order-size-btn {
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.5rem;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 6px;
   color: #60a5fa;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   transition: all 0.3s;
 }
 
