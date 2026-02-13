@@ -2043,10 +2043,11 @@ const QuickTradeComponent = () => {
       return sum + (posValue / pos.leverage);
     }, 0);
 
-  const maxOrderValueUSD = (availableFundsUSD * 20) / 100; // 20% of available funds
-
-  const orderValue = currentPrice * orderSize;
-
+ // Correct max order value: (paperBalance / dollarRate) * (maxOrderSize / 100)
+const maxOrderValueUSD = challenge
+  ? (userAccount.paperBalance / dollarRate) * (challenge.maxOrderSize / 100)
+  : (userAccount.paperBalance / dollarRate) * 0.2; // fallback 20%
+  
   // Get the current challenge
   const challenge = userAccount.currentChallenge ? 
     CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
@@ -2080,7 +2081,10 @@ const QuickTradeComponent = () => {
           <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-          <span className="funds-label">Max Order Value (20%):</span>
+         <span className="funds-label">
+  Max Order Value ({challenge?.maxOrderSize || 20}% of total):
+</span>
+
           <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
