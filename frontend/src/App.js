@@ -326,8 +326,7 @@ const challenge = userAccount.currentChallenge ?
   CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
 const maxPositionValueUSD = challenge 
   ? (userAccount.paperBalance / dollarRate) * (challenge.maxOrderSize / 100)
-  : (userAccount.paperBalance / dollarRate) * 0.2; // fallback 20%
-✅
+  : (userAccount.paperBalance / dollarRate) * 0.2; 
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
