@@ -2165,8 +2165,7 @@ const QuickTradeComponent = () => {
             </button>
           </div>
         </div>
-      </div>
-      
+      </div>      
       {/* Challenge Limits */}
       {challenge && (
         <div className="challenge-limits">
