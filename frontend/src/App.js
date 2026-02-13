@@ -2033,24 +2033,25 @@ const handleTrade = async (side) => {
   };
 
 const QuickTradeComponent = () => {
-  const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const currentPrice = prices[selectedSymbol] || 
+    cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
 
-  // Calculate max order value as 20% of available funds (not total balance)
-  const availableFundsUSD = (userAccount.paperBalance / dollarRate) - 
-    positions.reduce((sum, pos) => {
-      const posValue = pos.entryPrice * pos.size;
-      return sum + (posValue / pos.leverage);
-    }, 0);
+  // Total paper balance in USD
+  const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
- // Correct max order value: (paperBalance / dollarRate) * (maxOrderSize / 100)
-const maxOrderValueUSD = challenge
-  ? (userAccount.paperBalance / dollarRate) * (challenge.maxOrderSize / 100)
-  : (userAccount.paperBalance / dollarRate) * 0.2; // fallback 20%
-  
-  // Get the current challenge
-  const challenge = userAccount.currentChallenge ? 
-    CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
+  // Get the active challenge (if any)
+  const challenge = userAccount.currentChallenge
+    ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
+    : null;
+
+  // Max order value: (totalPaperUSD) * (maxOrderSize / 100)
+  const maxOrderValueUSD = challenge
+    ? totalPaperUSD * (challenge.maxOrderSize / 100)
+    : totalPaperUSD * 0.2; // fallback 20%
+
+  // Current order value (based on selected symbol and orderSize)
+  const orderValue = currentPrice * orderSize;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
@@ -2081,17 +2082,17 @@ const maxOrderValueUSD = challenge
           <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-         <span className="funds-label">
-  Max Order Value ({challenge?.maxOrderSize || 20}% of total):
-</span>
-
+          <span className="funds-label">
+            Max Order Value ({challenge?.maxOrderSize || 20}% of total):
+          </span>
           <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
           <span className="funds-label">Current Order Value:</span>
           <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
             ${orderValue.toFixed(2)}
-            {orderValue > maxOrderValueUSD && <span className="warning-text"> (Exceeds max!)</span>}
+            {orderValue > maxOrderValueUSD && 
+              <span className="warning-text"> (Exceeds max!)</span>}
           </span>
         </div>
       </div>
@@ -2157,7 +2158,7 @@ const maxOrderValueUSD = challenge
             value={orderSize}
             onChange={(e) => {
               const newSize = parseFloat(e.target.value) || 0;
-              const maxSize = maxOrderValue / currentPrice;
+              const maxSize = maxOrderValueUSD / currentPrice;
               const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
               setOrderSize(clampedSize);
             }}
@@ -2169,7 +2170,7 @@ const maxOrderValueUSD = challenge
               className="order-size-btn"
               onClick={() => {
                 const halfSize = orderSize * 0.5;
-                const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValue / currentPrice);
+                const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValueUSD / currentPrice);
                 setOrderSize(clampedHalf);
               }}
               disabled={!canTrade}
@@ -2179,7 +2180,7 @@ const maxOrderValueUSD = challenge
             <button 
               className="order-size-btn"
               onClick={() => {
-                const maxSize = maxOrderValue / currentPrice;
+                const maxSize = maxOrderValueUSD / currentPrice;
                 setOrderSize(Math.max(maxSize, minLot));
               }}
               disabled={!canTrade}
