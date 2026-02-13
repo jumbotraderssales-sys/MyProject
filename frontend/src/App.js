@@ -1296,6 +1296,7 @@ const handleTrade = async (side) => {
         pnl: 0,
         currentPrice: currentPrice,
         positionValue: data.trade.positionValue
+         marginUsed: marginRequired // <-- add this
       };
       
       setOrderHistory(prev => [newOrder, ...prev]);
@@ -3638,17 +3639,18 @@ const handleTrade = async (side) => {
                   <div className="advanced-stats">
                     <h3>Order History</h3>
                     <div className="order-history" style={{ maxHeight: isFullScreen ? '200px' : '300px', overflowY: 'auto' }}>
-                      <div className="order-history-header enhanced">
-                        <span>Side</span>
-                        <span>Size</span>
-                        <span>Lev</span>
-                        <span>Entry</span>
-                        <span>SL</span>
-                        <span>TP</span>
-                        <span>Status</span>
-                        <span>PnL</span>
-                        <span>Action</span>
-                      </div>
+                  <div className="order-history-header enhanced">
+  <span>Side</span>
+  <span>Size</span>
+  <span>Margin</span>   {/* new column */}
+  <span>Lev</span>
+  <span>Entry</span>
+  <span>SL</span>
+  <span>TP</span>
+  <span>Status</span>
+  <span>PnL</span>
+  <span>Action</span>
+</div>
                       <div className="order-history-list">
                         {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
                           const currentPnl = calculateOrderPnL(order);
@@ -3661,6 +3663,7 @@ const handleTrade = async (side) => {
                             <div key={order.id} className={`order-history-item enhanced ${order.side?.toLowerCase()}`}>
                               <span className={`order-side ${order.side?.toLowerCase()}`}>{order.side}</span>
                               <span>{order.size}</span>
+                <span>${order.marginUsed ? order.marginUsed.toFixed(2) : '0.00'}</span>  {/* new cell */}
                               <span>
                                 <span className="leverage-badge">{order.leverage}x</span>
                               </span>
