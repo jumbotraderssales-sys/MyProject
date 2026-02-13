@@ -253,6 +253,17 @@ function App() {
     totalLoss: 0,
     status: 'active'
   });
+  // Fetch real-time price for a single symbol from Binance
+const fetchRealPrice = async (symbol) => {
+  try {
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+    const data = await response.json();
+    return parseFloat(data.price);
+  } catch (error) {
+    console.error('Failed to fetch real price:', error);
+    return null;
+  }
+};
 
   const positionsRef = useRef(positions);
 
@@ -578,37 +589,51 @@ useEffect(() => {
     setMarketNews(news);
   }, []);
 
-  const fetchRealPrices = async () => {
-  try {
-    // Prepare symbols in Binance format (e.g., BTCUSDT)
-    const symbols = SYMBOLS.map(s => s);  // Already correct
-    const response = await fetch(
-      `https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`
-    );
-    const data = await response.json();
-    
-    const newPrices = {};
-    data.forEach(item => {
-      newPrices[item.symbol] = parseFloat(item.price);
-    });
-    
-    setPrices(newPrices);
-    
-    // After updating prices, check SL/TP conditions
-    checkSLTP();
-  } catch (error) {
-    console.error('Failed to fetch real prices:', error);
-  }
-};
   useEffect(() => {
-  // Initial fetch
-  fetchRealPrices();
+    const checkSLTP = () => {
+      const currentPositions = positionsRef.current;
+      currentPositions.forEach(position => {
+        const currentPrice = prices[position.symbol] || position.entryPrice;
+        
+        if (position.side === 'LONG') {
+          if (position.stopLoss && currentPrice <= position.stopLoss) {
+            closePosition(position.id, 'STOP_LOSS');
+          }
+          if (position.takeProfit && currentPrice >= position.takeProfit) {
+            closePosition(position.id, 'TAKE_PROFIT');
+          }
+        } else if (position.side === 'SHORT') {
+          if (position.stopLoss && currentPrice >= position.stopLoss) {
+            closePosition(position.id, 'STOP_LOSS');
+          }
+          if (position.takeProfit && currentPrice <= position.takeProfit) {
+            closePosition(position.id, 'TAKE_PROFIT');
+          }
+        }
+      });
+    };
 
-  // Set up interval for live updates every 5 seconds
-  const interval = setInterval(fetchRealPrices, 5000);
+    const interval = setInterval(() => {
+      setPrices(prev => {
+        const newPrices = { ...prev };
+        Object.keys(newPrices).forEach(symbol => {
+          const crypto = cryptoData.find(c => c.symbol === symbol);
+          const baseChange = crypto?.change24h || 0;
+          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
+          newPrices[symbol] = Math.max(
+            newPrices[symbol] * (1 + changePercent),
+            newPrices[symbol] * 0.998
+          );
+        });
+        
+        setTimeout(checkSLTP, 100);
+        
+        return newPrices;
+      });
+    }, 3000);
 
-  return () => clearInterval(interval);
-}, []); // Empty dependency array means runs once on mount
+    return () => clearInterval(interval);
+  }, [prices]);
 
   useEffect(() => {
     let total = 0;
