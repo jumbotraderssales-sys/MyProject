@@ -264,6 +264,12 @@ const fetchRealPrice = async (symbol) => {
     return null;
   }
 };
+  // Determine minimum order lot size based on current price
+const getMinLot = (price) => {
+  if (price >= 10000) return 0.001;
+  if (price >= 1000) return 0.1;
+  return 1;
+};
 
   const positionsRef = useRef(positions);
 
@@ -301,21 +307,24 @@ const fetchRealPrice = async (symbol) => {
 useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const orderValue = currentPrice * orderSize;
+    const minLot = getMinLot(currentPrice);
+    const maxSize = maxOrderValue / currentPrice;
     
-    // Check if current order exceeds max order size
-    if (orderValue > maxOrderValue) {
-      const maxSize = maxOrderValue / currentPrice;
-      setOrderSize(prevSize => {
-        // Only update if the difference is significant
-        if (Math.abs(prevSize - maxSize) > 0.0001) {
-          return maxSize;
-        }
-        return prevSize;
-      });
-    }
+    setOrderSize(prevSize => {
+      let newSize = prevSize;
+      if (prevSize < minLot) {
+        newSize = minLot;
+      }
+      if (prevSize > maxSize) {
+        newSize = maxSize;
+      }
+      if (Math.abs(prevSize - newSize) > 0.0001) {
+        return newSize;
+      }
+      return prevSize;
+    });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]);
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
 
   // Calculate daily and total loss
   useEffect(() => {
@@ -1173,7 +1182,12 @@ console.log('Payment request headers:', response.headers);
     if (totalLoss >= challenge.maxLossLimit) {
       return { valid: false, message: `Maximum loss limit (${challenge.maxLossLimit}%) reached` };
     }
-    
+
+    // Inside validateTrade, after checking max order size:
+const minLot = getMinLot(currentPrice);
+if (orderSize < minLot) {
+  return { valid: false, message: `Minimum order size is ${minLot}` };
+}
     // Check available funds
     if (availableFunds <= 0) {
       return { valid: false, message: 'Insufficient available funds' };
@@ -2019,8 +2033,11 @@ const handleTrade = async (side) => {
     setShowPaymentDetails(true);
   };
 
-  const QuickTradeComponent = () => {
+const QuickTradeComponent = () => {
   const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const minLot = getMinLot(currentPrice);
+  // ... rest of the component
+};
   
   // Calculate max order value as 20% of available funds (not total balance)
   const availableFundsUSD = (userAccount.paperBalance / dollarRate) - 
@@ -2079,22 +2096,50 @@ const handleTrade = async (side) => {
       </div>
       
       {/* Order Size Section */}
-      <div className="order-size-section">
-        <div className="section-label">
-          Order Size (Max: 20% of available funds)
-        </div>
-        <div className="order-size-controls">
-          <input 
-            type="number" 
-            step="0.001"
-            value={orderSize}
-            onChange={(e) => {
-              const newSize = parseFloat(e.target.value) || 0;
-              const maxSize = maxOrderValueUSD / currentPrice;
-              setOrderSize(Math.min(newSize, maxSize));
-            }}
-            className="order-size-input"
-            disabled={!canTrade}
+    <div className="order-size-section">
+  <div className="section-label">
+    Order Size (Min: {minLot} – Max: {challenge ? `${challenge.maxOrderSize}% of capital` : '20%'})
+  </div>
+  <div className="order-size-controls">
+    <input 
+      type="number" 
+      step={minLot}
+      value={orderSize}
+      onChange={(e) => {
+        const newSize = parseFloat(e.target.value) || 0;
+        const maxSize = maxOrderValue / currentPrice;
+        // Clamp between minLot and maxSize
+        const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
+        setOrderSize(clampedSize);
+      }}
+      className="order-size-input"
+      disabled={!canTrade}
+    />
+    <div className="order-size-buttons">
+      <button 
+        className="order-size-btn"
+        onClick={() => {
+          const halfSize = orderSize * 0.5;
+          const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValue / currentPrice);
+          setOrderSize(clampedHalf);
+        }}
+        disabled={!canTrade}
+      >
+        ½
+      </button>
+      <button 
+        className="order-size-btn"
+        onClick={() => {
+          const maxSize = maxOrderValue / currentPrice;
+          setOrderSize(Math.max(maxSize, minLot)); // ensure at least minLot
+        }}
+        disabled={!canTrade}
+      >
+        MAX
+      </button>
+    </div>
+  </div>
+</div>
           />
           <div className="order-size-buttons">
             <button 
