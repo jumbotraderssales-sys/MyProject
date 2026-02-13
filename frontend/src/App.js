@@ -602,27 +602,37 @@ useEffect(() => {
       });
     };
 
-    const interval = setInterval(() => {
-      setPrices(prev => {
-        const newPrices = { ...prev };
-        Object.keys(newPrices).forEach(symbol => {
-          const crypto = cryptoData.find(c => c.symbol === symbol);
-          const baseChange = crypto?.change24h || 0;
-          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
-          newPrices[symbol] = Math.max(
-            newPrices[symbol] * (1 + changePercent),
-            newPrices[symbol] * 0.998
-          );
-        });
-        
-        setTimeout(checkSLTP, 100);
-        
-        return newPrices;
-      });
-    }, 3000);
+   const fetchRealPrices = async () => {
+  try {
+    // Prepare symbols in Binance format (e.g., BTCUSDT)
+    const symbols = SYMBOLS.map(s => s);  // Already correct
+    const response = await fetch(
+      `https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`
+    );
+    const data = await response.json();
+    
+    const newPrices = {};
+    data.forEach(item => {
+      newPrices[item.symbol] = parseFloat(item.price);
+    });
+    
+    setPrices(newPrices);
+    
+    // After updating prices, check SL/TP conditions
+    checkSLTP();
+  } catch (error) {
+    console.error('Failed to fetch real prices:', error);
+  }
+};
+    seEffect(() => {
+  // Initial fetch
+  fetchRealPrices();
 
-    return () => clearInterval(interval);
-  }, [prices]);
+  // Set up interval for live updates every 5 seconds
+  const interval = setInterval(fetchRealPrices, 5000);
+
+  return () => clearInterval(interval);
+}, []); // Empty dependency array means runs once on mount
 
   useEffect(() => {
     let total = 0;
