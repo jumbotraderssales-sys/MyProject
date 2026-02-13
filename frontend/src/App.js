@@ -1288,16 +1288,16 @@ const handleTrade = async (side) => {
       }));
       setBalance(data.newBalance);
       
-      const newOrder = {
-        id: data.trade.id,
-        ...tradeData,
-        status: 'OPEN',
-        timestamp: new Date().toLocaleString(),
-        pnl: 0,
-        currentPrice: currentPrice,
-        positionValue: data.trade.positionValue
-        
-         };
+     const newOrder = {
+  id: data.trade.id,
+  ...tradeData,
+  status: 'OPEN',
+  timestamp: new Date().toLocaleString(),
+  pnl: 0,
+  currentPrice: currentPrice,
+  positionValue: data.trade.positionValue,
+  marginUsed: (currentPrice * orderSize) / leverage   // ← add this line
+};
       
       setOrderHistory(prev => [newOrder, ...prev]);
       
