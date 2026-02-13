@@ -5,7 +5,6 @@ import AccountSetup from './components/AccountSetup';
 import WithdrawalRequest from './components/WithdrawalRequest';
 import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
 import WithdrawalHistory from './components/WithdrawalHistory';
-
 import './App.css';
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
@@ -2076,122 +2075,166 @@ const QuickTradeComponent = () => {
         </button>
       </div>
       
-      {/* Funds Information */}
-      <div className="funds-info-section">
-        <div className="funds-item">
-          <span className="funds-label">Available Funds:</span>
-          <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+    return (
+  <div className="quick-trade-top mobile-quick-trade-component">
+    <h3>Quick Trade</h3>
+    
+    {/* Trade Actions */}
+    <div className="trade-actions-top">
+      <button 
+        className="trade-btn-top buy-btn-top"
+        onClick={() => handleTrade('LONG')}
+        disabled={!canTrade}
+      >
+        {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
+      </button>
+      <button 
+        className="trade-btn-top sell-btn-top"
+        onClick={() => handleTrade('SHORT')}
+        disabled={!canTrade}
+      >
+        {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
+      </button>
+    </div>
+    
+    {/* Funds Information */}
+    <div className="funds-info-section">
+      <div className="funds-item">
+        <span className="funds-label">Available Funds:</span>
+        <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+      </div>
+      <div className="funds-item">
+        <span className="funds-label">Max Order Value (20%):</span>
+        <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
+      </div>
+      <div className="funds-item">
+        <span className="funds-label">Current Order Value:</span>
+        <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
+          ${orderValue.toFixed(2)}
+          {orderValue > maxOrderValueUSD && <span className="warning-text"> (Exceeds max!)</span>}
+        </span>
+      </div>
+    </div>
+    
+    {/* Leverage Section */}
+    <div className="leverage-section-top">
+      <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+      <div className="leverage-buttons-top">
+        {[1, 5, 10, 20].map(lev => (
+          <button
+            key={lev}
+            className={`leverage-btn-top ${leverage === lev ? 'active' : ''} ${lev > (challenge?.maxLeverage || 10) ? 'disabled' : ''}`}
+            onClick={() => {
+              if (lev <= (challenge?.maxLeverage || 10)) {
+                setLeverage(lev);
+              }
+            }}
+            disabled={!canTrade || lev > (challenge?.maxLeverage || 10)}
+          >
+            {lev}x
+          </button>
+        ))}
+      </div>
+    </div>
+    
+    {/* SL/TP Section */}
+    <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+        <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
+        <input 
+          type="number"
+          value={stopLoss}
+          onChange={(e) => setStopLoss(e.target.value)}
+          placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+          className="sl-input-adjusted"
+          disabled={!canTrade}
+          style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+        />
+      </div>
+      <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+        <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
+        <input 
+          type="number"
+          value={takeProfit}
+          onChange={(e) => setTakeProfit(e.target.value)}
+          placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+          className="tp-input-adjusted"
+          disabled={!canTrade}
+          style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+        />
+      </div>
+    </div>
+    
+    {/* Order Size Section */}
+    <div className="order-size-section">
+      <div className="section-label">
+        Order Size (Min: {minLot} – Max: {challenge ? `${challenge.maxOrderSize}% of capital` : '20%'})
+      </div>
+      <div className="order-size-controls">
+        <input 
+          type="number" 
+          step={minLot}
+          value={orderSize}
+          onChange={(e) => {
+            const newSize = parseFloat(e.target.value) || 0;
+            const maxSize = maxOrderValue / currentPrice;
+            const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
+            setOrderSize(clampedSize);
+          }}
+          className="order-size-input"
+          disabled={!canTrade}
+        />
+        <div className="order-size-buttons">
+          <button 
+            className="order-size-btn"
+            onClick={() => {
+              const halfSize = orderSize * 0.5;
+              const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValue / currentPrice);
+              setOrderSize(clampedHalf);
+            }}
+            disabled={!canTrade}
+          >
+            ½
+          </button>
+          <button 
+            className="order-size-btn"
+            onClick={() => {
+              const maxSize = maxOrderValue / currentPrice;
+              setOrderSize(Math.max(maxSize, minLot));
+            }}
+            disabled={!canTrade}
+          >
+            MAX
+          </button>
         </div>
-        <div className="funds-item">
-          <span className="funds-label">Max Order Value (20%):</span>
-          <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
+      </div>
+    </div>
+    
+    {/* Challenge Limits */}
+    {challenge && (
+      <div className="challenge-limits">
+        <div className="limit-item">
+          <span>Daily Loss:</span>
+          <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
+            {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
+          </span>
         </div>
-        <div className="funds-item">
-          <span className="funds-label">Current Order Value:</span>
-          <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
-            ${orderValue.toFixed(2)}
-            {orderValue > maxOrderValueUSD && <span className="warning-text"> (Exceeds max!)</span>}
+        <div className="limit-item">
+          <span>Max Loss:</span>
+          <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
+            {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
+          </span>
+        </div>
+        <div className="limit-item">
+          <span>Profit Target:</span>
+          <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
+            {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
           </span>
         </div>
       </div>
-      
-      {/* Order Size Section */}
-    <div className="order-size-section">
-  <div className="section-label">
-    Order Size (Min: {minLot} – Max: {challenge ? `${challenge.maxOrderSize}% of capital` : '20%'})
+    )}
   </div>
-  <div className="order-size-controls">
-    <input 
-      type="number" 
-      step={minLot}
-      value={orderSize}
-      onChange={(e) => {
-        const newSize = parseFloat(e.target.value) || 0;
-        const maxSize = maxOrderValue / currentPrice;
-        // Clamp between minLot and maxSize
-        const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-        setOrderSize(clampedSize);
-      }}
-      className="order-size-input"
-      disabled={!canTrade}
-    />
-    <div className="order-size-buttons">
-      <button 
-        className="order-size-btn"
-        onClick={() => {
-          const halfSize = orderSize * 0.5;
-          const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValue / currentPrice);
-          setOrderSize(clampedHalf);
-        }}
-        disabled={!canTrade}
-      >
-        ½
-      </button>
-      <button 
-        className="order-size-btn"
-        onClick={() => {
-          const maxSize = maxOrderValue / currentPrice;
-          setOrderSize(Math.max(maxSize, minLot)); // ensure at least minLot
-        }}
-        disabled={!canTrade}
-      >
-        MAX
-      </button>
-    </div>
-  </div>
-</div>
-          />
-          <div className="order-size-buttons">
-            <button 
-              className="order-size-btn"
-              onClick={() => {
-                const newSize = orderSize * 0.5;
-                const maxSize = maxOrderValueUSD / currentPrice;
-                setOrderSize(Math.min(newSize, maxSize));
-              }}
-              disabled={!canTrade}
-            >
-              ½
-            </button>
-            <button 
-              className="order-size-btn"
-              onClick={() => {
-                const maxSize = maxOrderValueUSD / currentPrice;
-                setOrderSize(maxSize);
-              }}
-              disabled={!canTrade}
-            >
-              MAX
-            </button>
-          </div>
-        </div>
-      </div>      
-      {/* Challenge Limits */}
-      {challenge && (
-        <div className="challenge-limits">
-          <div className="limit-item">
-            <span>Daily Loss:</span>
-            <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
-              {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
-            </span>
-          </div>
-          <div className="limit-item">
-            <span>Max Loss:</span>
-            <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
-              {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
-            </span>
-          </div>
-          <div className="limit-item">
-            <span>Profit Target:</span>
-            <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
-              {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+);
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
