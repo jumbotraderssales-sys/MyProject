@@ -1296,8 +1296,7 @@ const handleTrade = async (side) => {
         pnl: 0,
         currentPrice: currentPrice,
         positionValue: data.trade.positionValue
-        const marginUsed = currentPrice * orderSize / leverage;
-newOrder.marginUsed = marginUsed;
+        
          };
       
       setOrderHistory(prev => [newOrder, ...prev]);
