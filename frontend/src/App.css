@@ -1681,7 +1681,7 @@ body {
 
 .order-history-header.enhanced {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 0.5rem;
   padding: 0.75rem;
   background: rgba(15, 23, 42, 0.9);
@@ -1696,7 +1696,7 @@ body {
 
 .order-history-item.enhanced {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 0.5rem;
   padding: 0.5rem;
   font-size: 0.8rem;
