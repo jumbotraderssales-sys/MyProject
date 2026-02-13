@@ -1296,6 +1296,8 @@ const handleTrade = async (side) => {
         pnl: 0,
         currentPrice: currentPrice,
         positionValue: data.trade.positionValue
+        const marginUsed = currentPrice * orderSize / leverage;
+newOrder.marginUsed = marginUsed;
          };
       
       setOrderHistory(prev => [newOrder, ...prev]);
@@ -1318,9 +1320,7 @@ const handleTrade = async (side) => {
     alert('Trade failed. Please try again.');
   }
 };
-  const marginUsed = currentPrice * orderSize / leverage;
-newOrder.marginUsed = marginUsed;
-  
+    
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
     
