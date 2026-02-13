@@ -306,27 +306,25 @@ const getMinLot = (price) => {
 useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-const minLot = getMinLot(currentPrice);
+    const minLot = getMinLot(currentPrice);
+    const maxSize = maxOrderValue / currentPrice;
+    
+    setOrderSize(prevSize => {
+      let newSize = prevSize;
+      if (prevSize < minLot) {
+        newSize = minLot;
+      }
+      if (prevSize > maxSize) {
+        newSize = maxSize;
+      }
+      if (Math.abs(prevSize - newSize) > 0.0001) {
+        return newSize;
+      }
+      return prevSize;
+    });
+  }
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
 
-// Total position value
-const positionValue = currentPrice * orderSize;
-
-// Margin required (actual funds needed)
-const marginRequired = positionValue / leverage;
-
-// Available funds in USD (paper balance converted to USD minus used margin)
-const availableFundsUSD = (userAccount.paperBalance / dollarRate) - 
-  positions.reduce((sum, pos) => {
-    const posValue = pos.entryPrice * pos.size;
-    return sum + (posValue / pos.leverage);
-  }, 0);
-
-// Max allowed position value based on challenge (20% of total paper balance)
-const challenge = userAccount.currentChallenge ? 
-  CHALLENGES.find(c => c.name === userAccount.currentChallenge) : null;
-const maxPositionValueUSD = challenge 
-  ? (userAccount.paperBalance / dollarRate) * (challenge.maxOrderSize / 100)
-  : (userAccount.paperBalance / dollarRate) * 0.2; 
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
@@ -2076,31 +2074,23 @@ const QuickTradeComponent = () => {
       </div>
 
       {/* Funds Information */}
-  {/* Funds Information */}
-<div className="funds-info-section">
-  <div className="funds-item">
-    <span className="funds-label">Available Funds:</span>
-    <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
-  </div>
-  <div className="funds-item">
-    <span className="funds-label">Max Position Value (20%):</span>
-    <span className="funds-value">${maxPositionValueUSD.toFixed(2)}</span>
-  </div>
-  <div className="funds-item">
-    <span className="funds-label">Position Value:</span>
-    <span className={`funds-value ${positionValue > maxPositionValueUSD ? 'warning' : ''}`}>
-      ${positionValue.toFixed(2)}
-      {positionValue > maxPositionValueUSD && <span className="warning-text"> (Exceeds max!)</span>}
-    </span>
-  </div>
-  <div className="funds-item">
-    <span className="funds-label">Margin Required:</span>
-    <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
-      ${marginRequired.toFixed(2)}
-      {marginRequired > availableFundsUSD && <span className="warning-text"> (Insufficient funds!)</span>}
-    </span>
-  </div>
-</div>
+      <div className="funds-info-section">
+        <div className="funds-item">
+          <span className="funds-label">Available Funds:</span>
+          <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+        </div>
+        <div className="funds-item">
+          <span className="funds-label">Max Order Value (20%):</span>
+          <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
+        </div>
+        <div className="funds-item">
+          <span className="funds-label">Current Order Value:</span>
+          <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
+            ${orderValue.toFixed(2)}
+            {orderValue > maxOrderValueUSD && <span className="warning-text"> (Exceeds max!)</span>}
+          </span>
+        </div>
+      </div>
 
       {/* Leverage Section */}
       <div className="leverage-section-top">
