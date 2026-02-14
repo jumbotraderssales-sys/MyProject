@@ -157,11 +157,11 @@ function App() {
   const [activeIndicators, setActiveIndicators] = useState([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showIndicatorsPanel, setShowIndicatorsPanel] = useState(false);
-  const [stopLoss, setStopLoss] = useState('');
-const [takeProfit, setTakeProfit] = useState('');
-const [orderSize, setOrderSize] = useState(0.001);
-const [leverage, setLeverage] = useState(5);
   const [positions, setPositions] = useState([]);
+  const [stopLoss, setStopLoss] = useState('');
+  const [takeProfit, setTakeProfit] = useState('');
+  const [orderSize, setOrderSize] = useState(0.001);
+  const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
   const [chartType, setChartType] = useState('0');
@@ -346,7 +346,7 @@ useEffect(() => {
       return prevSize;
     });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); 
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
 
   // Calculate daily and total loss
   useEffect(() => {
@@ -654,17 +654,17 @@ useEffect(() => {
           newPrices[symbol] = Math.max(
             newPrices[symbol] * (1 + changePercent),
             newPrices[symbol] * 0.998
-            );
+          );
+        });
+        
+        setTimeout(checkSLTP, 100);
+        
+        return newPrices;
       });
-      return newPrices;
-    });
-    
-    // Call SL/TP check after prices update
-    checkSLTP();
-  }, 3000);
+    }, 3000);
 
-  return () => clearInterval(interval);
-}, []); // ✅ EMPTY DEPENDENCY – runs only once
+    return () => clearInterval(interval);
+  }, [prices]);
 
   useEffect(() => {
     let total = 0;
@@ -1220,6 +1220,29 @@ if (orderSize < minLot) {
       return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
     }
     
+    // Check max order size
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const orderValue = currentPrice * orderSize;
+     const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+    
+    if (orderValue > maxOrderValue) {
+      return { 
+        valid: false, 
+        message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
+      };
+    }
+    
+    // Check leverage limit
+    if (leverage > challenge.maxLeverage) {
+      return { 
+        valid: false, 
+        message: `Leverage exceeds maximum (${challenge.maxLeverage}x)` 
+      };
+    }
+    
+    return { valid: true, message: '' };
+  };
+
 const handleTrade = async (side) => {
   const validation = validateTrade();
   if (!validation.valid) {
@@ -1595,7 +1618,7 @@ const handleTrade = async (side) => {
         const container = document.getElementById('tradingview-chart-container');
         if (container) {
           // The widget will automatically resize when container dimensions change
-         
+          window.dispatchEvent(new Event('resize'));
         }
       }
     };
