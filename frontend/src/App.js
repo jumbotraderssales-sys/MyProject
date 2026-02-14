@@ -302,6 +302,7 @@ const getMinLot = (price) => {
   }
 }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
 // Fetch real-time price for the selected symbol every 3 seconds
+// Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
   if (!selectedSymbol) return;
 
@@ -2055,6 +2056,7 @@ const handleTrade = async (side) => {
   };
 
 const QuickTradeComponent = () => {
+  // Use live price from the prices state (updated by the new useEffect)
   const currentPrice = prices[selectedSymbol] || 
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
@@ -2079,9 +2081,9 @@ const QuickTradeComponent = () => {
   // Max allowed position value (20% of total capital)
   const maxOrderValueUSD = challenge
     ? totalPaperUSD * (challenge.maxOrderSize / 100)
-    : totalPaperUSD * 0.2;
+    : totalPaperUSD * 0.2; // fallback 20%
 
-  // Position value for the new order
+  // Position value for the new order (raw, before leverage)
   const orderValue = currentPrice * orderSize;
 
   // Margin required for this new order
@@ -2125,6 +2127,7 @@ const QuickTradeComponent = () => {
           <span className="funds-label">Margin Required:</span>
           <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
             ${marginRequired.toFixed(2)}
+            {/* Warning appears only when the raw position value exceeds the max allowed */}
             {orderValue > maxOrderValueUSD && 
               <span className="warning-text"> (Position size exceeds max!)</span>}
           </span>
