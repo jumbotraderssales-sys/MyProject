@@ -327,11 +327,17 @@ useEffect(() => {
 
   // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    if (!challenge) return;
+
+    // Convert paper balance to USD
+    const paperBalanceUSD = userAccount.paperBalance / dollarRate;
+    const maxOrderValueUSD = paperBalanceUSD * (challenge.maxOrderSize / 100);
     const minLot = getMinLot(currentPrice);
-    const maxSize = maxOrderValue / currentPrice;
-    
+    const maxSize = maxOrderValueUSD / currentPrice;
+
     setOrderSize(prevSize => {
       let newSize = prevSize;
       if (prevSize < minLot) {
@@ -346,7 +352,7 @@ useEffect(() => {
       return prevSize;
     });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
+}, [userAccount.currentChallenge, userAccount.paperBalance, selectedSymbol, prices, isLoggedIn, dollarRate]);
 
   // Calculate daily and total loss
   useEffect(() => {
