@@ -276,30 +276,31 @@ const getMinLot = (price) => {
     positionsRef.current = positions;
   }, [positions]);
 
+  // Calculate margin and available funds
   useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-    const currentPrice = prices[selectedSymbol] || 91391.5;
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
     
-    // Margin required (USD)
+    // Calculate margin required
     const orderValue = currentPrice * orderSize;
     const margin = orderValue / leverage;
     setMarginRequired(margin);
     
-    // Available funds (USD)
-    const paperBalanceUSD = userAccount.paperBalance / dollarRate;
-    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+    // Calculate available funds (paper balance - margin of open positions)
+    const totalMarginUsed = positions.reduce((sum, pos) => {
       const posValue = pos.entryPrice * pos.size;
       return sum + (posValue / pos.leverage);
     }, 0);
-    const availableUSD = paperBalanceUSD - totalMarginUsedUSD;
-    setAvailableFunds(availableUSD);
     
-    // Max order value (INR) – kept for compatibility
-    const maxOrderINR = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
-    setMaxOrderValue(maxOrderINR);
+    const available = userAccount.paperBalance - totalMarginUsed;
+    setAvailableFunds(available);
+    
+    // Calculate max order value (20% of paper balance)
+    const maxOrder = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+    setMaxOrderValue(maxOrder);
   }
-}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);leverage
+}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
 // Fetch real-time price for the selected symbol every 3 seconds
 // Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
@@ -327,21 +328,26 @@ useEffect(() => {
   // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
-    const currentPrice = prices[selectedSymbol] || 91391.5;
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const minLot = getMinLot(currentPrice);
-    // Convert max order value from INR to USD
-    const maxOrderValueUSD = maxOrderValue / dollarRate;
-    const maxSize = maxOrderValueUSD / currentPrice;
+    const maxSize = maxOrderValue / currentPrice;
     
     setOrderSize(prevSize => {
       let newSize = prevSize;
-      if (prevSize < minLot) newSize = minLot;
-      if (prevSize > maxSize) newSize = maxSize;
-      if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
+      if (prevSize < minLot) {
+        newSize = minLot;
+      }
+      if (prevSize > maxSize) {
+        newSize = maxSize;
+      }
+      if (Math.abs(prevSize - newSize) > 0.0001) {
+        return newSize;
+      }
       return prevSize;
     });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, dollarRate]);
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
+
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
@@ -1215,14 +1221,27 @@ if (orderSize < minLot) {
     }
     
     // Check max order size
-   const currentPrice = prices[selectedSymbol] || 91391.5;
-const orderValue = currentPrice * orderSize; // USD
-const maxOrderValueUSD = (userAccount.paperBalance * challenge.maxOrderSize) / (100 * dollarRate); // USD
-
-if (orderValue > maxOrderValueUSD) {
-  return { valid: false, message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` };
-}
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const orderValue = currentPrice * orderSize;
+     const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
     
+    if (orderValue > maxOrderValue) {
+      return { 
+        valid: false, 
+        message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
+      };
+    }
+    
+    // Check leverage limit
+    if (leverage > challenge.maxLeverage) {
+      return { 
+        valid: false, 
+        message: `Leverage exceeds maximum (${challenge.maxLeverage}x)` 
+      };
+    }
+    
+    return { valid: true, message: '' };
+  };
 
 const handleTrade = async (side) => {
   const validation = validateTrade();
@@ -1612,7 +1631,16 @@ const handleTrade = async (side) => {
     };
   }, [widgetScriptLoaded, activeDashboard, isFullScreen]);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
 
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   const calculateStats = () => {
     const closedOrders = orderHistory.filter(o => o.status === 'CLOSED');
@@ -1940,7 +1968,25 @@ const handleTrade = async (side) => {
     setActiveIndicators(preset.indicators);
   };
 
-   const calculatePositionPnL = (position) => {
+  const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const orderBookData = {
+    bids: [
+      { price: currentPrice * 0.9995, amount: 2.5, total: (currentPrice * 0.9995 * 2.5).toFixed(2) },
+      { price: currentPrice * 0.9990, amount: 3.2, total: (currentPrice * 0.9990 * 3.2).toFixed(2) },
+      { price: currentPrice * 0.9985, amount: 1.8, total: (currentPrice * 0.9985 * 1.8).toFixed(2) },
+      { price: currentPrice * 0.9980, amount: 4.1, total: (currentPrice * 0.9980 * 4.1).toFixed(2) },
+      { price: currentPrice * 0.9975, amount: 2.7, total: (currentPrice * 0.9975 * 2.7).toFixed(2) },
+    ],
+    asks: [
+      { price: currentPrice * 1.0005, amount: 1.9, total: (currentPrice * 1.0005 * 1.9).toFixed(2) },
+      { price: currentPrice * 1.0010, amount: 2.3, total: (currentPrice * 1.0010 * 2.3).toFixed(2) },
+      { price: currentPrice * 1.0015, amount: 3.1, total: (currentPrice * 1.0015 * 3.1).toFixed(2) },
+      { price: currentPrice * 1.0020, amount: 1.5, total: (currentPrice * 1.0020 * 1.5).toFixed(2) },
+      { price: currentPrice * 1.0025, amount: 2.8, total: (currentPrice * 1.0025 * 2.8).toFixed(2) },
+    ]
+  };
+
+  const calculatePositionPnL = (position) => {
     const currentPrice = prices[position.symbol] || position.entryPrice;
     const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
                 (position.side === 'LONG' ? 1 : -1);
@@ -4541,4 +4587,4 @@ return (
   );
 }
 
-
+export default App;
