@@ -1221,7 +1221,8 @@ if (orderSize < minLot) {
     if (marginRequired > availableFunds) {
       return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
     }
-    
+    const maxOrderValueUSD = maxOrderValue; // from parent state
+const availableFundsUSD = availableFunds; // from parent state
     // Check max order size
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const orderValue = currentPrice * orderSize;
