@@ -335,32 +335,25 @@ useEffect(() => {
 
   // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-    if (!challenge) return;
-    
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const minLot = getMinLot(currentPrice);
-    
-    // Calculate max order value in USD
-    const paperBalanceUSD = userAccount.paperBalance / dollarRate;
-    const maxOrderValueUSD = paperBalanceUSD * (challenge.maxOrderSize / 100);
-    const maxSize = maxOrderValueUSD / currentPrice;
-    
-    setOrderSize(prevSize => {
-      let newSize = prevSize;
-      if (prevSize < minLot) {
-        newSize = minLot;
-      }
-      if (prevSize > maxSize) {
-        newSize = maxSize;
-      }
-      if (Math.abs(prevSize - newSize) > 0.0001) {
-        return newSize;
-      }
-      return prevSize;
-    });
-  }
+  if (!isLoggedIn || !userAccount.currentChallenge || userAccount.paperBalance <= 0) return;
+
+  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+  if (!challenge) return;
+
+  const currentPrice = prices[selectedSymbol] || 
+    cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const minLot = getMinLot(currentPrice);
+
+  const paperBalanceUSD = userAccount.paperBalance / dollarRate;
+  const maxOrderValueUSD = paperBalanceUSD * (challenge.maxOrderSize / 100);
+  const maxSize = maxOrderValueUSD / currentPrice;
+
+  setOrderSize(prevSize => {
+    let newSize = prevSize;
+    if (prevSize < minLot) newSize = minLot;
+    if (prevSize > maxSize) newSize = maxSize;
+    return Math.abs(prevSize - newSize) > 0.0001 ? newSize : prevSize;
+  });
 }, [selectedSymbol, prices, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, dollarRate]);
   // Calculate daily and total loss
   useEffect(() => {
