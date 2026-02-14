@@ -263,12 +263,7 @@ const fetchRealPrice = async (symbol) => {
     return null;
   }
 };
-  // Determine minimum order lot size based on current price
-const getMinLot = (price) => {
-  if (price >= 10000) return 0.001;
-  if (price >= 1000) return 0.1;
-  return 1;
-};
+ 
 
   const positionsRef = useRef(positions);
 
@@ -301,7 +296,13 @@ const getMinLot = (price) => {
     setMaxOrderValue(maxOrder);
   }
 }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
-// Fetch real-time price for the selected symbol every 3 seconds
+ // Determine minimum order lot size based on current price
+const getMinLot = (price) => {
+  if (price >= 10000) return 0.001;
+  if (price >= 1000) return 0.1;
+  return 1;
+};
+  // Fetch real-time price for the selected symbol every 3 seconds
 // Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
   if (!selectedSymbol) return;
