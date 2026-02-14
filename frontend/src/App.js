@@ -3634,13 +3634,14 @@ const syncUserWallet = async () => {
                           
                           return (
                             <div key={order.id} className={`order-history-item enhanced ${order.side?.toLowerCase()}`}>
-                              <span className={`order-side ${order.side?.toLowerCase()}`}>{order.side}</span>
-                              <span>{order.size}</span>
-                              <span>
-                                <span className="leverage-badge">{order.leverage}x</span>
-                              </span>
-                              <span>${order.entryPrice?.toFixed(2)}</span>
-                     {/* NEW MARGIN COLUMN */}
+  <span className={`order-side ${order.side?.toLowerCase()}`}>{order.side}</span>
+  <span>{order.size}</span>
+  <span>
+    <span className="leverage-badge">{order.leverage}x</span>
+  </span>
+  <span>${order.entryPrice?.toFixed(2)}</span>
+
+  {/* NEW MARGIN COLUMN */}
   <span>${((order.entryPrice * order.size) / order.leverage).toFixed(2)}</span>
 
   {/* NEW LIQUIDATION PRICE COLUMN */}
@@ -3649,75 +3650,60 @@ const syncUserWallet = async () => {
       ? order.entryPrice * (1 - 1 / order.leverage)
       : order.entryPrice * (1 + 1 / order.leverage)
     ).toFixed(2)}
-                              <span>
-                                <div className="sl-info">
-                                  <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
-                                  <div className="sl-amount">{slAmount}</div>
-                                </div>
-                              </span>
-                              <span>
-                                <div className="tp-info">
-                                  <div>${order.takeProfit?.toFixed(2) || 'N/A'}</div>
-                                  <div className="tp-amount">{tpAmount}</div>
-                                </div>
-                              </span>
-                              <span>
-                                <span className={`order-status ${order.status === 'OPEN' ? 'active-badge' : 'triggered-badge'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
-                                  {order.status}
-                                </span>
-                              </span>
-                              <span>
-                                <div className="order-pnl-section">
-                                  <span className={`order-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
-                                    {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
-                                  </span>
-                                </div>
-                              </span>
-                              <span>
-                                <div className="order-actions">
-                                  {isCancellable && (
-                                    <button 
-                                      className="cancel-order-btn"
-                                      onClick={() => handleCancelOrder(order.id)}
-                                      style={{
-                                        marginLeft: '5px',
-                                        padding: '0.1rem 0.3rem',
-                                        fontSize: '0.7rem',
-                                        background: '#dc2626',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                      }}
-                                      title="Cancel Order"
-                                    >
-                                      Cancel
-                                    </button>
-                                  )}
-                                  {order.status === 'OPEN' && !isCancellable && (
-                                    <button 
-                                      className="close-position-btn"
-                                      onClick={() => closePosition(order.id)}
-                                      style={{
-                                        marginLeft: '5px',
-                                        padding: '0.1rem 0.3rem',
-                                        fontSize: '0.7rem',
-                                        background: '#3b82f6',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                      }}
-                                      title="Close Position"
-                                    >
-                                      Close
-                                    </button>
-                                  )}
-                                </div>
-                              </span>
-                            </div>
-                          );
-                        })}
+  </span>
+
+  {/* Existing SL column */}
+  <span>
+    <div className="sl-info">
+      <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
+      <div className="sl-amount">{slAmount}</div>
+    </div>
+  </span>
+
+  <span>
+    <div className="tp-info">
+      <div>${order.takeProfit?.toFixed(2) || 'N/A'}</div>
+      <div className="tp-amount">{tpAmount}</div>
+    </div>
+  </span>
+
+  <span>
+    <span className={`order-status ${order.status === 'OPEN' ? 'active-badge' : 'triggered-badge'}`}>
+      {order.status}
+    </span>
+  </span>
+
+  <span>
+    <div className="order-pnl-section">
+      <span className={`order-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
+        {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
+      </span>
+    </div>
+  </span>
+
+  <span>
+    <div className="order-actions">
+      {isCancellable && (
+        <button 
+          className="cancel-order-btn"
+          onClick={() => handleCancelOrder(order.id)}
+          style={{...}}
+        >
+          Cancel
+        </button>
+      )}
+      {order.status === 'OPEN' && !isCancellable && (
+        <button 
+          className="close-position-btn"
+          onClick={() => closePosition(order.id)}
+          style={{...}}
+        >
+          Close
+        </button>
+      )}
+    </div>
+  </span>
+</div>
                         {orderHistory.length === 0 && (
                           <div className="no-orders">No orders yet</div>
                         )}
