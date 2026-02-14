@@ -2037,8 +2037,17 @@ const QuickTradeComponent = () => {
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
 
-  // Total paper balance in USD
+  // Convert total paper balance (INR) to USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
+
+  // Calculate total margin used by open positions (in USD)
+  const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+    const posValue = pos.entryPrice * pos.size;
+    return sum + (posValue / pos.leverage);
+  }, 0);
+
+  // Available funds in USD
+  const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
   // Get the active challenge (if any)
   const challenge = userAccount.currentChallenge
@@ -2216,8 +2225,7 @@ const QuickTradeComponent = () => {
       )}
     </div>
   );
-};
-  return (
+};  return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
