@@ -227,6 +227,8 @@ function App() {
   });
 
   const [dollarRate, setDollarRate] = useState(90);
+  const maxOrderValueUSD = maxOrderValue; // from parent state
+const availableFundsUSD = availableFunds; // from parent state
 
   const [payments, setPayments] = useState([]);
   const [paymentFilter, setPaymentFilter] = useState('all');
