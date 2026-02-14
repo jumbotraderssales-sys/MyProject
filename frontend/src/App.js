@@ -1940,23 +1940,7 @@ const handleTrade = async (side) => {
     setActiveIndicators(preset.indicators);
   };
 
- 
-      { price: currentPrice * 0.9995, amount: 2.5, total: (currentPrice * 0.9995 * 2.5).toFixed(2) },
-      { price: currentPrice * 0.9990, amount: 3.2, total: (currentPrice * 0.9990 * 3.2).toFixed(2) },
-      { price: currentPrice * 0.9985, amount: 1.8, total: (currentPrice * 0.9985 * 1.8).toFixed(2) },
-    
-      { price: currentPrice * 0.9975, amount: 2.7, total: (currentPrice * 0.9975 * 2.7).toFixed(2) },
-    ],
-    asks: [
-      { price: currentPrice * 1.0005, amount: 1.9, total: (currentPrice * 1.0005 * 1.9).toFixed(2) },
-      { price: currentPrice * 1.0010, amount: 2.3, total: (currentPrice * 1.0010 * 2.3).toFixed(2) },
-      { price: currentPrice * 1.0015, amount: 3.1, total: (currentPrice * 1.0015 * 3.1).toFixed(2) },
-      { price: currentPrice * 1.0020, amount: 1.5, total: (currentPrice * 1.0020 * 1.5).toFixed(2) },
-      { price: currentPrice * 1.0025, amount: 2.8, total: (currentPrice * 1.0025 * 2.8).toFixed(2) },
-    ]
-  };
-
-  const calculatePositionPnL = (position) => {
+   const calculatePositionPnL = (position) => {
     const currentPrice = prices[position.symbol] || position.entryPrice;
     const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
                 (position.side === 'LONG' ? 1 : -1);
