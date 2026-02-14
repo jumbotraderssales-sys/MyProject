@@ -1220,29 +1220,6 @@ if (orderSize < minLot) {
       return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
     }
     
-    // Check max order size
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const orderValue = currentPrice * orderSize;
-     const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
-    
-    if (orderValue > maxOrderValue) {
-      return { 
-        valid: false, 
-        message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
-      };
-    }
-    
-    // Check leverage limit
-    if (leverage > challenge.maxLeverage) {
-      return { 
-        valid: false, 
-        message: `Leverage exceeds maximum (${challenge.maxLeverage}x)` 
-      };
-    }
-    
-    return { valid: true, message: '' };
-  };
-
 const handleTrade = async (side) => {
   const validation = validateTrade();
   if (!validation.valid) {
