@@ -346,7 +346,7 @@ useEffect(() => {
       return prevSize;
     });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); 
 
   // Calculate daily and total loss
   useEffect(() => {
@@ -654,17 +654,17 @@ useEffect(() => {
           newPrices[symbol] = Math.max(
             newPrices[symbol] * (1 + changePercent),
             newPrices[symbol] * 0.998
-          );
-        });
-        
-        setTimeout(checkSLTP, 100);
-        
-        return newPrices;
+            );
       });
-    }, 3000);
+      return newPrices;
+    });
+    
+    // Call SL/TP check after prices update
+    checkSLTP();
+  }, 3000);
 
-    return () => clearInterval(interval);
-  }, [prices]);
+  return () => clearInterval(interval);
+}, []); // ✅ EMPTY DEPENDENCY – runs only once
 
   useEffect(() => {
     let total = 0;
