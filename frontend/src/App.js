@@ -2060,14 +2060,6 @@ const QuickTradeComponent = () => {
   const currentPrice = prices[selectedSymbol] || 
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
-   // Use parent's maxOrderValue (USD) – now guaranteed to be in sync
-  const maxOrderUSD = maxOrderValue; // from parent state
-  const availableUSD = availableFunds; // from parent state
-   // Clamp orderSize whenever currentPrice, maxOrderUSD, or minLot change
-  const clampedOrderSize = useMemo(() => {
-    const maxSize = maxOrderUSD / currentPrice;
-    return Math.min(Math.max(orderSize, minLot), maxSize);
-  }, [orderSize, maxOrderUSD, currentPrice, minLot]);
 
   // Total paper balance in USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
