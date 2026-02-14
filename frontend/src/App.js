@@ -2037,10 +2037,10 @@ const QuickTradeComponent = () => {
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
 
-  // Convert total paper balance (INR) to USD
+  // Total paper balance in USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
-  // Calculate total margin used by open positions (in USD)
+  // Margin used by open positions
   const totalMarginUsedUSD = positions.reduce((sum, pos) => {
     const posValue = pos.entryPrice * pos.size;
     return sum + (posValue / pos.leverage);
@@ -2049,18 +2049,21 @@ const QuickTradeComponent = () => {
   // Available funds in USD
   const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
-  // Get the active challenge (if any)
+  // Active challenge (if any)
   const challenge = userAccount.currentChallenge
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
-  // Max order value: (totalPaperUSD) * (maxOrderSize / 100)
+  // Max allowed position value (20% of total capital)
   const maxOrderValueUSD = challenge
     ? totalPaperUSD * (challenge.maxOrderSize / 100)
-    : totalPaperUSD * 0.2; // fallback 20%
+    : totalPaperUSD * 0.2;
 
-  // Current order value (based on selected symbol and orderSize)
+  // Position value for the new order
   const orderValue = currentPrice * orderSize;
+
+  // Margin required for this new order
+  const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
@@ -2092,16 +2095,16 @@ const QuickTradeComponent = () => {
         </div>
         <div className="funds-item">
           <span className="funds-label">
-            Max Order Value ({challenge?.maxOrderSize || 20}% of total):
+            Max Position Value ({challenge?.maxOrderSize || 20}% of total):
           </span>
           <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-          <span className="funds-label">Current Order Value:</span>
-          <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
-            ${orderValue.toFixed(2)}
+          <span className="funds-label">Margin Required:</span>
+          <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
+            ${marginRequired.toFixed(2)}
             {orderValue > maxOrderValueUSD && 
-              <span className="warning-text"> (Exceeds max!)</span>}
+              <span className="warning-text"> (Position size exceeds max!)</span>}
           </span>
         </div>
       </div>
@@ -2225,7 +2228,8 @@ const QuickTradeComponent = () => {
       )}
     </div>
   );
-};  return (
+};
+return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
