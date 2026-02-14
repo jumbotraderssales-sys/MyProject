@@ -1618,7 +1618,7 @@ const handleTrade = async (side) => {
         const container = document.getElementById('tradingview-chart-container');
         if (container) {
           // The widget will automatically resize when container dimensions change
-          window.dispatchEvent(new Event('resize'));
+         
         }
       }
     };
