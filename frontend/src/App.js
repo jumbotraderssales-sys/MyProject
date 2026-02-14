@@ -277,30 +277,29 @@ const getMinLot = (price) => {
   }, [positions]);
 
   // Calculate margin and available funds
-  useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-    
-    // Calculate margin required
-    const orderValue = currentPrice * orderSize;
-    const margin = orderValue / leverage;
-    setMarginRequired(margin);
-    
-    // Calculate available funds (paper balance - margin of open positions)
-    const totalMarginUsed = positions.reduce((sum, pos) => {
-      const posValue = pos.entryPrice * pos.size;
-      return sum + (posValue / pos.leverage);
-    }, 0);
-    
-    const available = userAccount.paperBalance - totalMarginUsed;
-    setAvailableFunds(available);
-    
-    // Calculate max order value (20% of paper balance)
-    const maxOrder = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
-    setMaxOrderValue(maxOrder);
-  }
-}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
+useEffect(() => {
+  if (!isLoggedIn || !userAccount.paperBalance) return;
+
+  const price =
+    prices[selectedSymbol] ||
+    cryptoData.find(c => c.symbol === selectedSymbol)?.price ||
+    91391.5;
+
+  // INR → USD
+  const availableUSD = userAccount.paperBalance / dollarRate;
+
+  // 20% rule
+  const maxUsableUSD = availableUSD * 0.20;
+
+  const positionValueUSD = orderSize * price;
+  const margin = positionValueUSD / leverage;
+
+  setAvailableFunds(availableUSD);
+  setMaxOrderValue(maxUsableUSD);
+  setMarginRequired(margin);
+
+}, [orderSize, leverage, prices, selectedSymbol, userAccount.paperBalance, dollarRate, isLoggedIn]);
+
 // Fetch real-time price for the selected symbol every 3 seconds
 // Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
@@ -1222,7 +1221,7 @@ if (orderSize < minLot) {
     
     // Check max order size
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const orderValue = currentPrice * orderSize;
+    const orderValue = orderSize * currentPrice;
      const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
     
     if (orderValue > maxOrderValue) {
@@ -1245,11 +1244,13 @@ if (orderSize < minLot) {
 
 const handleTrade = async (side) => {
   const validation = validateTrade();
-  if (!validation.valid) {
-    alert(validation.message);
-    return;
-  }
-  
+  if (orderValue > maxOrderValue) {
+  return {
+    valid: false,
+    message: "Position size exceeds max (20% of available funds)"
+  };
+}
+   
   // Get the latest real price from Binance
   let currentPrice = await fetchRealPrice(selectedSymbol);
   
@@ -2084,7 +2085,7 @@ const QuickTradeComponent = () => {
     : totalPaperUSD * 0.2; // fallback 20%
 
   // Position value for the new order (raw, before leverage)
-  const orderValue = currentPrice * orderSize;
+  const orderValue = orderSize * currentPrice;
 
   // Margin required for this new order
   const marginRequired = orderValue / leverage;
