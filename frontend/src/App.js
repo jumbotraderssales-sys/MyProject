@@ -281,30 +281,28 @@ const getMinLot = (price) => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-
-    // Convert paper balance from INR to USD
-    const paperBalanceUSD = userAccount.paperBalance / dollarRate;
-
-    // Margin required for the current order (USD)
+    
+    // Calculate margin required
     const orderValue = currentPrice * orderSize;
     const margin = orderValue / leverage;
     setMarginRequired(margin);
-
-    // Total margin used by open positions (USD)
-    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+    
+    // Calculate available funds (paper balance - margin of open positions)
+    const totalMarginUsed = positions.reduce((sum, pos) => {
       const posValue = pos.entryPrice * pos.size;
       return sum + (posValue / pos.leverage);
     }, 0);
-    const availableUSD = paperBalanceUSD - totalMarginUsedUSD;
-    setAvailableFunds(availableUSD);
-
-    // Max allowed order value in USD (20% of total paper balance)
-    const maxOrderUSD = (paperBalanceUSD * challenge.maxOrderSize) / 100;
-    setMaxOrderValue(maxOrderUSD);
+    
+    const available = userAccount.paperBalance - totalMarginUsed;
+    setAvailableFunds(available);
+    
+    // Calculate max order value (20% of paper balance)
+    const maxOrder = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+    setMaxOrderValue(maxOrder);
   }
-}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, dollarRate, orderSize, leverage]);
+}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
 // Fetch real-time price for the selected symbol every 3 seconds
-
+// Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
   if (!selectedSymbol) return;
 
@@ -332,9 +330,8 @@ useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const minLot = getMinLot(currentPrice);
-    // maxOrderValue is now in USD, so maxSize in coin units = USD max / price
     const maxSize = maxOrderValue / currentPrice;
-
+    
     setOrderSize(prevSize => {
       let newSize = prevSize;
       if (prevSize < minLot) {
@@ -350,6 +347,7 @@ useEffect(() => {
     });
   }
 }, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
+
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
@@ -1221,8 +1219,7 @@ if (orderSize < minLot) {
     if (marginRequired > availableFunds) {
       return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
     }
-    const maxOrderValueUSD = maxOrderValue; // from parent state
-const availableFundsUSD = availableFunds; // from parent state
+    
     // Check max order size
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const orderValue = currentPrice * orderSize;
@@ -2063,6 +2060,14 @@ const QuickTradeComponent = () => {
   const currentPrice = prices[selectedSymbol] || 
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
+   // Use parent's maxOrderValue (USD) – now guaranteed to be in sync
+  const maxOrderUSD = maxOrderValue; // from parent state
+  const availableUSD = availableFunds; // from parent state
+   // Clamp orderSize whenever currentPrice, maxOrderUSD, or minLot change
+  const clampedOrderSize = useMemo(() => {
+    const maxSize = maxOrderUSD / currentPrice;
+    return Math.min(Math.max(orderSize, minLot), maxSize);
+  }, [orderSize, maxOrderUSD, currentPrice, minLot]);
 
   // Total paper balance in USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
