@@ -301,8 +301,30 @@ const getMinLot = (price) => {
     setMaxOrderValue(maxOrder);
   }
 }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
+// Fetch real-time price for the selected symbol every 3 seconds
+useEffect(() => {
+  if (!selectedSymbol) return;
 
-// Add separate useEffect for adjusting order size (prevent infinite loop)
+  const fetchLivePrice = async () => {
+    try {
+      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${selectedSymbol}`);
+      const data = await response.json();
+      const realPrice = parseFloat(data.price);
+      if (!isNaN(realPrice) && realPrice > 0) {
+        setPrices(prev => ({ ...prev, [selectedSymbol]: realPrice }));
+        console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch live price:', error);
+    }
+  };
+
+  fetchLivePrice();
+  const interval = setInterval(fetchLivePrice, 3000);
+  return () => clearInterval(interval);
+}, [selectedSymbol]);
+
+  // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
