@@ -332,7 +332,6 @@ useEffect(() => {
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     if (!challenge) return;
 
-    // Convert paper balance to USD
     const paperBalanceUSD = userAccount.paperBalance / dollarRate;
     const maxOrderValueUSD = paperBalanceUSD * (challenge.maxOrderSize / 100);
     const minLot = getMinLot(currentPrice);
@@ -340,15 +339,9 @@ useEffect(() => {
 
     setOrderSize(prevSize => {
       let newSize = prevSize;
-      if (prevSize < minLot) {
-        newSize = minLot;
-      }
-      if (prevSize > maxSize) {
-        newSize = maxSize;
-      }
-      if (Math.abs(prevSize - newSize) > 0.0001) {
-        return newSize;
-      }
+      if (prevSize < minLot) newSize = minLot;
+      if (prevSize > maxSize) newSize = maxSize;
+      if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
       return prevSize;
     });
   }
