@@ -1612,16 +1612,7 @@ const handleTrade = async (side) => {
     };
   }, [widgetScriptLoaded, activeDashboard, isFullScreen]);
 
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-    };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, []);
 
   const calculateStats = () => {
     const closedOrders = orderHistory.filter(o => o.status === 'CLOSED');
