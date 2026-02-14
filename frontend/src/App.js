@@ -3611,17 +3611,19 @@ const syncUserWallet = async () => {
                   <div className="advanced-stats">
                     <h3>Order History</h3>
                     <div className="order-history" style={{ maxHeight: isFullScreen ? '200px' : '300px', overflowY: 'auto' }}>
-                      <div className="order-history-header enhanced">
-                        <span>Side</span>
-                        <span>Size</span>
-                        <span>Lev</span>
-                        <span>Entry</span>
-                        <span>SL</span>
-                        <span>TP</span>
-                        <span>Status</span>
-                        <span>PnL</span>
-                        <span>Action</span>
-                      </div>
+                     <div className="order-history-header enhanced">
+  <span>Side</span>
+  <span>Size</span>
+  <span>Lev</span>
+  <span>Entry</span>
+  <span>Margin</span>          {/* new */}
+  <span>Liq. Price</span>      {/* new */}
+  <span>SL</span>
+  <span>TP</span>
+  <span>Status</span>
+  <span>PnL</span>
+  <span>Action</span>
+</div>
                       <div className="order-history-list">
                         {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
                           const currentPnl = calculateOrderPnL(order);
@@ -3638,6 +3640,15 @@ const syncUserWallet = async () => {
                                 <span className="leverage-badge">{order.leverage}x</span>
                               </span>
                               <span>${order.entryPrice?.toFixed(2)}</span>
+                     {/* NEW MARGIN COLUMN */}
+  <span>${((order.entryPrice * order.size) / order.leverage).toFixed(2)}</span>
+
+  {/* NEW LIQUIDATION PRICE COLUMN */}
+  <span>
+    ${(order.side === 'LONG'
+      ? order.entryPrice * (1 - 1 / order.leverage)
+      : order.entryPrice * (1 + 1 / order.leverage)
+    ).toFixed(2)}
                               <span>
                                 <div className="sl-info">
                                   <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
