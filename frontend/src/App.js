@@ -2128,7 +2128,7 @@ const QuickTradeComponent = () => {
           <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
             ${marginRequired.toFixed(2)}
             {/* Warning appears only when the raw position value exceeds the max allowed */}
-            {orderValue > maxOrderValueUSD && 
+           {orderValue > maxOrderValueUSD + 0.0001 && 
               <span className="warning-text"> (Position size exceeds max!)</span>}
           </span>
         </div>
