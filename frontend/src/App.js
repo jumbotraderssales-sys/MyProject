@@ -337,17 +337,26 @@ useEffect(() => {
     const minLot = getMinLot(currentPrice);
     const maxSize = maxOrderValueUSD / currentPrice;
 
-    setOrderSize(prevSize => {
-      let newSize = prevSize;
-      if (prevSize < minLot) newSize = minLot;
-      if (prevSize > maxSize) newSize = maxSize;
-      if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
-      return prevSize;
-    });
+    // If no feasible order size (minLot > maxSize), set to maxSize and stop oscillating
+    if (minLot > maxSize) {
+      setOrderSize(prevSize => {
+        if (Math.abs(prevSize - maxSize) > 0.0001) {
+          return maxSize;
+        }
+        return prevSize;
+      });
+    } else {
+      // Feasible range exists – clamp to [minLot, maxSize]
+      setOrderSize(prevSize => {
+        let newSize = prevSize;
+        if (prevSize < minLot) newSize = minLot;
+        if (prevSize > maxSize) newSize = maxSize;
+        if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
+        return prevSize;
+      });
+    }
   }
-}, [userAccount.currentChallenge, userAccount.paperBalance, selectedSymbol, prices, isLoggedIn, dollarRate]);
-
-  // Calculate daily and total loss
+}, [userAccount.currentChallenge, userAccount.paperBalance, selectedSymbol, prices, isLoggedIn, dollarRate]);  // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
