@@ -277,7 +277,7 @@ const getMinLot = (price) => {
   }, [positions]);
 
   // ✅ USD based margin + 20% utilization rule
-// ✅ Safe auto clamp (prevents infinite loop)
+// ✅ SINGLE SAFE ORDER SIZE CLAMP (no infinite loop)
 useEffect(() => {
   if (!isLoggedIn || !userAccount.paperBalance) return;
 
@@ -292,18 +292,21 @@ useEffect(() => {
   const maxUsableUSD = availableUSD * 0.20;
   const maxSize = maxUsableUSD / currentPrice;
 
-  let newSize = orderSize;
+  setOrderSize(prevSize => {
+    let newSize = prevSize;
 
-  if (newSize < minLot) newSize = minLot;
-  if (newSize > maxSize) newSize = maxSize;
+    if (newSize < minLot) newSize = minLot;
+    if (newSize > maxSize) newSize = maxSize;
 
-  // 🛑 CRITICAL: only update if actually changed
-  if (Math.abs(newSize - orderSize) > 0.0000001) {
-    setOrderSize(newSize);
-  }
+    // 🚫 prevents loop
+    if (Math.abs(newSize - prevSize) < 0.0000001) {
+      return prevSize;
+    }
+
+    return newSize;
+  });
 
 }, [
-  orderSize,
   prices,
   selectedSymbol,
   userAccount.paperBalance,
@@ -2166,7 +2169,7 @@ const QuickTradeComponent = () => {
               const newSize = parseFloat(e.target.value) || 0;
               const maxSize = maxOrderValueUSD / currentPrice;
               const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-              setOrderSize(clampedSize);
+            
             }}
             className="order-size-input"
             disabled={!canTrade}
@@ -2177,7 +2180,7 @@ const QuickTradeComponent = () => {
               onClick={() => {
                 const halfSize = orderSize * 0.5;
                 const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValueUSD / currentPrice);
-                setOrderSize(clampedHalf);
+              
               }}
               disabled={!canTrade}
             >
@@ -2187,7 +2190,7 @@ const QuickTradeComponent = () => {
               className="order-size-btn"
               onClick={() => {
                 const maxSize = maxOrderValueUSD / currentPrice;
-                setOrderSize(Math.max(maxSize, minLot));
+               
               }}
               disabled={!canTrade}
             >
