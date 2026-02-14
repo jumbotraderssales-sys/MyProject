@@ -1955,7 +1955,7 @@ const handleTrade = async (side) => {
       { price: currentPrice * 0.9995, amount: 2.5, total: (currentPrice * 0.9995 * 2.5).toFixed(2) },
       { price: currentPrice * 0.9990, amount: 3.2, total: (currentPrice * 0.9990 * 3.2).toFixed(2) },
       { price: currentPrice * 0.9985, amount: 1.8, total: (currentPrice * 0.9985 * 1.8).toFixed(2) },
-      { price: currentPrice * 0.9980, amount: 4.1, total: (currentPrice * 0.9980 * 4.1).toFixed(2) },
+    
       { price: currentPrice * 0.9975, amount: 2.7, total: (currentPrice * 0.9975 * 2.7).toFixed(2) },
     ],
     asks: [
