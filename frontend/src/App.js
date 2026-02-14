@@ -263,7 +263,12 @@ const fetchRealPrice = async (symbol) => {
     return null;
   }
 };
- 
+  // Determine minimum order lot size based on current price
+const getMinLot = (price) => {
+  if (price >= 10000) return 0.001;
+  if (price >= 1000) return 0.1;
+  return 1;
+};
 
   const positionsRef = useRef(positions);
 
@@ -296,13 +301,7 @@ const fetchRealPrice = async (symbol) => {
     setMaxOrderValue(maxOrder);
   }
 }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
- // Determine minimum order lot size based on current price
-const getMinLot = (price) => {
-  if (price >= 10000) return 0.001;
-  if (price >= 1000) return 0.1;
-  return 1;
-};
-  // Fetch real-time price for the selected symbol every 3 seconds
+// Fetch real-time price for the selected symbol every 3 seconds
 // Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
   if (!selectedSymbol) return;
@@ -328,36 +327,28 @@ useEffect(() => {
 
   // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-    if (!challenge) return;
-
-    const paperBalanceUSD = userAccount.paperBalance / dollarRate;
-    const maxOrderValueUSD = paperBalanceUSD * (challenge.maxOrderSize / 100);
     const minLot = getMinLot(currentPrice);
-    const maxSize = maxOrderValueUSD / currentPrice;
-
-    // If no feasible order size (minLot > maxSize), set to maxSize and stop oscillating
-    if (minLot > maxSize) {
-      setOrderSize(prevSize => {
-        if (Math.abs(prevSize - maxSize) > 0.0001) {
-          return maxSize;
-        }
-        return prevSize;
-      });
-    } else {
-      // Feasible range exists – clamp to [minLot, maxSize]
-      setOrderSize(prevSize => {
-        let newSize = prevSize;
-        if (prevSize < minLot) newSize = minLot;
-        if (prevSize > maxSize) newSize = maxSize;
-        if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
-        return prevSize;
-      });
-    }
+    const maxSize = maxOrderValue / currentPrice;
+    
+    setOrderSize(prevSize => {
+      let newSize = prevSize;
+      if (prevSize < minLot) {
+        newSize = minLot;
+      }
+      if (prevSize > maxSize) {
+        newSize = maxSize;
+      }
+      if (Math.abs(prevSize - newSize) > 0.0001) {
+        return newSize;
+      }
+      return prevSize;
+    });
   }
-}, [userAccount.currentChallenge, userAccount.paperBalance, selectedSymbol, prices, isLoggedIn, dollarRate]);  // Calculate daily and total loss
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
+
+  // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
@@ -1623,12 +1614,11 @@ const handleTrade = async (side) => {
   useEffect(() => {
     const handleResize = () => {
       if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
-         // The widget will automatically resize when container dimensions change
+        // Force a redraw of the TradingView widget
         const container = document.getElementById('tradingview-chart-container');
         if (container) {
-        // NO need to dispatch a resize event – just let the widget adjust naturally
-          // (Optional: you could call a specific TradingView resize method if available)
-      
+          // The widget will automatically resize when container dimensions change
+          window.dispatchEvent(new Event('resize'));
         }
       }
     };
