@@ -284,6 +284,14 @@ const getMinLot = (price) => {
     
     // Calculate margin required
     const orderValue = currentPrice * orderSize;
+    const maxOrderValueUSD = (userAccount.paperBalance * challenge.maxOrderSize) / 100 / dollarRate;
+
+if (orderValue > maxOrderValueUSD) {
+  return { 
+    valid: false, 
+    message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
+  };
+}
     const margin = orderValue / leverage;
     setMarginRequired(margin);
     
@@ -327,10 +335,17 @@ useEffect(() => {
 
   // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    if (!challenge) return;
+    
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const minLot = getMinLot(currentPrice);
-    const maxSize = maxOrderValue / currentPrice;
+    
+    // Calculate max order value in USD
+    const paperBalanceUSD = userAccount.paperBalance / dollarRate;
+    const maxOrderValueUSD = paperBalanceUSD * (challenge.maxOrderSize / 100);
+    const maxSize = maxOrderValueUSD / currentPrice;
     
     setOrderSize(prevSize => {
       let newSize = prevSize;
@@ -346,8 +361,7 @@ useEffect(() => {
       return prevSize;
     });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
-
+}, [selectedSymbol, prices, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, dollarRate]);
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
