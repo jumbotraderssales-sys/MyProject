@@ -158,10 +158,6 @@ function App() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showIndicatorsPanel, setShowIndicatorsPanel] = useState(false);
   const [positions, setPositions] = useState([]);
-  const [stopLoss, setStopLoss] = useState('');
-  const [takeProfit, setTakeProfit] = useState('');
-  const [orderSize, setOrderSize] = useState(0.001);
-  const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
   const [chartType, setChartType] = useState('0');
