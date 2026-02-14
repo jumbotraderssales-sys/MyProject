@@ -276,44 +276,77 @@ const getMinLot = (price) => {
     positionsRef.current = positions;
   }, [positions]);
 
-  // ✅ USD based margin + 20% utilization rule
-// ✅ SINGLE SAFE ORDER SIZE CLAMP (no infinite loop)
+  // Calculate margin and available funds
+  useEffect(() => {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+    
+    // Calculate margin required
+    const orderValue = currentPrice * orderSize;
+    const margin = orderValue / leverage;
+    setMarginRequired(margin);
+    
+    // Calculate available funds (paper balance - margin of open positions)
+    const totalMarginUsed = positions.reduce((sum, pos) => {
+      const posValue = pos.entryPrice * pos.size;
+      return sum + (posValue / pos.leverage);
+    }, 0);
+    
+    const available = userAccount.paperBalance - totalMarginUsed;
+    setAvailableFunds(available);
+    
+    // Calculate max order value (20% of paper balance)
+    const maxOrder = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+    setMaxOrderValue(maxOrder);
+  }
+}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
+// Fetch real-time price for the selected symbol every 3 seconds
+// Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
-  if (!isLoggedIn || !userAccount.paperBalance) return;
+  if (!selectedSymbol) return;
 
-  const currentPrice =
-    prices[selectedSymbol] ||
-    cryptoData.find(c => c.symbol === selectedSymbol)?.price ||
-    91391.5;
-
-  const minLot = getMinLot(currentPrice);
-
-  const availableUSD = userAccount.paperBalance / dollarRate;
-  const maxUsableUSD = availableUSD * 0.20;
-  const maxSize = maxUsableUSD / currentPrice;
-
-  setOrderSize(prevSize => {
-    let newSize = prevSize;
-
-    if (newSize < minLot) newSize = minLot;
-    if (newSize > maxSize) newSize = maxSize;
-
-    // 🚫 prevents loop
-    if (Math.abs(newSize - prevSize) < 0.0000001) {
-      return prevSize;
+  const fetchLivePrice = async () => {
+    try {
+      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${selectedSymbol}`);
+      const data = await response.json();
+      const realPrice = parseFloat(data.price);
+      if (!isNaN(realPrice) && realPrice > 0) {
+        setPrices(prev => ({ ...prev, [selectedSymbol]: realPrice }));
+        console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch live price:', error);
     }
+  };
 
-    return newSize;
-  });
+  fetchLivePrice();
+  const interval = setInterval(fetchLivePrice, 3000);
+  return () => clearInterval(interval);
+}, [selectedSymbol]);
 
-}, [
-  prices,
-  selectedSymbol,
-  userAccount.paperBalance,
-  dollarRate,
-  isLoggedIn
-]);
-
+  // Add separate useEffect for adjusting order size (prevent infinite loop)
+useEffect(() => {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const minLot = getMinLot(currentPrice);
+    const maxSize = maxOrderValue / currentPrice;
+    
+    setOrderSize(prevSize => {
+      let newSize = prevSize;
+      if (prevSize < minLot) {
+        newSize = minLot;
+      }
+      if (prevSize > maxSize) {
+        newSize = maxSize;
+      }
+      if (Math.abs(prevSize - newSize) > 0.0001) {
+        return newSize;
+      }
+      return prevSize;
+    });
+  }
+}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
 
   // Calculate daily and total loss
   useEffect(() => {
@@ -1188,21 +1221,16 @@ if (orderSize < minLot) {
     }
     
     // Check max order size
-    const currentPrice =
-  prices[selectedSymbol] ||
-  cryptoData.find(c => c.symbol === selectedSymbol)?.price ||
-  91391.5;
-
-const orderValue = orderSize * currentPrice; // USD
-const maxOrderValue = (userAccount.paperBalance / dollarRate) * 0.20; // 20% USD
-
-if (orderValue > maxOrderValue) {
-  return {
-    valid: false,
-    message: "Position size exceeds max (20% of available funds)"
-  };
-}
-
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const orderValue = currentPrice * orderSize;
+     const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
+    
+    if (orderValue > maxOrderValue) {
+      return { 
+        valid: false, 
+        message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
+      };
+    }
     
     // Check leverage limit
     if (leverage > challenge.maxLeverage) {
@@ -1583,7 +1611,26 @@ const handleTrade = async (side) => {
     }
   };
   
- 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
+        // Force a redraw of the TradingView widget
+        const container = document.getElementById('tradingview-chart-container');
+        if (container) {
+          // The widget will automatically resize when container dimensions change
+          window.dispatchEvent(new Event('resize'));
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial call
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [widgetScriptLoaded, activeDashboard, isFullScreen]);
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
@@ -2150,7 +2197,7 @@ const QuickTradeComponent = () => {
               const newSize = parseFloat(e.target.value) || 0;
               const maxSize = maxOrderValueUSD / currentPrice;
               const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-            
+              setOrderSize(clampedSize);
             }}
             className="order-size-input"
             disabled={!canTrade}
@@ -2161,7 +2208,7 @@ const QuickTradeComponent = () => {
               onClick={() => {
                 const halfSize = orderSize * 0.5;
                 const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValueUSD / currentPrice);
-              
+                setOrderSize(clampedHalf);
               }}
               disabled={!canTrade}
             >
@@ -2171,7 +2218,7 @@ const QuickTradeComponent = () => {
               className="order-size-btn"
               onClick={() => {
                 const maxSize = maxOrderValueUSD / currentPrice;
-               
+                setOrderSize(Math.max(maxSize, minLot));
               }}
               disabled={!canTrade}
             >
