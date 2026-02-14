@@ -1622,10 +1622,11 @@ const handleTrade = async (side) => {
   useEffect(() => {
     const handleResize = () => {
       if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
-        // Force a redraw of the TradingView widget
+         // The widget will automatically resize when container dimensions change
         const container = document.getElementById('tradingview-chart-container');
         if (container) {
-          // The widget will automatically resize when container dimensions change
+        // NO need to dispatch a resize event – just let the widget adjust naturally
+          // (Optional: you could call a specific TradingView resize method if available)
       
         }
       }
