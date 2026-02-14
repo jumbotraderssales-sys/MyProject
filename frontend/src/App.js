@@ -277,6 +277,7 @@ const getMinLot = (price) => {
   }, [positions]);
 
   // ✅ USD based margin + 20% utilization rule
+// ✅ Safe auto clamp (prevents infinite loop)
 useEffect(() => {
   if (!isLoggedIn || !userAccount.paperBalance) return;
 
@@ -285,20 +286,31 @@ useEffect(() => {
     cryptoData.find(c => c.symbol === selectedSymbol)?.price ||
     91391.5;
 
-  // INR → USD
+  const minLot = getMinLot(currentPrice);
+
   const availableUSD = userAccount.paperBalance / dollarRate;
-
-  // Max usable = 20% of USD funds
   const maxUsableUSD = availableUSD * 0.20;
+  const maxSize = maxUsableUSD / currentPrice;
 
-  const positionValueUSD = orderSize * currentPrice;
-  const margin = positionValueUSD / leverage;
+  let newSize = orderSize;
 
-  setAvailableFunds(availableUSD);   // show in USD
-  setMaxOrderValue(maxUsableUSD);    // 20% cap
-  setMarginRequired(margin);
+  if (newSize < minLot) newSize = minLot;
+  if (newSize > maxSize) newSize = maxSize;
 
-}, [orderSize, leverage, prices, selectedSymbol, userAccount.paperBalance, dollarRate, isLoggedIn]);
+  // 🛑 CRITICAL: only update if actually changed
+  if (Math.abs(newSize - orderSize) > 0.0000001) {
+    setOrderSize(newSize);
+  }
+
+}, [
+  orderSize,
+  prices,
+  selectedSymbol,
+  userAccount.paperBalance,
+  dollarRate,
+  isLoggedIn
+]);
+
 
   // Calculate daily and total loss
   useEffect(() => {
