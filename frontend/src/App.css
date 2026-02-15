@@ -6193,53 +6193,46 @@ body.profile-route .below-price-alert-section {
    FIX: Chart fits in one viewport on desktop (no vertical page scroll)
    ============================================================================ */
 @media (min-width: 1024px) {
-  /* Make the entire app a full‑height flex column */
   .advanced-app {
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  /* Top navigation stays fixed */
   .top-horizontal-nav {
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
   }
 
-  /* Main content takes remaining height, hides outer scroll */
   .advanced-main {
-    flex: 1 1 auto;
-    min-height: 0;          /* critical for flex children */
-    display: flex;
-    overflow: hidden;       /* no page scroll – panels scroll internally */
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    overflow: hidden !important;
   }
 
-  /* Each panel gets its own scroll if needed */
   .left-panel,
   .center-panel,
   .right-panel {
-    height: 100%;
-    overflow-y: auto;       /* internal scroll for tall content */
+    height: 100% !important;
+    overflow-y: auto !important;
   }
 
-  /* Center panel stacks children vertically */
   .center-panel {
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  /* Chart expands to fill available space */
   .chart-container {
-    flex: 1 1 auto;
-    min-height: 0;          /* allows shrinking/expanding */
-    height: auto !important; /* override any fixed heights */
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
   }
 
-  /* Trading controls and headers stay at bottom/top */
   .trading-controls,
   .chart-header-simplified,
   .indicators-panel {
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
   }
 }
  }
