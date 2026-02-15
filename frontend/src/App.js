@@ -2129,26 +2129,24 @@ const QuickTradeComponent = () => {
       </div>
 
       {/* Leverage Section */}
-      <div className="leverage-section-top">
-        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-        <div className="leverage-buttons-top">
-          {[1, 5, 10, 20].map(lev => (
-            <button
-              key={lev}
-              className={`leverage-btn-top ${leverage === lev ? 'active' : ''} ${lev > (challenge?.maxLeverage || 10) ? 'disabled' : ''}`}
-              onClick={() => {
-                if (lev <= (challenge?.maxLeverage || 10)) {
-                  setLeverage(lev);
-                }
-              }}
-              disabled={!canTrade || lev > (challenge?.maxLeverage || 10)}
-            >
-              {lev}x
-            </button>
-          ))}
-        </div>
-      </div>
-
+<div className="leverage-section-top">
+  <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+  <div className="leverage-buttons-top">
+    {[1, 5, 10, 20].map(lev => (
+      <button
+        key={lev}
+        className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+        onClick={() => {
+          console.log('Leverage button clicked:', lev);
+          setLeverage(lev);
+        }}
+        disabled={!canTrade} // Only disable if canTrade is false, ignore maxLeverage here
+      >
+        {lev}x
+      </button>
+    ))}
+  </div>
+</div>
       {/* SL/TP Section */}
       <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
