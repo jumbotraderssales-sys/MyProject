@@ -243,7 +243,7 @@ function App() {
 
   const [marginRequired, setMarginRequired] = useState(0);
   const [availableFunds, setAvailableFunds] = useState(0);
-  const [maxOrderValue, setMaxOrderValue] = useState(0);
+ 
   const [dailyLoss, setDailyLoss] = useState(0);
   const [totalLoss, setTotalLoss] = useState(0);
   const [challengeProgress, setChallengeProgress] = useState({
@@ -277,31 +277,31 @@ const getMinLot = (price) => {
   }, [positions]);
 
   // Calculate margin and available funds
-  useEffect(() => {
+useEffect(() => {
   if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-    
-    // Calculate margin required
-    const orderValue = currentPrice * orderSize;
-    const margin = orderValue / leverage;
-    setMarginRequired(margin);
-    
-    // Calculate available funds (paper balance - margin of open positions)
-    const totalMarginUsed = positions.reduce((sum, pos) => {
-      const posValue = pos.entryPrice * pos.size;
-      return sum + (posValue / pos.leverage);
+
+    // Paper balance in USD
+    const paperUSD = userAccount.paperBalance / dollarRate;
+
+    // Margin required for the current order (USD)
+    const orderValueUSD = currentPrice * orderSize;
+    const marginUSD = orderValueUSD / leverage;
+    setMarginRequired(marginUSD);
+
+    // Total margin used by open positions (USD)
+    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+      const posValueUSD = pos.entryPrice * pos.size;
+      return sum + (posValueUSD / pos.leverage);
     }, 0);
-    
-    const available = userAccount.paperBalance - totalMarginUsed;
-    setAvailableFunds(available);
-    
-    // Calculate max order value (20% of paper balance)
-    const maxOrder = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
-    setMaxOrderValue(maxOrder);
+
+    // Available funds in USD
+    const availableUSD = paperUSD - totalMarginUsedUSD;
+    setAvailableFunds(availableUSD);
   }
-}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn]); // REMOVED orderSize and leverage
-// Fetch real-time price for the selected symbol every 3 seconds
+}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);
+  
 // Fetch real-time price for the selected symbol every 3 seconds
 useEffect(() => {
   if (!selectedSymbol) return;
@@ -327,26 +327,23 @@ useEffect(() => {
 
   // Add separate useEffect for adjusting order size (prevent infinite loop)
 useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0 && maxOrderValue > 0) {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const paperUSD = userAccount.paperBalance / dollarRate;
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+    const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
     const minLot = getMinLot(currentPrice);
-    const maxSize = maxOrderValue / currentPrice;
-    
+    const maxSize = maxOrderValueUSD / currentPrice;
+
     setOrderSize(prevSize => {
       let newSize = prevSize;
-      if (prevSize < minLot) {
-        newSize = minLot;
-      }
-      if (prevSize > maxSize) {
-        newSize = maxSize;
-      }
-      if (Math.abs(prevSize - newSize) > 0.0001) {
-        return newSize;
-      }
+      if (prevSize < minLot) newSize = minLot;
+      if (prevSize > maxSize) newSize = maxSize;
+      if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
       return prevSize;
     });
   }
-}, [maxOrderValue, selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn]); // no orderSize dependency
+}, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
 
   // Calculate daily and total loss
   useEffect(() => {
@@ -1221,16 +1218,35 @@ if (orderSize < minLot) {
     }
     
     // Check max order size
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const orderValue = currentPrice * orderSize;
-     const maxOrderValue = (userAccount.paperBalance * challenge.maxOrderSize) / 100;
-    
-    if (orderValue > maxOrderValue) {
-      return { 
-        valid: false, 
-        message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)` 
-      };
-    }
+      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const paperUSD = userAccount.paperBalance / dollarRate;
+  const orderValueUSD = currentPrice * orderSize;
+  const marginUSD = orderValueUSD / leverage;
+
+  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+  const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
+
+  // Check available funds (USD)
+  const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+    const posValueUSD = pos.entryPrice * pos.size;
+    return sum + (posValueUSD / pos.leverage);
+  }, 0);
+  const availableUSD = paperUSD - totalMarginUsedUSD;
+
+  if (availableUSD <= 0) {
+    return { valid: false, message: 'Insufficient available funds' };
+  }
+
+  if (marginUSD > availableUSD) {
+    return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
+  }
+
+  if (orderValueUSD > maxOrderValueUSD) {
+    return {
+      valid: false,
+      message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)`
+    };
+  }
     
     // Check leverage limit
     if (leverage > challenge.maxLeverage) {
