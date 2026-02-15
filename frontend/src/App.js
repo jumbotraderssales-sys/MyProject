@@ -2061,38 +2061,28 @@ const handleTrade = async (side) => {
   };
 
 const QuickTradeComponent = () => {
-  // Use live price from the prices state (updated by the new useEffect)
   const currentPrice = prices[selectedSymbol] || 
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
 
-  // Total paper balance in USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
-  // Margin used by open positions
   const totalMarginUsedUSD = positions.reduce((sum, pos) => {
     const posValue = pos.entryPrice * pos.size;
     return sum + (posValue / pos.leverage);
   }, 0);
 
-  // Available funds in USD
   const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
-  // Active challenge (if any)
   const challenge = userAccount.currentChallenge
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
-  // Max allowed position value (20% of total capital)
   const maxOrderValueUSD = challenge
     ? totalPaperUSD * (challenge.maxOrderSize / 100)
-    : totalPaperUSD * 0.2; // fallback 20%
+    : totalPaperUSD * 0.2;
 
-  // Position value for the new order (raw, before leverage)
   const orderValue = currentPrice * orderSize;
-
-  // Margin required for this new order
-  const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
@@ -2129,11 +2119,10 @@ const QuickTradeComponent = () => {
           <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-          <span className="funds-label">Margin Required:</span>
-          <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
-            ${marginRequired.toFixed(2)}
-            {/* Warning appears only when the raw position value exceeds the max allowed */}
-           {orderValue > maxOrderValueUSD + 0.0001 && 
+          <span className="funds-label">Order Value:</span>
+          <span className={`funds-value ${orderValue > maxOrderValueUSD + 0.0001 ? 'warning' : ''}`}>
+            ${orderValue.toFixed(2)}
+            {orderValue > maxOrderValueUSD + 0.0001 && 
               <span className="warning-text"> (Position size exceeds max!)</span>}
           </span>
         </div>
@@ -2189,26 +2178,26 @@ const QuickTradeComponent = () => {
       </div>
 
       {/* Order Size Section */}
-    <div className="order-size-section">
-  <div className="section-label">
-    Order Size (Min: {minLot})
-  </div>
-  <div className="order-size-controls">
-    <input 
-      type="number" 
-      step={minLot}
-      value={orderSize}
-      onChange={(e) => {
-        const newSize = parseFloat(e.target.value) || 0;
-        const maxSize = maxOrderValueUSD / currentPrice;
-        const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-        setOrderSize(clampedSize);
-      }}
-      className="order-size-input"
-      disabled={!canTrade}
-    />
-  </div>
-</div>
+      <div className="order-size-section">
+        <div className="section-label">
+          Order Size (Min: {minLot})
+        </div>
+        <div className="order-size-controls">
+          <input 
+            type="number" 
+            step={minLot}
+            value={orderSize}
+            onChange={(e) => {
+              const newSize = parseFloat(e.target.value) || 0;
+              const maxSize = maxOrderValueUSD / currentPrice;
+              const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
+              setOrderSize(clampedSize);
+            }}
+            className="order-size-input"
+            disabled={!canTrade}
+          />
+        </div>
+      </div>
 
       {/* Challenge Limits */}
       {challenge && (
@@ -2235,8 +2224,7 @@ const QuickTradeComponent = () => {
       )}
     </div>
   );
-};
-return (
+};return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
