@@ -2060,29 +2060,39 @@ const handleTrade = async (side) => {
     setShowPaymentDetails(true);
   };
 
+
 const QuickTradeComponent = () => {
   const currentPrice = prices[selectedSymbol] || 
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
 
+  // Total paper balance in USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
+  // Margin used by open positions (USD)
   const totalMarginUsedUSD = positions.reduce((sum, pos) => {
     const posValue = pos.entryPrice * pos.size;
     return sum + (posValue / pos.leverage);
   }, 0);
 
+  // Available funds in USD
   const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
+  // Active challenge
   const challenge = userAccount.currentChallenge
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
+  // Max allowed position value (USD) – 20% of total capital
   const maxOrderValueUSD = challenge
     ? totalPaperUSD * (challenge.maxOrderSize / 100)
     : totalPaperUSD * 0.2;
 
+  // Position value for the current order (USD)
   const orderValue = currentPrice * orderSize;
+
+  // Margin required for this order (USD)
+  const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
@@ -2120,33 +2130,40 @@ const QuickTradeComponent = () => {
         </div>
         <div className="funds-item">
           <span className="funds-label">Order Value:</span>
-          <span className={`funds-value ${orderValue > maxOrderValueUSD + 0.0001 ? 'warning' : ''}`}>
+          <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
             ${orderValue.toFixed(2)}
-            {orderValue > maxOrderValueUSD + 0.0001 && 
-              <span className="warning-text"> (Position size exceeds max!)</span>}
+            {orderValue > maxOrderValueUSD && 
+              <span className="warning-text"> (exceeds max!)</span>}
+          </span>
+        </div>
+        <div className="funds-item">
+          <span className="funds-label">Margin Required:</span>
+          <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
+            ${marginRequired.toFixed(2)}
           </span>
         </div>
       </div>
 
       {/* Leverage Section */}
-<div className="leverage-section-top">
-  <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-  <div className="leverage-buttons-top">
-    {[1, 5, 10, 20].map(lev => (
-      <button
-        key={lev}
-        className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-        onClick={() => {
-          console.log('Leverage button clicked:', lev);
-          setLeverage(lev);
-        }}
-        disabled={!canTrade} // Only disable if canTrade is false, ignore maxLeverage here
-      >
-        {lev}x
-      </button>
-    ))}
-  </div>
-</div>
+      <div className="leverage-section-top">
+        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+        <div className="leverage-buttons-top">
+          {[1, 5, 10, 20].map(lev => (
+            <button
+              key={lev}
+              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+              onClick={() => {
+                console.log('Setting leverage to', lev);
+                setLeverage(lev);
+              }}
+              disabled={!canTrade}
+            >
+              {lev}x
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* SL/TP Section */}
       <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
