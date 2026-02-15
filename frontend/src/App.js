@@ -641,27 +641,30 @@ useEffect(() => {
       });
     };
 
-    const interval = setInterval(() => {
-      setPrices(prev => {
-        const newPrices = { ...prev };
-        Object.keys(newPrices).forEach(symbol => {
-          const crypto = cryptoData.find(c => c.symbol === symbol);
-          const baseChange = crypto?.change24h || 0;
-          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
-          newPrices[symbol] = Math.max(
-            newPrices[symbol] * (1 + changePercent),
-            newPrices[symbol] * 0.998
-          );
-        });
-        
-        setTimeout(checkSLTP, 100);
-        
-        return newPrices;
-      });
-    }, 3000);
+     const interval = setInterval(() => {
+    setPrices(prev => {
+      const newPrices = { ...prev };
+      Object.keys(newPrices).forEach(symbol => {
+        // Do NOT simulate the currently selected symbol – keep its real price
+        if (symbol === selectedSymbol) return;
 
-    return () => clearInterval(interval);
-  }, [prices]);
+        const crypto = cryptoData.find(c => c.symbol === symbol);
+        const baseChange = crypto?.change24h || 0;
+        const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
+        newPrices[symbol] = Math.max(
+          newPrices[symbol] * (1 + changePercent),
+          newPrices[symbol] * 0.998
+        );
+      });
+
+      setTimeout(checkSLTP, 100);
+      return newPrices;
+    });
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [prices, selectedSymbol]); // ⬅️ add selectedSymbol to dependencies
+
 
   useEffect(() => {
     let total = 0;
