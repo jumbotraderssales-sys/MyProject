@@ -6190,49 +6190,82 @@ body.profile-route .below-price-alert-section {
   }
 }
   /* ============================================================================
-   FIX: Chart fits in one viewport on desktop (no vertical page scroll)
+   FIX: TRADING CHART SINGLE PAGE – NO SCROLLING
    ============================================================================ */
-@media (min-width: 1024px) {
-  .advanced-app {
-    height: 100vh !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
+html, body {
+  height: 100%;
+  overflow: hidden;           /* Prevent body scroll */
+}
 
-  .top-horizontal-nav {
-    flex-shrink: 0 !important;
-  }
+.advanced-app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  .advanced-main {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    display: flex !important;
-    overflow: hidden !important;
-  }
+/* Top bars – keep their natural height */
+.top-static-user-bar {
+  flex-shrink: 0;
+}
 
-  .left-panel,
-  .center-panel,
-  .right-panel {
-    height: 100% !important;
-    overflow-y: auto !important;
-  }
+.advanced-header {
+  flex-shrink: 0;
+}
 
+.below-price-alert-section {
+  flex-shrink: 0;
+}
+
+/* Main content area – takes remaining space */
+.advanced-main {
+  flex: 1 1 auto;
+  min-height: 0;              /* Override any min-height */
+  display: flex;
+  overflow: hidden;           /* Prevent main area scroll */
+}
+
+/* Left, center, right panels – scroll internally if needed */
+.left-panel,
+.center-panel,
+.right-panel {
+  overflow-y: auto;           /* Allow internal scrolling for long content */
+  height: 100%;               /* Fill parent height */
+}
+
+/* Center panel – ensure chart container fills available space */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chart-container {
+  flex: 1 1 auto;
+  min-height: 0;              /* Critical: allows chart to shrink */
+  height: auto !important;    /* Override any fixed heights */
+}
+
+/* Ensure the TradingView widget itself fills the container */
+.tradingview-chart {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* If there is a trading controls section below the chart, keep it visible but small */
+.trading-controls {
+  flex-shrink: 0;
+  max-height: 30%;            /* Optional: limit height of order list */
+  overflow-y: auto;
+}
+
+/* On mobile, you might want to hide some panels to give chart more space */
+@media (max-width: 768px) {
+  .left-panel, .right-panel {
+    display: none;            /* Hide side panels on small screens */
+  }
   .center-panel {
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .chart-container {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    height: auto !important;
-  }
-
-  .trading-controls,
-  .chart-header-simplified,
-  .indicators-panel {
-    flex-shrink: 0 !important;
+    width: 100%;
   }
 }
  }
