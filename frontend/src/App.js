@@ -1207,7 +1207,14 @@ const validateTrade = () => {
   const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const paperUSD = userAccount.paperBalance / dollarRate;
   const orderValueUSD = currentPrice * orderSize;
-  const marginUSD = orderValueUSD / leverage;
+  const maxMarginUSD = (paperUSD * challenge.maxOrderSize) / 100; // 20% of capital as margin
+
+if (marginUSD > maxMarginUSD) {
+  return {
+    valid: false,
+    message: `Margin required ($${marginUSD.toFixed(2)}) exceeds maximum allowed ($${maxMarginUSD.toFixed(2)})`
+  };
+}
   const minLot = getMinLot(currentPrice);
   const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
 
@@ -2116,33 +2123,28 @@ const QuickTradeComponent = () => {
         </button>
       </div>
 
-      {/* Funds Information */}
       <div className="funds-info-section">
-        <div className="funds-item">
-          <span className="funds-label">Available Funds:</span>
-          <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">
-            Max Position Value ({challenge?.maxOrderSize || 20}% of total):
-          </span>
-          <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">Order Value:</span>
-          <span className={`funds-value ${orderValue > maxOrderValueUSD ? 'warning' : ''}`}>
-            ${orderValue.toFixed(2)}
-            {orderValue > maxOrderValueUSD && 
-              <span className="warning-text"> (exceeds max!)</span>}
-          </span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">Margin Required:</span>
-          <span className={`funds-value ${marginRequired > availableFundsUSD ? 'warning' : ''}`}>
-            ${marginRequired.toFixed(2)}
-          </span>
-        </div>
-      </div>
+  <div className="funds-item">
+    <span className="funds-label">Available Funds:</span>
+    <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+  </div>
+  <div className="funds-item">
+    <span className="funds-label">Max Margin Allowed ({challenge?.maxOrderSize || 20}% of capital):</span>
+    <span className="funds-value">${maxMarginUSD.toFixed(2)}</span>
+  </div>
+  <div className="funds-item">
+    <span className="funds-label">Order Value (Notional):</span>
+    <span className="funds-value">${orderValue.toFixed(2)}</span>
+  </div>
+  <div className="funds-item">
+    <span className="funds-label">Margin Required:</span>
+    <span className={`funds-value ${marginRequired > maxMarginUSD ? 'warning' : ''}`}>
+      ${marginRequired.toFixed(2)}
+      {marginRequired > maxMarginUSD && 
+        <span className="warning-text"> (exceeds max margin!)</span>}
+    </span>
+  </div>
+</div>
 
       {/* Leverage Section */}
       <div className="leverage-section-top">
