@@ -2186,49 +2186,26 @@ const QuickTradeComponent = () => {
       </div>
 
       {/* Order Size Section */}
-      <div className="order-size-section">
-        <div className="section-label">
-          Order Size (Min: {minLot} – Max: {challenge ? `${challenge.maxOrderSize}% of capital` : '20%'})
-        </div>
-        <div className="order-size-controls">
-          <input 
-            type="number" 
-            step={minLot}
-            value={orderSize}
-            onChange={(e) => {
-              const newSize = parseFloat(e.target.value) || 0;
-              const maxSize = maxOrderValueUSD / currentPrice;
-              const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-              setOrderSize(clampedSize);
-            }}
-            className="order-size-input"
-            disabled={!canTrade}
-          />
-          <div className="order-size-buttons">
-            <button 
-              className="order-size-btn"
-              onClick={() => {
-                const halfSize = orderSize * 0.5;
-                const clampedHalf = Math.min(Math.max(halfSize, minLot), maxOrderValueUSD / currentPrice);
-                setOrderSize(clampedHalf);
-              }}
-              disabled={!canTrade}
-            >
-              ½
-            </button>
-            <button 
-              className="order-size-btn"
-              onClick={() => {
-                const maxSize = maxOrderValueUSD / currentPrice;
-                setOrderSize(Math.max(maxSize, minLot));
-              }}
-              disabled={!canTrade}
-            >
-              MAX
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="order-size-section">
+  <div className="section-label">
+    Order Size (Min: {minLot})
+  </div>
+  <div className="order-size-controls">
+    <input 
+      type="number" 
+      step={minLot}
+      value={orderSize}
+      onChange={(e) => {
+        const newSize = parseFloat(e.target.value) || 0;
+        const maxSize = maxOrderValueUSD / currentPrice;
+        const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
+        setOrderSize(clampedSize);
+      }}
+      className="order-size-input"
+      disabled={!canTrade}
+    />
+  </div>
+</div>
 
       {/* Challenge Limits */}
       {challenge && (
