@@ -2078,11 +2078,10 @@ const QuickTradeComponent = () => {
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
-  const maxOrderSizePercent = challenge?.maxOrderSize || 20;
-  const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
+const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-  const orderValue = currentPrice * orderSize;
-  const marginRequired = orderValue / leverage;
+const orderValue = currentPrice * orderSize;
+const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
