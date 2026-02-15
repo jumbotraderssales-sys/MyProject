@@ -2078,11 +2078,11 @@ const QuickTradeComponent = () => {
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
-  const maxOrderValueUSD = challenge
-    ? totalPaperUSD * (challenge.maxOrderSize / 100)
-    : totalPaperUSD * 0.2;
+  const maxOrderSizePercent = challenge?.maxOrderSize || 20;
+  const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
   const orderValue = currentPrice * orderSize;
+  const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
@@ -2114,39 +2114,37 @@ const QuickTradeComponent = () => {
         </div>
         <div className="funds-item">
           <span className="funds-label">
-            Max Position Value ({challenge?.maxOrderSize || 20}% of total):
+            Max Margin ({maxOrderSizePercent}% of total):
           </span>
-          <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
+          <span className="funds-value">${maxAllowedMarginUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-          <span className="funds-label">Order Value:</span>
-          <span className={`funds-value ${orderValue > maxOrderValueUSD + 0.0001 ? 'warning' : ''}`}>
-            ${orderValue.toFixed(2)}
-            {orderValue > maxOrderValueUSD + 0.0001 && 
-              <span className="warning-text"> (Position size exceeds max!)</span>}
+          <span className="funds-label">Margin Required:</span>
+          <span className={`funds-value ${marginRequired > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
+            ${marginRequired.toFixed(2)}
+            {marginRequired > maxAllowedMarginUSD + 0.0001 && 
+              <span className="warning-text"> (Margin exceeds max!)</span>}
           </span>
         </div>
       </div>
 
       {/* Leverage Section */}
-<div className="leverage-section-top">
-  <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-  <div className="leverage-buttons-top">
-    {[1, 5, 10, 20].map(lev => (
-      <button
-        key={lev}
-        className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-        onClick={() => {
-          console.log('Leverage button clicked:', lev);
-          setLeverage(lev);
-        }}
-        disabled={!canTrade} // Only disable if canTrade is false, ignore maxLeverage here
-      >
-        {lev}x
-      </button>
-    ))}
-  </div>
-</div>
+      <div className="leverage-section-top">
+        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+        <div className="leverage-buttons-top">
+          {[1, 5, 10, 20].map(lev => (
+            <button
+              key={lev}
+              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+              onClick={() => setLeverage(lev)}
+              disabled={!canTrade}
+            >
+              {lev}x
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* SL/TP Section */}
       <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
@@ -2187,7 +2185,8 @@ const QuickTradeComponent = () => {
             value={orderSize}
             onChange={(e) => {
               const newSize = parseFloat(e.target.value) || 0;
-              const maxSize = maxOrderValueUSD / currentPrice;
+              // size must satisfy: marginRequired = size * price / leverage <= maxAllowedMarginUSD
+              const maxSize = maxAllowedMarginUSD * leverage / currentPrice;
               const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
               setOrderSize(clampedSize);
             }}
