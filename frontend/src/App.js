@@ -1165,68 +1165,52 @@ console.log('Payment request headers:', response.headers);
     setLoginData({ email: '', password: '' });
   };
 
-  const validateTrade = () => {
-    if (!isLoggedIn) {
-      return { valid: false, message: 'Please login to trade' };
-    }
-    
-    if (!userAccount.currentChallenge || userAccount.paperBalance === 0) {
-      return { valid: false, message: 'Please purchase a challenge to start trading' };
-    }
-    
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-    if (!challenge) {
-      return { valid: false, message: 'Invalid challenge configuration' };
-    }
-    
-    // Check challenge status
-    if (userAccount.challengeStats.status !== 'active') {
-      return { 
-        valid: false, 
-        message: `Challenge ${userAccount.challengeStats.status}. Cannot trade.` 
-      };
-    }
-    
-    // Check one trade at a time
-    if (challenge.oneTradeAtTime && positions.length > 0) {
-      return { valid: false, message: 'Only one trade allowed at a time for this challenge' };
-    }
-    
-    // Check daily loss limit
-    if (dailyLoss >= challenge.dailyLossLimit) {
-      return { valid: false, message: `Daily loss limit (${challenge.dailyLossLimit}%) reached` };
-    }
-    
-    // Check max loss limit
-    if (totalLoss >= challenge.maxLossLimit) {
-      return { valid: false, message: `Maximum loss limit (${challenge.maxLossLimit}%) reached` };
-    }
+const validateTrade = () => {
+  if (!isLoggedIn) {
+    return { valid: false, message: 'Please login to trade' };
+  }
+  if (!userAccount.currentChallenge || userAccount.paperBalance === 0) {
+    return { valid: false, message: 'Please purchase a challenge to start trading' };
+  }
 
-    // Inside validateTrade, after checking max order size:
-const minLot = getMinLot(currentPrice);
-if (orderSize < minLot) {
-  return { valid: false, message: `Minimum order size is ${minLot}` };
-}
-    // Check available funds
-    if (availableFunds <= 0) {
-      return { valid: false, message: 'Insufficient available funds' };
-    }
-    
-    // Check margin requirement
-    if (marginRequired > availableFunds) {
-      return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
-    }
-    
-    // Check max order size
-      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+  if (!challenge) {
+    return { valid: false, message: 'Invalid challenge configuration' };
+  }
+
+  // Check challenge status
+  if (userAccount.challengeStats.status !== 'active') {
+    return { valid: false, message: `Challenge ${userAccount.challengeStats.status}. Cannot trade.` };
+  }
+
+  // Check one trade at a time
+  if (challenge.oneTradeAtTime && positions.length > 0) {
+    return { valid: false, message: 'Only one trade allowed at a time for this challenge' };
+  }
+
+  // Check daily loss limit
+  if (dailyLoss >= challenge.dailyLossLimit) {
+    return { valid: false, message: `Daily loss limit (${challenge.dailyLossLimit}%) reached` };
+  }
+
+  // Check max loss limit
+  if (totalLoss >= challenge.maxLossLimit) {
+    return { valid: false, message: `Maximum loss limit (${challenge.maxLossLimit}%) reached` };
+  }
+
+  const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const paperUSD = userAccount.paperBalance / dollarRate;
   const orderValueUSD = currentPrice * orderSize;
   const marginUSD = orderValueUSD / leverage;
-
-  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+  const minLot = getMinLot(currentPrice);
   const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
 
-  // Check available funds (USD)
+  // Minimum order size check
+  if (orderSize < minLot) {
+    return { valid: false, message: `Minimum order size is ${minLot}` };
+  }
+
+  // Calculate total margin used by open positions
   const totalMarginUsedUSD = positions.reduce((sum, pos) => {
     const posValueUSD = pos.entryPrice * pos.size;
     return sum + (posValueUSD / pos.leverage);
@@ -1247,18 +1231,17 @@ if (orderSize < minLot) {
       message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)`
     };
   }
-    
-    // Check leverage limit
-    if (leverage > challenge.maxLeverage) {
-      return { 
-        valid: false, 
-        message: `Leverage exceeds maximum (${challenge.maxLeverage}x)` 
-      };
-    }
-    
-    return { valid: true, message: '' };
-  };
 
+  // Check leverage limit
+  if (leverage > challenge.maxLeverage) {
+    return {
+      valid: false,
+      message: `Leverage exceeds maximum (${challenge.maxLeverage}x)`
+    };
+  }
+
+  return { valid: true, message: '' };
+};
 const handleTrade = async (side) => {
   const validation = validateTrade();
   if (!validation.valid) {
