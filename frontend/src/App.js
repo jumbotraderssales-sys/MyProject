@@ -1207,9 +1207,9 @@ const validateTrade = () => {
   const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const paperUSD = userAccount.paperBalance / dollarRate;
   const orderValueUSD = currentPrice * orderSize;
-  const marginUSD = orderValueUSD / leverage;               // ✅ define marginUSD
+  const marginUSD = orderValueUSD / leverage;
   const minLot = getMinLot(currentPrice);
-  const maxMarginUSD = (paperUSD * challenge.maxOrderSize) / 100; // ✅ max allowed margin (20% of capital)
+  const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
 
   // Minimum order size check
   if (orderSize < minLot) {
@@ -1231,11 +1231,10 @@ const validateTrade = () => {
     return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
   }
 
-  // Check margin against max allowed (20% of capital)
-  if (marginUSD > maxMarginUSD) {
+  if (orderValueUSD > maxOrderValueUSD) {
     return {
       valid: false,
-      message: `Margin required ($${marginUSD.toFixed(2)}) exceeds maximum allowed ($${maxMarginUSD.toFixed(2)})`
+      message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)`
     };
   }
 
@@ -1249,7 +1248,7 @@ const validateTrade = () => {
 
   return { valid: true, message: '' };
 };
- const handleTrade = async (side) => {
+const handleTrade = async (side) => {
   const validation = validateTrade();
   if (!validation.valid) {
     alert(validation.message);
@@ -1291,8 +1290,6 @@ const validateTrade = () => {
   
   try {
     const token = localStorage.getItem('token');
-    const marginRequired = (currentPrice * orderSize) / leverage; // compute margin for this order
-    
     const tradeData = {
       symbol: selectedSymbol,
       side: side,
@@ -1332,16 +1329,16 @@ const validateTrade = () => {
       }));
       setBalance(data.newBalance);
       
-      const newOrder = {
-        id: data.trade.id,
-        ...tradeData,
-        status: 'OPEN',
-        timestamp: new Date().toLocaleString(),
-        pnl: 0,
-        currentPrice: currentPrice,
-        positionValue: data.trade.positionValue,
-        marginUsed: marginRequired
-      };
+     const newOrder = {
+  id: data.trade.id,
+  ...tradeData,
+  status: 'OPEN',
+  timestamp: new Date().toLocaleString(),
+  pnl: 0,
+  currentPrice: currentPrice,
+  positionValue: data.trade.positionValue,
+  marginUsed: (currentPrice * orderSize) / leverage   // ← add this line
+};
       
       setOrderHistory(prev => [newOrder, ...prev]);
       
@@ -1362,7 +1359,7 @@ const validateTrade = () => {
     console.error('Trade error:', error);
     alert('Trade failed. Please try again.');
   }
-};;
+};
     
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
@@ -2063,39 +2060,29 @@ const validateTrade = () => {
     setShowPaymentDetails(true);
   };
 
-
 const QuickTradeComponent = () => {
   const currentPrice = prices[selectedSymbol] || 
     cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
   const minLot = getMinLot(currentPrice);
 
-  // Total paper balance in USD
   const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
-  // Margin used by open positions (USD)
   const totalMarginUsedUSD = positions.reduce((sum, pos) => {
     const posValue = pos.entryPrice * pos.size;
     return sum + (posValue / pos.leverage);
   }, 0);
 
-  // Available funds in USD
   const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
-  // Active challenge
   const challenge = userAccount.currentChallenge
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
-  // Max allowed margin (20% of capital)
-  const maxMarginUSD = challenge
-    ? (totalPaperUSD * challenge.maxOrderSize) / 100
-    : totalPaperUSD * 0.2; // fallback 20%
+  const maxOrderValueUSD = challenge
+    ? totalPaperUSD * (challenge.maxOrderSize / 100)
+    : totalPaperUSD * 0.2;
 
-  // Position value for the current order (USD)
   const orderValue = currentPrice * orderSize;
-
-  // Margin required for this order (USD)
-  const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
@@ -2126,43 +2113,40 @@ const QuickTradeComponent = () => {
           <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-          <span className="funds-label">Max Margin Allowed ({challenge?.maxOrderSize || 20}% of capital):</span>
-          <span className="funds-value">${maxMarginUSD.toFixed(2)}</span>
+          <span className="funds-label">
+            Max Position Value ({challenge?.maxOrderSize || 20}% of total):
+          </span>
+          <span className="funds-value">${maxOrderValueUSD.toFixed(2)}</span>
         </div>
         <div className="funds-item">
-          <span className="funds-label">Order Value (Notional):</span>
-          <span className="funds-value">${orderValue.toFixed(2)}</span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">Margin Required:</span>
-          <span className={`funds-value ${marginRequired > maxMarginUSD ? 'warning' : ''}`}>
-            ${marginRequired.toFixed(2)}
-            {marginRequired > maxMarginUSD && 
-              <span className="warning-text"> (exceeds max margin!)</span>}
+          <span className="funds-label">Order Value:</span>
+          <span className={`funds-value ${orderValue > maxOrderValueUSD + 0.0001 ? 'warning' : ''}`}>
+            ${orderValue.toFixed(2)}
+            {orderValue > maxOrderValueUSD + 0.0001 && 
+              <span className="warning-text"> (Position size exceeds max!)</span>}
           </span>
         </div>
       </div>
 
       {/* Leverage Section */}
-      <div className="leverage-section-top">
-        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-        <div className="leverage-buttons-top">
-          {[1, 5, 10, 20].map(lev => (
-            <button
-              key={lev}
-              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-              onClick={() => {
-                console.log('Setting leverage to', lev);
-                setLeverage(lev);
-              }}
-              disabled={!canTrade}
-            >
-              {lev}x
-            </button>
-          ))}
-        </div>
-      </div>
-
+<div className="leverage-section-top">
+  <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+  <div className="leverage-buttons-top">
+    {[1, 5, 10, 20].map(lev => (
+      <button
+        key={lev}
+        className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+        onClick={() => {
+          console.log('Leverage button clicked:', lev);
+          setLeverage(lev);
+        }}
+        disabled={!canTrade} // Only disable if canTrade is false, ignore maxLeverage here
+      >
+        {lev}x
+      </button>
+    ))}
+  </div>
+</div>
       {/* SL/TP Section */}
       <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
@@ -2203,7 +2187,7 @@ const QuickTradeComponent = () => {
             value={orderSize}
             onChange={(e) => {
               const newSize = parseFloat(e.target.value) || 0;
-              const maxSize = (maxMarginUSD * leverage) / currentPrice; // derived from max margin
+              const maxSize = maxOrderValueUSD / currentPrice;
               const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
               setOrderSize(clampedSize);
             }}
@@ -2237,7 +2221,8 @@ const QuickTradeComponent = () => {
         </div>
       )}
     </div>
-  );return (
+  );
+};return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
