@@ -6189,6 +6189,8 @@ body.profile-route .below-price-alert-section {
     gap: 0.25rem;
   }
 }
+
+ }
   /* ============================================================================
    FIX: TRADING CHART SINGLE PAGE – NO SCROLLING
    ============================================================================ */
@@ -6268,6 +6270,5 @@ html, body {
     width: 100%;
   }
 }
- }
 
 /* End of CSS */
