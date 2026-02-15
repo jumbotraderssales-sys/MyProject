@@ -1249,15 +1249,16 @@ const validateTrade = () => {
 
   return { valid: true, message: '' };
 };
+ const handleTrade = async (side) => {
   // Get the latest real price from Binance
   let currentPrice = await fetchRealPrice(selectedSymbol);
-  
+
   // Fallback if API fails
   if (!currentPrice) {
     currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     console.warn('Using fallback price for order');
   }
-
+ }
   // Update local price for consistency
   setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
 
