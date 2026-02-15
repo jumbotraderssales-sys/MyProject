@@ -1250,15 +1250,21 @@ const validateTrade = () => {
   return { valid: true, message: '' };
 };
  const handleTrade = async (side) => {
+  const validation = validateTrade();
+  if (!validation.valid) {
+    alert(validation.message);
+    return;
+  }
+  
   // Get the latest real price from Binance
   let currentPrice = await fetchRealPrice(selectedSymbol);
-
+  
   // Fallback if API fails
   if (!currentPrice) {
     currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     console.warn('Using fallback price for order');
   }
- }
+
   // Update local price for consistency
   setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
 
@@ -1285,6 +1291,8 @@ const validateTrade = () => {
   
   try {
     const token = localStorage.getItem('token');
+    const marginRequired = (currentPrice * orderSize) / leverage; // compute margin for this order
+    
     const tradeData = {
       symbol: selectedSymbol,
       side: side,
@@ -1324,16 +1332,16 @@ const validateTrade = () => {
       }));
       setBalance(data.newBalance);
       
-     const newOrder = {
-  id: data.trade.id,
-  ...tradeData,
-  status: 'OPEN',
-  timestamp: new Date().toLocaleString(),
-  pnl: 0,
-  currentPrice: currentPrice,
-  positionValue: data.trade.positionValue,
-  marginUsed: (currentPrice * orderSize) / leverage   // ← add this line
-};
+      const newOrder = {
+        id: data.trade.id,
+        ...tradeData,
+        status: 'OPEN',
+        timestamp: new Date().toLocaleString(),
+        pnl: 0,
+        currentPrice: currentPrice,
+        positionValue: data.trade.positionValue,
+        marginUsed: marginRequired
+      };
       
       setOrderHistory(prev => [newOrder, ...prev]);
       
@@ -1354,7 +1362,7 @@ const validateTrade = () => {
     console.error('Trade error:', error);
     alert('Trade failed. Please try again.');
   }
-};
+};;
     
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
