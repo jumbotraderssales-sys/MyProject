@@ -1231,12 +1231,16 @@ const validateTrade = () => {
     return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
   }
 
-  if (orderValueUSD > maxOrderValueUSD) {
-    return {
-      valid: false,
-      message: `Order exceeds maximum size (${challenge.maxOrderSize}% of capital)`
-    };
-  }
+  const totalPaperUSD = userAccount.paperBalance / dollarRate;
+const maxAllowedMarginUSD = totalPaperUSD * (challenge.maxOrderSize / 100);
+const marginRequired = orderValueUSD / leverage;
+
+if (marginRequired > maxAllowedMarginUSD) {
+  return {
+    valid: false,
+    message: `Margin required ($${marginRequired.toFixed(2)}) exceeds max allowed ($${maxAllowedMarginUSD.toFixed(2)})`
+  };
+}
 
   // Check leverage limit
   if (leverage > challenge.maxLeverage) {
@@ -2078,10 +2082,11 @@ const QuickTradeComponent = () => {
     ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
     : null;
 
-const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
+  const maxOrderSizePercent = challenge?.maxOrderSize || 20;
+  const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-const orderValue = currentPrice * orderSize;
-const marginRequired = orderValue / leverage;
+  const orderValue = currentPrice * orderSize;
+  const marginRequired = orderValue / leverage;
 
   return (
     <div className="quick-trade-top mobile-quick-trade-component">
