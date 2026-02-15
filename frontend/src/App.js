@@ -271,7 +271,12 @@ const getMinLot = (price) => {
 };
 
   const positionsRef = useRef(positions);
-
+const selectedSymbolRef = useRef(selectedSymbol);
+  // Update the ref whenever selectedSymbol changes (add this after the ref)
+useEffect(() => {
+  selectedSymbolRef.current = selectedSymbol;
+}, [selectedSymbol]);
+  
   useEffect(() => {
     positionsRef.current = positions;
   }, [positions]);
@@ -618,35 +623,35 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    const checkSLTP = () => {
-      const currentPositions = positionsRef.current;
-      currentPositions.forEach(position => {
-        const currentPrice = prices[position.symbol] || position.entryPrice;
-        
-        if (position.side === 'LONG') {
-          if (position.stopLoss && currentPrice <= position.stopLoss) {
-            closePosition(position.id, 'STOP_LOSS');
-          }
-          if (position.takeProfit && currentPrice >= position.takeProfit) {
-            closePosition(position.id, 'TAKE_PROFIT');
-          }
-        } else if (position.side === 'SHORT') {
-          if (position.stopLoss && currentPrice >= position.stopLoss) {
-            closePosition(position.id, 'STOP_LOSS');
-          }
-          if (position.takeProfit && currentPrice <= position.takeProfit) {
-            closePosition(position.id, 'TAKE_PROFIT');
-          }
+  const checkSLTP = () => {
+    const currentPositions = positionsRef.current;
+    currentPositions.forEach(position => {
+      const currentPrice = prices[position.symbol] || position.entryPrice;
+      if (position.side === 'LONG') {
+        if (position.stopLoss && currentPrice <= position.stopLoss) {
+          closePosition(position.id, 'STOP_LOSS');
         }
-      });
-    };
+        if (position.takeProfit && currentPrice >= position.takeProfit) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      } else if (position.side === 'SHORT') {
+        if (position.stopLoss && currentPrice >= position.stopLoss) {
+          closePosition(position.id, 'STOP_LOSS');
+        }
+        if (position.takeProfit && currentPrice <= position.takeProfit) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      }
+    });
+  };
 
-     const interval = setInterval(() => {
+  const interval = setInterval(() => {
     setPrices(prev => {
       const newPrices = { ...prev };
+      const currentSelected = selectedSymbolRef.current; // always the latest selected symbol
       Object.keys(newPrices).forEach(symbol => {
-        // Do NOT simulate the currently selected symbol – keep its real price
-        if (symbol === selectedSymbol) return;
+        // Skip the currently selected symbol – keep its live price
+        if (symbol === currentSelected) return;
 
         const crypto = cryptoData.find(c => c.symbol === symbol);
         const baseChange = crypto?.change24h || 0;
@@ -663,9 +668,7 @@ useEffect(() => {
   }, 3000);
 
   return () => clearInterval(interval);
-}, [prices, selectedSymbol]); // ⬅️ add selectedSymbol to dependencies
-
-
+}, []); // Empty deps – runs once on mount
   useEffect(() => {
     let total = 0;
     positions.forEach(pos => {
