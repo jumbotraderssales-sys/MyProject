@@ -337,6 +337,68 @@ const handleTouchMove = (e) => {
 const handleDragEnd = () => {
   setIsDragging(false);
 }; 
+    // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
+useEffect(() => {
+  if (isDragging) {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleDragEnd);
+  } else {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleDragEnd);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleDragEnd);
+  }
+  return () => {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleDragEnd);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleDragEnd);
+  };
+}, [isDragging]);
+      
+      // Calculate daily loss from today's trades
+      const today = new Date().toDateString();
+      const todayTrades = orderHistory.filter(order => {
+        const orderDate = new Date(order.timestamp).toDateString();
+        return orderDate === today && order.status === 'CLOSED';
+      });
+      
+      const dailyLossAmount = Math.abs(todayTrades
+        .filter(order => order.pnl < 0)
+        .reduce((sum, order) => sum + order.pnl, 0));
+      
+      const dailyLossPercentage = (dailyLossAmount / userAccount.paperBalance) * 100;
+      setDailyLoss(dailyLossPercentage);
+      
+      // Calculate total loss from all trades
+      const allLosses = orderHistory
+        .filter(order => order.status === 'CLOSED' && order.pnl < 0)
+        .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
+      
+      const totalLossPercentage = (allLosses / userAccount.paperBalance) * 100;
+      setTotalLoss(totalLossPercentage);
+      
+      // Update challenge progress
+      const totalProfit = orderHistory
+        .filter(order => order.status === 'CLOSED' && order.pnl > 0)
+        .reduce((sum, order) => sum + order.pnl, 0);
+      
+      const profitPercentage = (totalProfit / userAccount.paperBalance) * 100;
+      
+      setChallengeProgress({
+        profit: profitPercentage,
+        dailyLoss: dailyLossPercentage,
+        totalLoss: totalLossPercentage,
+        status: userAccount.challengeStats.status
+      });
+      
+      // Check challenge rules
+      checkChallengeRules();
+    }
+  }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
+
   // Update the ref whenever selectedSymbol changes (add this after the ref)
 useEffect(() => {
   selectedSymbolRef.current = selectedSymbol;
@@ -428,68 +490,7 @@ useEffect(() => {
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
       if (!challenge) return;
 
-      // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
-useEffect(() => {
-  if (isDragging) {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleDragEnd);
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('touchend', handleDragEnd);
-  } else {
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleDragEnd);
-    window.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleDragEnd);
-  }
-  return () => {
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleDragEnd);
-    window.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleDragEnd);
-  };
-}, [isDragging]);
-      
-      // Calculate daily loss from today's trades
-      const today = new Date().toDateString();
-      const todayTrades = orderHistory.filter(order => {
-        const orderDate = new Date(order.timestamp).toDateString();
-        return orderDate === today && order.status === 'CLOSED';
-      });
-      
-      const dailyLossAmount = Math.abs(todayTrades
-        .filter(order => order.pnl < 0)
-        .reduce((sum, order) => sum + order.pnl, 0));
-      
-      const dailyLossPercentage = (dailyLossAmount / userAccount.paperBalance) * 100;
-      setDailyLoss(dailyLossPercentage);
-      
-      // Calculate total loss from all trades
-      const allLosses = orderHistory
-        .filter(order => order.status === 'CLOSED' && order.pnl < 0)
-        .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
-      
-      const totalLossPercentage = (allLosses / userAccount.paperBalance) * 100;
-      setTotalLoss(totalLossPercentage);
-      
-      // Update challenge progress
-      const totalProfit = orderHistory
-        .filter(order => order.status === 'CLOSED' && order.pnl > 0)
-        .reduce((sum, order) => sum + order.pnl, 0);
-      
-      const profitPercentage = (totalProfit / userAccount.paperBalance) * 100;
-      
-      setChallengeProgress({
-        profit: profitPercentage,
-        dailyLoss: dailyLossPercentage,
-        totalLoss: totalLossPercentage,
-        status: userAccount.challengeStats.status
-      });
-      
-      // Check challenge rules
-      checkChallengeRules();
-    }
-  }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
-
+    
   // Check challenge rules
   const checkChallengeRules = () => {
     if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
