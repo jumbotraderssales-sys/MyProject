@@ -1,8 +1,10 @@
 import React, { Suspense, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AdminWithdrawalPanel from './AdminWithdrawalPanel'; // This is in the root
+import PrivateRoute from './components/PrivateRoute';
+import Login from './pages/Login';
 import './App.css';
 
 // Lazy load pages from the pages folder
@@ -16,7 +18,6 @@ const P2PPage = React.lazy(() => import('./pages/P2PPage'));
 const UserDetailPage = React.lazy(() => import('./pages/UserDetailPage'));
 const ChallengeManagement = React.lazy(() => import('./pages/ChallengeManagement'));
 const ChallengeHistory = React.lazy(() => import('./pages/ChallengeHistory'));
-// ========== NEW REFERRAL PAGE ==========
 const ReferralsPage = React.lazy(() => import('./pages/ReferralsPage'));
 
 // Lazy load components from the components folder
@@ -49,25 +50,21 @@ function App() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSystemStats();
-  }, []);
-
   const fetchSystemStats = async () => {
     try {
       setLoading(true);
-      
-      // Using the correct endpoints from your backend
+      const token = localStorage.getItem('token');
       const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
       
+      const headers = { 'Authorization': `Bearer ${token}` };
+
       const [usersRes, tradesRes, paymentsRes, withdrawalsRes] = await Promise.all([
-        fetch(`${baseURL}/api/admin/users`),
-        fetch(`${baseURL}/api/admin/trades`),
-        fetch(`${baseURL}/api/admin/payments`),
-        fetch(`${baseURL}/api/admin/withdrawals`)
+        fetch(`${baseURL}/api/admin/users`, { headers }),
+        fetch(`${baseURL}/api/admin/trades`, { headers }),
+        fetch(`${baseURL}/api/admin/payments`, { headers }),
+        fetch(`${baseURL}/api/admin/withdrawals`, { headers })
       ]);
 
-      // Check if responses are ok
       if (!usersRes.ok || !tradesRes.ok || !paymentsRes.ok || !withdrawalsRes.ok) {
         throw new Error('Failed to fetch data from server');
       }
@@ -77,7 +74,6 @@ function App() {
       const payments = await paymentsRes.json();
       const withdrawals = await withdrawalsRes.json();
 
-      // Calculate stats from existing data
       const activeTrades = Array.isArray(trades) ? 
         trades.filter(trade => trade.status === 'open' || trade.status === 'active').length : 0;
       
@@ -87,13 +83,11 @@ function App() {
       const pendingWithdrawals = Array.isArray(withdrawals) ? 
         withdrawals.filter(withdrawal => withdrawal.status === 'pending').length : 0;
       
-      // Calculate total revenue from approved payments
       const totalRevenue = Array.isArray(payments) ? 
         payments
           .filter(p => p.status === 'approved')
           .reduce((sum, payment) => sum + (payment.amount || 0), 0) : 0;
       
-      // Calculate challenge statistics
       const challengeStats = {
         beginner: { total: 0, active: 0, passed: 0, failed: 0 },
         intermediate: { total: 0, active: 0, passed: 0, failed: 0 },
@@ -165,57 +159,54 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    fetchSystemStats();
+  }, []);
+
   const refreshStats = () => {
     fetchSystemStats();
   };
 
   return (
     <Router>
-      <div className="app-container">
-        <Sidebar />
-        <div className="main-content">
-          <Header onRefresh={refreshStats} />
-          <div className="content-area">
-            <Suspense fallback={<Loading />}>
-              <Routes>
-                {/* Main dashboard using DashboardPage */}
-                <Route 
-                  path="/" 
-                  element={<DashboardPage systemStats={systemStats} loading={loading} />} 
-                />
-                <Route 
-                  path="/dashboard" 
-                  element={<DashboardPage systemStats={systemStats} loading={loading} />} 
-                />
-                
-                {/* Alternative dashboard using Dashboard component */}
-                <Route 
-                  path="/dashboard-alt" 
-                  element={<Dashboard systemStats={systemStats} loading={loading} />} 
-                />
-                
-                {/* Other pages */}
-                <Route path="/users" element={<UsersPage />} />
-                <Route path="/user/:id" element={<UserDetailPage />} />
-                <Route path="/trades" element={<TradesPage />} />
-                <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/p2p" element={<P2PPage />} />
-                <Route path="/payments" element={<PaymentsPage />} />
-                <Route path="/withdrawals" element={<AdminWithdrawalPanel />} />
-                <Route path="/upi-settings" element={<UPISettings />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/challenges" element={<ChallengeManagement systemStats={systemStats} />} />
-                <Route path="/challenge-history" element={<ChallengeHistory />} />
-                {/* ========== NEW REFERRAL MANAGEMENT ROUTE ========== */}
-                <Route path="/referrals" element={<ReferralsPage />} />
-                
-                {/* Fallback route */}
-                <Route path="*" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
-              </Routes>
-            </Suspense>
-          </div>
-        </div>
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/*"
+          element={
+            <PrivateRoute>
+              <div className="app-container">
+                <Sidebar />
+                <div className="main-content">
+                  <Header onRefresh={refreshStats} />
+                  <div className="content-area">
+                    <Suspense fallback={<Loading />}>
+                      <Routes>
+                        <Route path="/" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
+                        <Route path="/dashboard" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
+                        <Route path="/dashboard-alt" element={<Dashboard systemStats={systemStats} loading={loading} />} />
+                        <Route path="/users" element={<UsersPage />} />
+                        <Route path="/user/:id" element={<UserDetailPage />} />
+                        <Route path="/trades" element={<TradesPage />} />
+                        <Route path="/orders" element={<OrdersPage />} />
+                        <Route path="/p2p" element={<P2PPage />} />
+                        <Route path="/payments" element={<PaymentsPage />} />
+                        <Route path="/withdrawals" element={<AdminWithdrawalPanel />} />
+                        <Route path="/upi-settings" element={<UPISettings />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/challenges" element={<ChallengeManagement />} />
+                        <Route path="/challenge-history" element={<ChallengeHistory />} />
+                        <Route path="/referrals" element={<ReferralsPage />} />
+                        <Route path="*" element={<Navigate to="/dashboard" />} />
+                      </Routes>
+                    </Suspense>
+                  </div>
+                </div>
+              </div>
+            </PrivateRoute>
+          }
+        />
+      </Routes>
     </Router>
   );
 }
