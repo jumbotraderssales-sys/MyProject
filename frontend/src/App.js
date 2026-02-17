@@ -2482,7 +2482,7 @@ const QuickTradeComponent = () => {
             <div className="challenges-content">
               <div className="challenges-hero">
                 <h1>🚀 Paper2Real Trading Challenges</h1>
-                <p className="challenges-subtitle">Paper Trading, Make Profit and Earn Real Money</p>
+                <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
                 {!isLoggedIn && (
                   <div className="discount-banner">
                     <span>Sign up to start your trading journey</span>
