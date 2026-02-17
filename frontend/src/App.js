@@ -4625,6 +4625,30 @@ const QuickTradeComponent = () => {
                 {selectedPayment.adminNotes}
               </div>
             )}
+              {/* Floating Chart Button - Draggable */}
+<div
+  ref={buttonRef}
+  className="floating-chart-btn"
+  style={{
+    position: 'fixed',
+    left: `${buttonPos.x}px`,
+    top: `${buttonPos.y}px`,
+    cursor: isDragging ? 'grabbing' : 'grab',
+    zIndex: 9999,
+    userSelect: 'none',
+    touchAction: 'none',
+  }}
+  onMouseDown={handleMouseDown}
+  onTouchStart={handleTouchStart}
+  onClick={() => {
+    if (!isDragging) {
+      window.open('https://t.me/your_channel_username', '_blank');
+    }
+  }}
+>
+  📊
+  <span className="tooltip">Chat on Telegram</span>
+</div>
             
             <div className="dialog-buttons">
               <button 
@@ -4667,11 +4691,8 @@ const QuickTradeComponent = () => {
           </div>
         </div>
       )}
- 
-    </div>
-         
-  );
-
+     </div>
+      );
 }
   
 
