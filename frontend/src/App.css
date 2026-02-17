@@ -6270,5 +6270,12 @@ html, body {
     width: 100%;
   }
 }
+/* Force three columns for plans on desktop */
+@media (min-width: 992px) {
+  .plans-container,
+  .challenges-container {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
 
 /* End of CSS */
