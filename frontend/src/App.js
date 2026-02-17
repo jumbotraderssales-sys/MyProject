@@ -351,9 +351,9 @@ useEffect(() => {
 }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
 
   const carouselImages = [
-  'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1642790551116-18e150f248e4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+  'https://github.com/jumbotraderssales-sys/MyProject/blob/main/frontend/src/data/1.png',
+  'https://github.com/jumbotraderssales-sys/MyProject/blob/main/frontend/src/data/2.png',
+  'https://github.com/jumbotraderssales-sys/MyProject/blob/main/frontend/src/data/3.png'
 ];
   useEffect(() => {
   const interval = setInterval(() => {
