@@ -167,7 +167,7 @@ function App() {
   const [chartType, setChartType] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
   const [watchlist, setWatchlist] = useState(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
-  
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [showRegister, setShowRegister] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
@@ -350,6 +350,18 @@ useEffect(() => {
   }
 }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
 
+  const carouselImages = [
+  'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1642790551116-18e150f248e4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+];
+  useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+  }, 5000); // change every 5 seconds
+  return () => clearInterval(interval);
+}, [carouselImages.length]);
+  
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
@@ -4486,6 +4498,15 @@ const QuickTradeComponent = () => {
                 <span>Amount:</span>
                 <span>₹{typeof selectedPayment.amount === 'string' ? selectedPayment.amount : selectedPayment.amount?.toLocaleString() || '0'}</span>
               </div>
+        <div className="challenges-carousel">
+  {carouselImages.map((img, index) => (
+    <div
+      key={index}
+      className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
+      style={{ backgroundImage: `url(${img})` }}
+    ></div>
+  ))}
+</div>
               <div className="summary-item">
                 <span>Payment Method:</span>
                 <span>{selectedPayment.paymentMethod || 'UPI'}</span>
