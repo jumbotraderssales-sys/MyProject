@@ -196,11 +196,7 @@ function App() {
     value: '',
     enabled: true
   });
-  // ===== DRAGGABLE BUTTON STATE =====
-const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
-const [isDragging, setIsDragging] = useState(false);
-const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-const buttonRef = useRef(null);
+
   const [signals, setSignals] = useState([]);
   const [showUPIScanner, setShowUPIScanner] = useState(false);
   const [upiAmount, setUpiAmount] = useState('');
@@ -261,6 +257,11 @@ const buttonRef = useRef(null);
     totalLoss: 0,
     status: 'active'
   });
+  // Draggable button state
+const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+const [isDragging, setIsDragging] = useState(false);
+const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+const buttonRef = useRef(null);
   // Fetch real-time price for a single symbol from Binance
 const fetchRealPrice = async (symbol) => {
   try {
