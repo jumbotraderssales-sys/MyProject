@@ -1,8 +1,7 @@
-// src/components/Users.js
+// src/components/Users.js (UserDetail component)
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDatabase } from '../contexts/DatabaseContext'; // Fixed: contexts with 's'
-// ... rest of the code
 
 const UserDetail = () => {
   const { id } = useParams();
@@ -12,12 +11,22 @@ const UserDetail = () => {
   const [transactions, setTransactions] = useState([]);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  // ===== REFERRAL DATA =====
+  const [referredUsers, setReferredUsers] = useState([]);
 
   useEffect(() => {
     const foundUser = users.find(u => u.id === parseInt(id));
     if (foundUser) {
       setUser(foundUser);
       setFormData(foundUser);
+      // Fetch referred users if available (you may need to extend your data)
+      // For now, if the user object has a referredUsers array, use it
+      if (foundUser.referredUsers) {
+        const referred = users.filter(u => foundUser.referredUsers.includes(u.id));
+        setReferredUsers(referred);
+      } else {
+        setReferredUsers([]);
+      }
     } else {
       navigate('/users');
     }
@@ -143,30 +152,95 @@ const UserDetail = () => {
               <div className="verification-grid">
                 <div className="verification-item">
                   <span>Email</span>
-                  <span className={`badge ${user.verification.email ? 'badge-success' : 'badge-warning'}`}>
-                    {user.verification.email ? 'Verified' : 'Pending'}
+                  <span className={`badge ${user.verification?.email ? 'badge-success' : 'badge-warning'}`}>
+                    {user.verification?.email ? 'Verified' : 'Pending'}
                   </span>
                 </div>
                 <div className="verification-item">
                   <span>Mobile</span>
-                  <span className={`badge ${user.verification.mobile ? 'badge-success' : 'badge-warning'}`}>
-                    {user.verification.mobile ? 'Verified' : 'Pending'}
+                  <span className={`badge ${user.verification?.mobile ? 'badge-success' : 'badge-warning'}`}>
+                    {user.verification?.mobile ? 'Verified' : 'Pending'}
                   </span>
                 </div>
                 <div className="verification-item">
                   <span>2FA</span>
-                  <span className={`badge ${user.verification.twoFA ? 'badge-success' : 'badge-warning'}`}>
-                    {user.verification.twoFA ? 'Enabled' : 'Disabled'}
+                  <span className={`badge ${user.verification?.twoFA ? 'badge-success' : 'badge-warning'}`}>
+                    {user.verification?.twoFA ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
                 <div className="verification-item">
                   <span>KYC</span>
-                  <span className={`badge ${user.verification.kyc ? 'badge-success' : 'badge-warning'}`}>
-                    {user.verification.kyc ? 'Verified' : 'Pending'}
+                  <span className={`badge ${user.verification?.kyc ? 'badge-success' : 'badge-warning'}`}>
+                    {user.verification?.kyc ? 'Verified' : 'Pending'}
                   </span>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* ===== NEW REFERRAL INFORMATION SECTION ===== */}
+        <div className="content-section">
+          <div className="section-header">
+            <h2>Referral Information</h2>
+          </div>
+          <div className="section-content">
+            <div className="referral-summary">
+              <div className="info-row">
+                <label>Referral Code:</label>
+                <span><code>{user.referralCode || 'Not generated'}</code></span>
+              </div>
+              <div className="info-row">
+                <label>Referred By:</label>
+                <span>
+                  {user.referredBy ? (
+                    <a href={`/user/${user.referredBy}`}>User #{user.referredBy}</a>
+                  ) : 'Direct signup'}
+                </span>
+              </div>
+              <div className="info-row">
+                <label>Total Referrals:</label>
+                <span>{user.referralCount || 0}</span>
+              </div>
+              <div className="info-row">
+                <label>Reward Status:</label>
+                <span>
+                  {user.referralReward?.awarded ? (
+                    <span className="badge badge-success">Awarded on {new Date(user.referralReward.awardedAt).toLocaleDateString()}</span>
+                  ) : user.referralCount >= 20 ? (
+                    <span className="badge badge-warning">Pending approval</span>
+                  ) : (
+                    <span className="badge">Not reached</span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {referredUsers.length > 0 && (
+              <div className="referred-users">
+                <h3>Referred Users ({referredUsers.length})</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {referredUsers.map(ref => (
+                      <tr key={ref.id}>
+                        <td>#{ref.id}</td>
+                        <td>{ref.firstName} {ref.lastName}</td>
+                        <td>{ref.email}</td>
+                        <td>{ref.createdAt ? new Date(ref.createdAt).toLocaleDateString() : 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
@@ -179,7 +253,7 @@ const UserDetail = () => {
             <div className="wallet-stats">
               <div className="stat-card">
                 <h3>Current Balance</h3>
-                <div className="stat-value">${user.balance.toLocaleString()}</div>
+                <div className="stat-value">${(user.balance || 0).toLocaleString()}</div>
               </div>
               <div className="stat-card">
                 <h3>Total Deposits</h3>
