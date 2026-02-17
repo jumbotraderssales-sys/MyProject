@@ -1,4 +1,4 @@
-// components/Sidebar.js - Updated with Challenges link
+// components/Sidebar.js - Updated with Referrals link
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
@@ -7,6 +7,8 @@ const Sidebar = () => {
   const navItems = [
     { path: '/dashboard', icon: 'fas fa-chart-line', label: 'Dashboard' },
     { path: '/users', icon: 'fas fa-users', label: 'Users' },
+    // ===== NEW REFERRALS LINK =====
+    { path: '/referrals', icon: 'fas fa-users', label: 'Referrals' }, // added here
     { path: '/trades', icon: 'fas fa-exchange-alt', label: 'Trades' },
     { path: '/challenges', icon: 'fas fa-trophy', label: 'Challenges' },
     { path: '/challenge-history', icon: 'fas fa-history', label: 'Challenge History' },
