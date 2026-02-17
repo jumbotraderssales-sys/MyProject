@@ -6326,6 +6326,63 @@ html, body {
     grid-template-columns: repeat(3, 1fr) !important;
   }
 }
+/* Floating Chart Button */
+.floating-chart-btn {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+  font-size: 28px;
+  color: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.floating-chart-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.6);
+}
+
+.floating-chart-btn:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.floating-chart-btn .tooltip {
+  visibility: hidden;
+  background: #1e293b;
+  color: #e2e8f0;
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  border: 1px solid #334155;
+  z-index: 10000;
+}
+
+.floating-chart-btn:hover .tooltip {
+  visibility: visible;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .floating-chart-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+}
 
 
 /* End of CSS */
