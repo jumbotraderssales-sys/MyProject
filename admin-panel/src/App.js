@@ -14,8 +14,10 @@ const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const OrdersPage = React.lazy(() => import('./pages/OrdersPage'));
 const P2PPage = React.lazy(() => import('./pages/P2PPage'));
 const UserDetailPage = React.lazy(() => import('./pages/UserDetailPage'));
-const ChallengeManagement = React.lazy(() => import('./pages/ChallengeManagement')); // Added
+const ChallengeManagement = React.lazy(() => import('./pages/ChallengeManagement'));
 const ChallengeHistory = React.lazy(() => import('./pages/ChallengeHistory'));
+// ========== NEW REFERRAL PAGE ==========
+const ReferralsPage = React.lazy(() => import('./pages/ReferralsPage'));
 
 // Lazy load components from the components folder
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
@@ -204,6 +206,8 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/challenges" element={<ChallengeManagement systemStats={systemStats} />} />
                 <Route path="/challenge-history" element={<ChallengeHistory />} />
+                {/* ========== NEW REFERRAL MANAGEMENT ROUTE ========== */}
+                <Route path="/referrals" element={<ReferralsPage />} />
                 
                 {/* Fallback route */}
                 <Route path="*" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
