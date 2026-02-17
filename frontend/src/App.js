@@ -257,107 +257,181 @@ function App() {
     totalLoss: 0,
     status: 'active'
   });
+
   // Draggable button state
-const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
-const [isDragging, setIsDragging] = useState(false);
-const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-const buttonRef = useRef(null);
+  const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const buttonRef = useRef(null);
+
   // Fetch real-time price for a single symbol from Binance
-const fetchRealPrice = async (symbol) => {
-  try {
-    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-    const data = await response.json();
-    return parseFloat(data.price);
-  } catch (error) {
-    console.error('Failed to fetch real price:', error);
-    return null;
-  }
-};
+  const fetchRealPrice = async (symbol) => {
+    try {
+      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+      const data = await response.json();
+      return parseFloat(data.price);
+    } catch (error) {
+      console.error('Failed to fetch real price:', error);
+      return null;
+    }
+  };
+
   // Determine minimum order lot size based on current price
-const getMinLot = (price) => {
-  if (price >= 10000) return 0.001;
-  if (price >= 1000) return 0.1;
-  return 1;
-};
+  const getMinLot = (price) => {
+    if (price >= 10000) return 0.001;
+    if (price >= 1000) return 0.1;
+    return 1;
+  };
 
   const positionsRef = useRef(positions);
-const selectedSymbolRef = useRef(selectedSymbol);
+  const selectedSymbolRef = useRef(selectedSymbol);
 
- // ===== DRAGGABLE BUTTON HANDLERS =====
-const handleMouseDown = (e) => {
-  e.preventDefault();
-  const rect = buttonRef.current.getBoundingClientRect();
-  setDragOffset({
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
-  });
-  setIsDragging(true);
-};
-
-const handleTouchStart = (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const rect = buttonRef.current.getBoundingClientRect();
-  setDragOffset({
-    x: touch.clientX - rect.left,
-    y: touch.clientY - rect.top,
-  });
-  setIsDragging(true);
-};
-
-const handleMouseMove = (e) => {
-  if (!isDragging) return;
-  e.preventDefault();
-  let newX = e.clientX - dragOffset.x;
-  let newY = e.clientY - dragOffset.y;
-
-  const buttonWidth = buttonRef.current?.offsetWidth || 60;
-  const buttonHeight = buttonRef.current?.offsetHeight || 60;
-  newX = Math.max(0, Math.min(newX, window.innerWidth - buttonWidth));
-  newY = Math.max(0, Math.min(newY, window.innerHeight - buttonHeight));
-
-  setButtonPos({ x: newX, y: newY });
-};
-
-const handleTouchMove = (e) => {
-  if (!isDragging) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  let newX = touch.clientX - dragOffset.x;
-  let newY = touch.clientY - dragOffset.y;
-
-  const buttonWidth = buttonRef.current?.offsetWidth || 60;
-  const buttonHeight = buttonRef.current?.offsetHeight || 60;
-  newX = Math.max(0, Math.min(newX, window.innerWidth - buttonWidth));
-  newY = Math.max(0, Math.min(newY, window.innerHeight - buttonHeight));
-
-  setButtonPos({ x: newX, y: newY });
-};
-
-const handleDragEnd = () => {
-  setIsDragging(false);
-}; 
-    // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
-useEffect(() => {
-  if (isDragging) {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleDragEnd);
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('touchend', handleDragEnd);
-  } else {
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleDragEnd);
-    window.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleDragEnd);
-  }
-  return () => {
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleDragEnd);
-    window.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleDragEnd);
+  // ===== DRAGGABLE BUTTON HANDLERS =====
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDragging(true);
   };
-}, [isDragging]);
-      
+
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    let newX = e.clientX - dragOffset.x;
+    let newY = e.clientY - dragOffset.y;
+
+    const buttonWidth = buttonRef.current?.offsetWidth || 60;
+    const buttonHeight = buttonRef.current?.offsetHeight || 60;
+    newX = Math.max(0, Math.min(newX, window.innerWidth - buttonWidth));
+    newY = Math.max(0, Math.min(newY, window.innerHeight - buttonHeight));
+
+    setButtonPos({ x: newX, y: newY });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    let newX = touch.clientX - dragOffset.x;
+    let newY = touch.clientY - dragOffset.y;
+
+    const buttonWidth = buttonRef.current?.offsetWidth || 60;
+    const buttonHeight = buttonRef.current?.offsetHeight || 60;
+    newX = Math.max(0, Math.min(newX, window.innerWidth - buttonWidth));
+    newY = Math.max(0, Math.min(newY, window.innerHeight - buttonHeight));
+
+    setButtonPos({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Update the ref whenever selectedSymbol changes
+  useEffect(() => {
+    selectedSymbolRef.current = selectedSymbol;
+  }, [selectedSymbol]);
+  
+  useEffect(() => {
+    positionsRef.current = positions;
+  }, [positions]);
+
+  // Calculate margin and available funds
+  useEffect(() => {
+    if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+
+      // Paper balance in USD
+      const paperUSD = userAccount.paperBalance / dollarRate;
+
+      // Margin required for the current order (USD)
+      const orderValueUSD = currentPrice * orderSize;
+      const marginUSD = orderValueUSD / leverage;
+      setMarginRequired(marginUSD);
+
+      // Total margin used by open positions (USD)
+      const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+        const posValueUSD = pos.entryPrice * pos.size;
+        return sum + (posValueUSD / pos.leverage);
+      }, 0);
+
+      // Available funds in USD
+      const availableUSD = paperUSD - totalMarginUsedUSD;
+      setAvailableFunds(availableUSD);
+    }
+  }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);
+  
+  // Fetch real-time price for the selected symbol every 3 seconds
+  useEffect(() => {
+    if (!selectedSymbol) return;
+
+    const fetchLivePrice = async () => {
+      try {
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${selectedSymbol}`);
+        const data = await response.json();
+        const realPrice = parseFloat(data.price);
+        if (!isNaN(realPrice) && realPrice > 0) {
+          setPrices(prev => ({ ...prev, [selectedSymbol]: realPrice }));
+          console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
+        }
+      } catch (error) {
+        console.error('Failed to fetch live price:', error);
+      }
+    };
+
+    fetchLivePrice();
+    const interval = setInterval(fetchLivePrice, 3000);
+    return () => clearInterval(interval);
+  }, [selectedSymbol]);
+
+  // Add separate useEffect for adjusting order size (prevent infinite loop)
+  useEffect(() => {
+    if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      const paperUSD = userAccount.paperBalance / dollarRate;
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+      const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
+      const minLot = getMinLot(currentPrice);
+      const maxSize = maxOrderValueUSD / currentPrice;
+
+      setOrderSize(prevSize => {
+        let newSize = prevSize;
+        if (prevSize < minLot) newSize = minLot;
+        if (prevSize > maxSize) newSize = maxSize;
+        if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
+        return prevSize;
+      });
+    }
+  }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [carouselImages.length]);
+  
+  // Calculate daily and total loss
+  useEffect(() => {
+    if (userAccount.currentChallenge && userAccount.challengeStats) {
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+      if (!challenge) return;
+
       // Calculate daily loss from today's trades
       const today = new Date().toDateString();
       const todayTrades = orderHistory.filter(order => {
@@ -399,98 +473,6 @@ useEffect(() => {
     }
   }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
 
-  // Update the ref whenever selectedSymbol changes (add this after the ref)
-useEffect(() => {
-  selectedSymbolRef.current = selectedSymbol;
-}, [selectedSymbol]);
-  
-  useEffect(() => {
-    positionsRef.current = positions;
-  }, [positions]);
-
-  // Calculate margin and available funds
-useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-
-    // Paper balance in USD
-    const paperUSD = userAccount.paperBalance / dollarRate;
-
-    // Margin required for the current order (USD)
-    const orderValueUSD = currentPrice * orderSize;
-    const marginUSD = orderValueUSD / leverage;
-    setMarginRequired(marginUSD);
-
-    // Total margin used by open positions (USD)
-    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
-      const posValueUSD = pos.entryPrice * pos.size;
-      return sum + (posValueUSD / pos.leverage);
-    }, 0);
-
-    // Available funds in USD
-    const availableUSD = paperUSD - totalMarginUsedUSD;
-    setAvailableFunds(availableUSD);
-  }
-}, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);
-  
-// Fetch real-time price for the selected symbol every 3 seconds
-useEffect(() => {
-  if (!selectedSymbol) return;
-
-  const fetchLivePrice = async () => {
-    try {
-      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${selectedSymbol}`);
-      const data = await response.json();
-      const realPrice = parseFloat(data.price);
-      if (!isNaN(realPrice) && realPrice > 0) {
-        setPrices(prev => ({ ...prev, [selectedSymbol]: realPrice }));
-        console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
-      }
-    } catch (error) {
-      console.error('Failed to fetch live price:', error);
-    }
-  };
-
-  fetchLivePrice();
-  const interval = setInterval(fetchLivePrice, 3000);
-  return () => clearInterval(interval);
-}, [selectedSymbol]);
-
-  // Add separate useEffect for adjusting order size (prevent infinite loop)
-useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const paperUSD = userAccount.paperBalance / dollarRate;
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-    const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
-    const minLot = getMinLot(currentPrice);
-    const maxSize = maxOrderValueUSD / currentPrice;
-
-    setOrderSize(prevSize => {
-      let newSize = prevSize;
-      if (prevSize < minLot) newSize = minLot;
-      if (prevSize > maxSize) newSize = maxSize;
-      if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
-      return prevSize;
-    });
-  }
-}, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
-
-  useEffect(() => {
-  const interval = setInterval(() => {
-    setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
-  }, 5000); // change every 3 seconds
-  return () => clearInterval(interval);
-}, [carouselImages.length]);
-  
-  // Calculate daily and total loss
-  useEffect(() => {
-    if (userAccount.currentChallenge && userAccount.challengeStats) {
-      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (!challenge) return;
-
-    
   // Check challenge rules
   const checkChallengeRules = () => {
     if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
@@ -589,7 +571,6 @@ useEffect(() => {
     const token = localStorage.getItem('token');
     const userDataStr = localStorage.getItem('userData');
     const paymentsStr = localStorage.getItem('userPayments');
-    
     
     if (loggedIn === 'true' && token && userDataStr) {
       const userData = JSON.parse(userDataStr);
@@ -717,52 +698,50 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-  const checkSLTP = () => {
-    const currentPositions = positionsRef.current;
-    currentPositions.forEach(position => {
-      const currentPrice = prices[position.symbol] || position.entryPrice;
-      if (position.side === 'LONG') {
-        if (position.stopLoss && currentPrice <= position.stopLoss) {
-          closePosition(position.id, 'STOP_LOSS');
+    const checkSLTP = () => {
+      const currentPositions = positionsRef.current;
+      currentPositions.forEach(position => {
+        const currentPrice = prices[position.symbol] || position.entryPrice;
+        if (position.side === 'LONG') {
+          if (position.stopLoss && currentPrice <= position.stopLoss) {
+            closePosition(position.id, 'STOP_LOSS');
+          }
+          if (position.takeProfit && currentPrice >= position.takeProfit) {
+            closePosition(position.id, 'TAKE_PROFIT');
+          }
+        } else if (position.side === 'SHORT') {
+          if (position.stopLoss && currentPrice >= position.stopLoss) {
+            closePosition(position.id, 'STOP_LOSS');
+          }
+          if (position.takeProfit && currentPrice <= position.takeProfit) {
+            closePosition(position.id, 'TAKE_PROFIT');
+          }
         }
-        if (position.takeProfit && currentPrice >= position.takeProfit) {
-          closePosition(position.id, 'TAKE_PROFIT');
-        }
-      } else if (position.side === 'SHORT') {
-        if (position.stopLoss && currentPrice >= position.stopLoss) {
-          closePosition(position.id, 'STOP_LOSS');
-        }
-        if (position.takeProfit && currentPrice <= position.takeProfit) {
-          closePosition(position.id, 'TAKE_PROFIT');
-        }
-      }
-    });
-  };
-
-  const interval = setInterval(() => {
-    setPrices(prev => {
-      const newPrices = { ...prev };
-      const currentSelected = selectedSymbolRef.current; // always the latest selected symbol
-      Object.keys(newPrices).forEach(symbol => {
-        // Skip the currently selected symbol – keep its live price
-        if (symbol === currentSelected) return;
-
-        const crypto = cryptoData.find(c => c.symbol === symbol);
-        const baseChange = crypto?.change24h || 0;
-        const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
-        newPrices[symbol] = Math.max(
-          newPrices[symbol] * (1 + changePercent),
-          newPrices[symbol] * 0.998
-        );
       });
+    };
 
-      setTimeout(checkSLTP, 100);
-      return newPrices;
-    });
-  }, 3000);
+    const interval = setInterval(() => {
+      setPrices(prev => {
+        const newPrices = { ...prev };
+        const currentSelected = selectedSymbolRef.current;
+        Object.keys(newPrices).forEach(symbol => {
+          if (symbol === currentSelected) return;
+          const crypto = cryptoData.find(c => c.symbol === symbol);
+          const baseChange = crypto?.change24h || 0;
+          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
+          newPrices[symbol] = Math.max(
+            newPrices[symbol] * (1 + changePercent),
+            newPrices[symbol] * 0.998
+          );
+        });
+        setTimeout(checkSLTP, 100);
+        return newPrices;
+      });
+    }, 3000);
 
-  return () => clearInterval(interval);
-}, []); // Empty deps – runs once on mount
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     let total = 0;
     positions.forEach(pos => {
@@ -774,6 +753,27 @@ useEffect(() => {
     setTotalPnl(total);
     setEquity(balance + total);
   }, [positions, prices, balance]);
+
+  // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleDragEnd);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging]);
 
   const calculatePaymentStats = (paymentsList = payments) => {
     const stats = {
@@ -800,38 +800,38 @@ useEffect(() => {
     setPaymentStats(stats);
   };
 
-const syncUserWallet = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    
-   const response = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`
+  const syncUserWallet = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUserAccount(prev => ({
+            ...prev,
+            realBalance: data.user.realBalance,
+            paperBalance: data.user.paperBalance,
+            currentChallenge: data.user.currentChallenge
+          }));
+          
+          setBalance(data.user.paperBalance);
+          setEquity(data.user.paperBalance + totalPnl);
+          
+          localStorage.setItem('userData', JSON.stringify(data.user));
+          
+          console.log('Wallet synced:', data.user.paperBalance);
+        }
       }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        setUserAccount(prev => ({
-          ...prev,
-          realBalance: data.user.realBalance,
-          paperBalance: data.user.paperBalance,
-          currentChallenge: data.user.currentChallenge
-        }));
-        
-        setBalance(data.user.paperBalance);
-        setEquity(data.user.paperBalance + totalPnl);
-        
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        
-        console.log('Wallet synced:', data.user.paperBalance);
-      }
+    } catch (error) {
+      console.error('Error syncing wallet:', error);
     }
-  } catch (error) {
-    console.error('Error syncing wallet:', error);
-  }
-};
+  };
 
   const loadUserPayments = async () => {
     if (!isLoggedIn) return;
@@ -1066,48 +1066,43 @@ const syncUserWallet = async () => {
     }, 5000);
   };
 
-// ✅ FIXED - Update this function in your frontend
-const submitPaymentToBackend = async (paymentData) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found');
+  const submitPaymentToBackend = async (paymentData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('https://myproject1-d097.onrender.com/api/payments/request', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          challengeName: paymentData.challengeName,
+          amount: paymentData.amount,
+          paymentMethod: 'UPI',
+          transactionId: paymentData.transactionId,
+          notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
+        })
+      });
+      
+      console.log('Payment request status:', response.status);
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.payment;
+      } else {
+        throw new Error(data.error || 'Payment submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting payment to backend:', error);
+      throw error;
     }
+  };
 
-    const response = await fetch('https://myproject1-d097.onrender.com/api/payments/request', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        challengeName: paymentData.challengeName,   // ✅ CORRECT FIELD NAME
-        amount: paymentData.amount,
-
-        
-        paymentMethod: 'UPI',
-        transactionId: paymentData.transactionId,
-        notes: paymentData.notes || `Payment for ${paymentData.challengeName}`
-      })
-    });
-    
-console.log('Payment request status:', response.status);
-console.log('Payment request headers:', response.headers);
-
-
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      return data.payment;
-    } else {
-      throw new Error(data.error || 'Payment submission failed');
-    }
-  } catch (error) {
-    console.error('Error submitting payment to backend:', error);
-    throw error;
-  }
-};
   const syncPaymentsWithBackend = async () => {
     if (!isLoggedIn) return;
     
@@ -1265,199 +1260,200 @@ console.log('Payment request headers:', response.headers);
     setLoginData({ email: '', password: '' });
   };
 
-const validateTrade = () => {
-  if (!isLoggedIn) {
-    return { valid: false, message: 'Please login to trade' };
-  }
-  if (!userAccount.currentChallenge || userAccount.paperBalance === 0) {
-    return { valid: false, message: 'Please purchase a challenge to start trading' };
-  }
+  const validateTrade = () => {
+    if (!isLoggedIn) {
+      return { valid: false, message: 'Please login to trade' };
+    }
+    if (!userAccount.currentChallenge || userAccount.paperBalance === 0) {
+      return { valid: false, message: 'Please purchase a challenge to start trading' };
+    }
 
-  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-  if (!challenge) {
-    return { valid: false, message: 'Invalid challenge configuration' };
-  }
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    if (!challenge) {
+      return { valid: false, message: 'Invalid challenge configuration' };
+    }
 
-  // Check challenge status
-  if (userAccount.challengeStats.status !== 'active') {
-    return { valid: false, message: `Challenge ${userAccount.challengeStats.status}. Cannot trade.` };
-  }
+    // Check challenge status
+    if (userAccount.challengeStats.status !== 'active') {
+      return { valid: false, message: `Challenge ${userAccount.challengeStats.status}. Cannot trade.` };
+    }
 
-  // Check one trade at a time
-  if (challenge.oneTradeAtTime && positions.length > 0) {
-    return { valid: false, message: 'Only one trade allowed at a time for this challenge' };
-  }
+    // Check one trade at a time
+    if (challenge.oneTradeAtTime && positions.length > 0) {
+      return { valid: false, message: 'Only one trade allowed at a time for this challenge' };
+    }
 
-  // Check daily loss limit
-  if (dailyLoss >= challenge.dailyLossLimit) {
-    return { valid: false, message: `Daily loss limit (${challenge.dailyLossLimit}%) reached` };
-  }
+    // Check daily loss limit
+    if (dailyLoss >= challenge.dailyLossLimit) {
+      return { valid: false, message: `Daily loss limit (${challenge.dailyLossLimit}%) reached` };
+    }
 
-  // Check max loss limit
-  if (totalLoss >= challenge.maxLossLimit) {
-    return { valid: false, message: `Maximum loss limit (${challenge.maxLossLimit}%) reached` };
-  }
+    // Check max loss limit
+    if (totalLoss >= challenge.maxLossLimit) {
+      return { valid: false, message: `Maximum loss limit (${challenge.maxLossLimit}%) reached` };
+    }
 
-  const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-  const paperUSD = userAccount.paperBalance / dollarRate;
-  const orderValueUSD = currentPrice * orderSize;
-  const marginUSD = orderValueUSD / leverage;
-  const minLot = getMinLot(currentPrice);
-  const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const paperUSD = userAccount.paperBalance / dollarRate;
+    const orderValueUSD = currentPrice * orderSize;
+    const marginUSD = orderValueUSD / leverage;
+    const minLot = getMinLot(currentPrice);
+    const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
 
-  // Minimum order size check
-  if (orderSize < minLot) {
-    return { valid: false, message: `Minimum order size is ${minLot}` };
-  }
+    // Minimum order size check
+    if (orderSize < minLot) {
+      return { valid: false, message: `Minimum order size is ${minLot}` };
+    }
 
-  // Calculate total margin used by open positions
-  const totalMarginUsedUSD = positions.reduce((sum, pos) => {
-    const posValueUSD = pos.entryPrice * pos.size;
-    return sum + (posValueUSD / pos.leverage);
-  }, 0);
-  const availableUSD = paperUSD - totalMarginUsedUSD;
+    // Calculate total margin used by open positions
+    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+      const posValueUSD = pos.entryPrice * pos.size;
+      return sum + (posValueUSD / pos.leverage);
+    }, 0);
+    const availableUSD = paperUSD - totalMarginUsedUSD;
 
-  if (availableUSD <= 0) {
-    return { valid: false, message: 'Insufficient available funds' };
-  }
+    if (availableUSD <= 0) {
+      return { valid: false, message: 'Insufficient available funds' };
+    }
 
-  if (marginUSD > availableUSD) {
-    return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
-  }
+    if (marginUSD > availableUSD) {
+      return { valid: false, message: 'Insufficient margin. Reduce order size or increase leverage.' };
+    }
 
-  const totalPaperUSD = userAccount.paperBalance / dollarRate;
-const maxAllowedMarginUSD = totalPaperUSD * (challenge.maxOrderSize / 100);
-const marginRequired = orderValueUSD / leverage;
+    const totalPaperUSD = userAccount.paperBalance / dollarRate;
+    const maxAllowedMarginUSD = totalPaperUSD * (challenge.maxOrderSize / 100);
+    const marginRequired = orderValueUSD / leverage;
 
-if (marginRequired > maxAllowedMarginUSD) {
-  return {
-    valid: false,
-    message: `Margin required ($${marginRequired.toFixed(2)}) exceeds max allowed ($${maxAllowedMarginUSD.toFixed(2)})`
+    if (marginRequired > maxAllowedMarginUSD) {
+      return {
+        valid: false,
+        message: `Margin required ($${marginRequired.toFixed(2)}) exceeds max allowed ($${maxAllowedMarginUSD.toFixed(2)})`
+      };
+    }
+
+    // Check leverage limit
+    if (leverage > challenge.maxLeverage) {
+      return {
+        valid: false,
+        message: `Leverage exceeds maximum (${challenge.maxLeverage}x)`
+      };
+    }
+
+    return { valid: true, message: '' };
   };
-}
 
-  // Check leverage limit
-  if (leverage > challenge.maxLeverage) {
-    return {
-      valid: false,
-      message: `Leverage exceeds maximum (${challenge.maxLeverage}x)`
-    };
-  }
-
-  return { valid: true, message: '' };
-};
-const handleTrade = async (side) => {
-  const validation = validateTrade();
-  if (!validation.valid) {
-    alert(validation.message);
-    return;
-  }
-  
-  // Get the latest real price from Binance
-  let currentPrice = await fetchRealPrice(selectedSymbol);
-  
-  // Fallback if API fails
-  if (!currentPrice) {
-    currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    console.warn('Using fallback price for order');
-  }
-
-  // Update local price for consistency
-  setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
-
-  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-  
-  // Calculate auto SL and TP (10% of order value)
-  const slPercentage = challenge.autoStopLossTarget / 100;
-  const tpPercentage = challenge.autoStopLossTarget / 100;
-  
-  let sl = stopLoss;
-  let tp = takeProfit;
-  
-  if (!sl) {
-    sl = side === 'LONG' 
-      ? currentPrice * (1 - slPercentage)
-      : currentPrice * (1 + slPercentage);
-  }
-  
-  if (!tp) {
-    tp = side === 'LONG'
-      ? currentPrice * (1 + tpPercentage)
-      : currentPrice * (1 - tpPercentage);
-  }
-  
-  try {
-    const token = localStorage.getItem('token');
-    const tradeData = {
-      symbol: selectedSymbol,
-      side: side,
-      size: orderSize,
-      leverage: leverage,
-      entryPrice: currentPrice,
-      stopLoss: parseFloat(sl) || 0,
-      takeProfit: parseFloat(tp) || 0,
-      margin: marginRequired
-    };
+  const handleTrade = async (side) => {
+    const validation = validateTrade();
+    if (!validation.valid) {
+      alert(validation.message);
+      return;
+    }
     
-    const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(tradeData)
-    });
+    // Get the latest real price from Binance
+    let currentPrice = await fetchRealPrice(selectedSymbol);
     
-    const data = await response.json();
+    // Fallback if API fails
+    if (!currentPrice) {
+      currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      console.warn('Using fallback price for order');
+    }
+
+    // Update local price for consistency
+    setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
+
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     
-    if (data.success) {
-      const newPosition = {
-        id: data.trade.id,
-        ...tradeData,
-        status: 'OPEN',
-        timestamp: new Date().toLocaleTimeString(),
-        pnl: 0,
-        positionValue: data.trade.positionValue
+    // Calculate auto SL and TP (10% of order value)
+    const slPercentage = challenge.autoStopLossTarget / 100;
+    const tpPercentage = challenge.autoStopLossTarget / 100;
+    
+    let sl = stopLoss;
+    let tp = takeProfit;
+    
+    if (!sl) {
+      sl = side === 'LONG' 
+        ? currentPrice * (1 - slPercentage)
+        : currentPrice * (1 + slPercentage);
+    }
+    
+    if (!tp) {
+      tp = side === 'LONG'
+        ? currentPrice * (1 + tpPercentage)
+        : currentPrice * (1 - tpPercentage);
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const tradeData = {
+        symbol: selectedSymbol,
+        side: side,
+        size: orderSize,
+        leverage: leverage,
+        entryPrice: currentPrice,
+        stopLoss: parseFloat(sl) || 0,
+        takeProfit: parseFloat(tp) || 0,
+        margin: marginRequired
       };
       
-      setPositions(prev => [newPosition, ...prev]);
-      setUserAccount(prev => ({
-        ...prev,
-        paperBalance: data.newBalance
-      }));
-      setBalance(data.newBalance);
+      const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(tradeData)
+      });
       
-     const newOrder = {
-  id: data.trade.id,
-  ...tradeData,
-  status: 'OPEN',
-  timestamp: new Date().toLocaleString(),
-  pnl: 0,
-  currentPrice: currentPrice,
-  positionValue: data.trade.positionValue,
-  marginUsed: (currentPrice * orderSize) / leverage   // ← add this line
-};
+      const data = await response.json();
       
-      setOrderHistory(prev => [newOrder, ...prev]);
-      
-      setUserAccount(prev => ({
-        ...prev,
-        challengeStats: {
-          ...prev.challengeStats,
-          tradesCount: prev.challengeStats.tradesCount + 1
-        }
-      }));
-      
-      setStopLoss('');
-      setTakeProfit('');
-    } else {
-      alert(data.error || 'Trade failed');
+      if (data.success) {
+        const newPosition = {
+          id: data.trade.id,
+          ...tradeData,
+          status: 'OPEN',
+          timestamp: new Date().toLocaleTimeString(),
+          pnl: 0,
+          positionValue: data.trade.positionValue
+        };
+        
+        setPositions(prev => [newPosition, ...prev]);
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: data.newBalance
+        }));
+        setBalance(data.newBalance);
+        
+        const newOrder = {
+          id: data.trade.id,
+          ...tradeData,
+          status: 'OPEN',
+          timestamp: new Date().toLocaleString(),
+          pnl: 0,
+          currentPrice: currentPrice,
+          positionValue: data.trade.positionValue,
+          marginUsed: (currentPrice * orderSize) / leverage
+        };
+        
+        setOrderHistory(prev => [newOrder, ...prev]);
+        
+        setUserAccount(prev => ({
+          ...prev,
+          challengeStats: {
+            ...prev.challengeStats,
+            tradesCount: prev.challengeStats.tradesCount + 1
+          }
+        }));
+        
+        setStopLoss('');
+        setTakeProfit('');
+      } else {
+        alert(data.error || 'Trade failed');
+      }
+    } catch (error) {
+      console.error('Trade error:', error);
+      alert('Trade failed. Please try again.');
     }
-  } catch (error) {
-    console.error('Trade error:', error);
-    alert('Trade failed. Please try again.');
-  }
-};
+  };
     
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
@@ -1717,17 +1713,15 @@ const handleTrade = async (side) => {
   useEffect(() => {
     const handleResize = () => {
       if (window.TradingView && widgetScriptLoaded && activeDashboard === 'Trading') {
-        // Force a redraw of the TradingView widget
         const container = document.getElementById('tradingview-chart-container');
         if (container) {
-          // The widget will automatically resize when container dimensions change
           window.dispatchEvent(new Event('resize'));
         }
       }
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial call
+    handleResize();
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -2136,10 +2130,10 @@ const handleTrade = async (side) => {
 
   const stats = calculateStats();
 
- const canTrade =
-  isLoggedIn &&
-  userAccount?.paperBalance > 0 &&
-  userAccount?.challengeStats?.status === 'active';
+  const canTrade =
+    isLoggedIn &&
+    userAccount?.paperBalance > 0 &&
+    userAccount?.challengeStats?.status === 'active';
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -2158,168 +2152,169 @@ const handleTrade = async (side) => {
     setShowPaymentDetails(true);
   };
 
-const QuickTradeComponent = () => {
-  const currentPrice = prices[selectedSymbol] || 
-    cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-  const minLot = getMinLot(currentPrice);
+  const QuickTradeComponent = () => {
+    const currentPrice = prices[selectedSymbol] || 
+      cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const minLot = getMinLot(currentPrice);
 
-  const totalPaperUSD = userAccount.paperBalance / dollarRate;
+    const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
-  const totalMarginUsedUSD = positions.reduce((sum, pos) => {
-    const posValue = pos.entryPrice * pos.size;
-    return sum + (posValue / pos.leverage);
-  }, 0);
+    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+      const posValue = pos.entryPrice * pos.size;
+      return sum + (posValue / pos.leverage);
+    }, 0);
 
-  const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
+    const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
-  const challenge = userAccount.currentChallenge
-    ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
-    : null;
+    const challenge = userAccount.currentChallenge
+      ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
+      : null;
 
-  const maxOrderSizePercent = challenge?.maxOrderSize || 20;
-  const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
+    const maxOrderSizePercent = challenge?.maxOrderSize || 20;
+    const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-  const orderValue = currentPrice * orderSize;
-  const marginRequired = orderValue / leverage;
+    const orderValue = currentPrice * orderSize;
+    const marginRequired = orderValue / leverage;
+
+    return (
+      <div className="quick-trade-top mobile-quick-trade-component">
+        <h3>Quick Trade</h3>
+
+        {/* Trade Actions */}
+        <div className="trade-actions-top">
+          <button 
+            className="trade-btn-top buy-btn-top"
+            onClick={() => handleTrade('LONG')}
+            disabled={!canTrade}
+          >
+            {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
+          </button>
+          <button 
+            className="trade-btn-top sell-btn-top"
+            onClick={() => handleTrade('SHORT')}
+            disabled={!canTrade}
+          >
+            {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
+          </button>
+        </div>
+
+        {/* Funds Information */}
+        <div className="funds-info-section">
+          <div className="funds-item">
+            <span className="funds-label">Available Funds:</span>
+            <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+          </div>
+          <div className="funds-item">
+            <span className="funds-label">
+              Max Margin ({maxOrderSizePercent}% of total):
+            </span>
+            <span className="funds-value">${maxAllowedMarginUSD.toFixed(2)}</span>
+          </div>
+          <div className="funds-item">
+            <span className="funds-label">Margin Required:</span>
+            <span className={`funds-value ${marginRequired > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
+              ${marginRequired.toFixed(2)}
+              {marginRequired > maxAllowedMarginUSD + 0.0001 && 
+                <span className="warning-text"> (Margin exceeds max!)</span>}
+            </span>
+          </div>
+        </div>
+
+        {/* Leverage Section */}
+        <div className="leverage-section-top">
+          <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+          <div className="leverage-buttons-top">
+            {[1, 5, 10, 20].map(lev => (
+              <button
+                key={lev}
+                className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+                onClick={() => setLeverage(lev)}
+                disabled={!canTrade}
+              >
+                {lev}x
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* SL/TP Section */}
+        <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+            <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
+            <input 
+              type="number"
+              value={stopLoss}
+              onChange={(e) => setStopLoss(e.target.value)}
+              placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+              className="sl-input-adjusted"
+              disabled={!canTrade}
+              style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+            />
+          </div>
+          <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+            <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
+            <input 
+              type="number"
+              value={takeProfit}
+              onChange={(e) => setTakeProfit(e.target.value)}
+              placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+              className="tp-input-adjusted"
+              disabled={!canTrade}
+              style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+            />
+          </div>
+        </div>
+
+        {/* Order Size Section */}
+        <div className="order-size-section">
+          <div className="section-label">
+            Order Size (Min: {minLot})
+          </div>
+          <div className="order-size-controls">
+            <input 
+              type="number" 
+              step={minLot}
+              value={orderSize}
+              onChange={(e) => {
+                const newSize = parseFloat(e.target.value) || 0;
+                const maxSize = maxAllowedMarginUSD * leverage / currentPrice;
+                const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
+                setOrderSize(clampedSize);
+              }}
+              className="order-size-input"
+              disabled={!canTrade}
+            />
+          </div>
+        </div>
+
+        {/* Challenge Limits */}
+        {challenge && (
+          <div className="challenge-limits">
+            <div className="limit-item">
+              <span>Daily Loss:</span>
+              <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
+                {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
+              </span>
+            </div>
+            <div className="limit-item">
+              <span>Max Loss:</span>
+              <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
+                {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
+              </span>
+            </div>
+            <div className="limit-item">
+              <span>Profit Target:</span>
+              <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
+                {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="quick-trade-top mobile-quick-trade-component">
-      <h3>Quick Trade</h3>
-
-      {/* Trade Actions */}
-      <div className="trade-actions-top">
-        <button 
-          className="trade-btn-top buy-btn-top"
-          onClick={() => handleTrade('LONG')}
-          disabled={!canTrade}
-        >
-          {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
-        </button>
-        <button 
-          className="trade-btn-top sell-btn-top"
-          onClick={() => handleTrade('SHORT')}
-          disabled={!canTrade}
-        >
-          {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
-        </button>
-      </div>
-
-      {/* Funds Information */}
-      <div className="funds-info-section">
-        <div className="funds-item">
-          <span className="funds-label">Available Funds:</span>
-          <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">
-            Max Margin ({maxOrderSizePercent}% of total):
-          </span>
-          <span className="funds-value">${maxAllowedMarginUSD.toFixed(2)}</span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">Margin Required:</span>
-          <span className={`funds-value ${marginRequired > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
-            ${marginRequired.toFixed(2)}
-            {marginRequired > maxAllowedMarginUSD + 0.0001 && 
-              <span className="warning-text"> (Margin exceeds max!)</span>}
-          </span>
-        </div>
-      </div>
-
-      {/* Leverage Section */}
-      <div className="leverage-section-top">
-        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-        <div className="leverage-buttons-top">
-          {[1, 5, 10, 20].map(lev => (
-            <button
-              key={lev}
-              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-              onClick={() => setLeverage(lev)}
-              disabled={!canTrade}
-            >
-              {lev}x
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* SL/TP Section */}
-      <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-          <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
-          <input 
-            type="number"
-            value={stopLoss}
-            onChange={(e) => setStopLoss(e.target.value)}
-            placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
-            className="sl-input-adjusted"
-            disabled={!canTrade}
-            style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
-          />
-        </div>
-        <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-          <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
-          <input 
-            type="number"
-            value={takeProfit}
-            onChange={(e) => setTakeProfit(e.target.value)}
-            placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
-            className="tp-input-adjusted"
-            disabled={!canTrade}
-            style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
-          />
-        </div>
-      </div>
-
-      {/* Order Size Section */}
-      <div className="order-size-section">
-        <div className="section-label">
-          Order Size (Min: {minLot})
-        </div>
-        <div className="order-size-controls">
-          <input 
-            type="number" 
-            step={minLot}
-            value={orderSize}
-            onChange={(e) => {
-              const newSize = parseFloat(e.target.value) || 0;
-              // size must satisfy: marginRequired = size * price / leverage <= maxAllowedMarginUSD
-              const maxSize = maxAllowedMarginUSD * leverage / currentPrice;
-              const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-              setOrderSize(clampedSize);
-            }}
-            className="order-size-input"
-            disabled={!canTrade}
-          />
-        </div>
-      </div>
-
-      {/* Challenge Limits */}
-      {challenge && (
-        <div className="challenge-limits">
-          <div className="limit-item">
-            <span>Daily Loss:</span>
-            <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
-              {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
-            </span>
-          </div>
-          <div className="limit-item">
-            <span>Max Loss:</span>
-            <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
-              {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
-            </span>
-          </div>
-          <div className="limit-item">
-            <span>Profit Target:</span>
-            <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
-              {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
@@ -2570,21 +2565,20 @@ const QuickTradeComponent = () => {
             </div>
           </div>
         )}
-          
 
         <div className={`center-panel ${isFullScreen ? 'fullscreen' : ''} ${activeDashboard === 'Challenges' || activeDashboard === 'Market' || activeDashboard === 'Profile' ? 'full-width' : ''}`}>
           {activeDashboard === 'Challenges' ? (
             <div className="challenges-content">
-              {/* ===== INSERT CAROUSEL HERE ===== */}
-    <div className="challenges-carousel">
-      {carouselImages.map((img, index) => (
-        <div
-          key={index}
-          className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
-          style={{ backgroundImage: `url(${img})` }}
-        ></div>
-      ))}
-    </div>
+              {/* Carousel */}
+              <div className="challenges-carousel">
+                {carouselImages.map((img, index) => (
+                  <div
+                    key={index}
+                    className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
+                    style={{ backgroundImage: `url(${img})` }}
+                  ></div>
+                ))}
+              </div>
               <div className="challenges-hero">
                 <h1>🚀 Paper2Real Trading Challenges</h1>
                 <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
@@ -3160,13 +3154,13 @@ const QuickTradeComponent = () => {
                             onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
                             placeholder="Enter name as per bank records"
                             style={{
-  width: '100%',
-  padding: '10px',
-  background: '#2d3748',
-  border: '1px solid #4a5568',
-  borderRadius: '5px',
-  color: 'white'
-}}
+                              width: '100%',
+                              padding: '10px',
+                              background: '#2d3748',
+                              border: '1px solid #4a5568',
+                              borderRadius: '5px',
+                              color: 'white'
+                            }}
                           />
                         </div>
                         
@@ -3822,18 +3816,18 @@ const QuickTradeComponent = () => {
                   <div className="advanced-stats">
                     <h3>Order History</h3>
                     <div className="order-history" style={{ maxHeight: isFullScreen ? '200px' : '300px', overflowY: 'auto' }}>
-                  <div className="order-history-header enhanced">
-  <span>Side</span>
-  <span>Size</span>
-  <span>Margin</span>   {/* new column */}
-  <span>Lev</span>
-  <span>Entry</span>
-  <span>SL</span>
-  <span>TP</span>
-  <span>Status</span>
-  <span>PnL</span>
-  <span>Action</span>
-</div>
+                      <div className="order-history-header enhanced">
+                        <span>Side</span>
+                        <span>Size</span>
+                        <span>Margin</span>
+                        <span>Lev</span>
+                        <span>Entry</span>
+                        <span>SL</span>
+                        <span>TP</span>
+                        <span>Status</span>
+                        <span>PnL</span>
+                        <span>Action</span>
+                      </div>
                       <div className="order-history-list">
                         {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
                           const currentPnl = calculateOrderPnL(order);
@@ -3846,7 +3840,7 @@ const QuickTradeComponent = () => {
                             <div key={order.id} className={`order-history-item enhanced ${order.side?.toLowerCase()}`}>
                               <span className={`order-side ${order.side?.toLowerCase()}`}>{order.side}</span>
                               <span>{order.size}</span>
-                <span>${order.marginUsed ? order.marginUsed.toFixed(2) : '0.00'}</span>  {/* new cell */}
+                              <span>${order.marginUsed ? order.marginUsed.toFixed(2) : '0.00'}</span>
                               <span>
                                 <span className="leverage-badge">{order.leverage}x</span>
                               </span>
@@ -4084,7 +4078,7 @@ const QuickTradeComponent = () => {
         )}
       </div>
 
-      {/* Modals and Dialogs remain the same */}
+      {/* Modals and Dialogs */}
       {showNews && (
         <div className="news-panel">
           <div className="news-header">
@@ -4348,7 +4342,6 @@ const QuickTradeComponent = () => {
             </div>
             
             <div className="upi-payment-section">
-              {/* UPI PAYMENT SECTION */}
               <div className="qr-code-container">
                 <div className="real-upi-qr">
                   <h3>Scan QR Code to Pay</h3>
@@ -4373,7 +4366,6 @@ const QuickTradeComponent = () => {
                     </div>
                   </div>
                   
-                  {/* MOVED TEXT DETAILS HERE - Now below QR code */}
                   <div className="upi-details-below-qr">
                     <div className="upi-merchant">
                       <strong>Merchant:</strong> {upiSettings.merchantName}
@@ -4386,7 +4378,6 @@ const QuickTradeComponent = () => {
                     </div>
                   </div>
                   
-                  {/* Manual UPI Payment Option */}
                   <div className="manual-upi-option">
                     <h4>Send Payment Manually:</h4>
                     <div className="upi-manual-details">
@@ -4439,7 +4430,6 @@ const QuickTradeComponent = () => {
                   </div>
                 </div>
               </div>
-              {/* RECEIPT UPLOAD SECTION */}
               <div className="receipt-upload-section">
                 <h3>Upload Payment Receipt</h3>
                 
@@ -4522,7 +4512,6 @@ const QuickTradeComponent = () => {
               </div>
             </div>
             
-            {/* QUICK PAY BUTTONS */}
             <div className="dialog-buttons">
               <button 
                 className={`dialog-btn primary ${!receiptUploaded ? 'disabled' : ''}`}
@@ -4568,7 +4557,7 @@ const QuickTradeComponent = () => {
         </div>
       )}
 
-    {/* Payment Details Dialog */}
+      {/* Payment Details Dialog */}
       {showPaymentDetails && selectedPayment && (
         <div className="dialog-overlay">
           <div className="dialog-box upi-dialog">
@@ -4591,15 +4580,6 @@ const QuickTradeComponent = () => {
                 <span>Amount:</span>
                 <span>₹{typeof selectedPayment.amount === 'string' ? selectedPayment.amount : selectedPayment.amount?.toLocaleString() || '0'}</span>
               </div>
-        <div className="challenges-carousel">
-  {carouselImages.map((img, index) => (
-    <div
-      key={index}
-      className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
-      style={{ backgroundImage: `url(${img})` }}
-    ></div>
-  ))}
-</div>
               <div className="summary-item">
                 <span>Payment Method:</span>
                 <span>{selectedPayment.paymentMethod || 'UPI'}</span>
@@ -4626,13 +4606,11 @@ const QuickTradeComponent = () => {
                 {selectedPayment.adminNotes}
               </div>
             )}
-              
             
             <div className="dialog-buttons">
               <button 
                 className="dialog-btn secondary"
                 onClick={() => {
-                  // Refresh payment status
                   syncPaymentsWithBackend();
                 }}
               >
@@ -4669,33 +4647,34 @@ const QuickTradeComponent = () => {
           </div>
         </div>
       )}
-        {/* Floating Chart Button - Draggable */}
-<div
-  ref={buttonRef}
-  className="floating-chart-btn"
-  style={{
-    position: 'fixed',
-    left: `${buttonPos.x}px`,
-    top: `${buttonPos.y}px`,
-    cursor: isDragging ? 'grabbing' : 'grab',
-    zIndex: 9999,
-    userSelect: 'none',
-    touchAction: 'none',
-  }}
-  onMouseDown={handleMouseDown}
-  onTouchStart={handleTouchStart}
-  onClick={() => {
-    if (!isDragging) {
-      window.open('https://t.me/your_channel_username', '_blank');
-    }
-  }}
->
-  📊
-  <span className="tooltip">Chat on Telegram</span>
-</div>
-     </div>
-      );
+
+      {/* Floating Chart Button - Draggable */}
+      <div
+        ref={buttonRef}
+        className="floating-chart-btn"
+        style={{
+          position: 'fixed',
+          left: `${buttonPos.x}px`,
+          top: `${buttonPos.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          zIndex: 9999,
+          userSelect: 'none',
+          touchAction: 'none',
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        onClick={() => {
+          if (!isDragging) {
+            window.open('https://t.me/+c0cqqAHpqkEwNDE1', '_blank');
+          }
+        }}
+      >
+        📊
+        <span className="tooltip">Chat on Telegram</span>
+      </div>
+
+    </div>
+  );
 }
-  
 
 export default App;
