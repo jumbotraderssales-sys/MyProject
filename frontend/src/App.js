@@ -350,10 +350,10 @@ useEffect(() => {
   }
 }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
 
-  const carouselImages = [
-  'https://github.com/jumbotraderssales-sys/MyProject/blob/main/frontend/src/data/1.png',
-  'https://github.com/jumbotraderssales-sys/MyProject/blob/main/frontend/src/data/2.png',
-  'https://github.com/jumbotraderssales-sys/MyProject/blob/main/frontend/src/data/3.png'
+const carouselImages = [
+  'https://github.com/jumbotraderssales-sys/MyProject/raw/main/frontend/src/data/1.png',
+  'https://github.com/jumbotraderssales-sys/MyProject/raw/main/frontend/src/data/2.png',
+  'https://github.com/jumbotraderssales-sys/MyProject/raw/main/frontend/src/data/3.png'
 ];
   useEffect(() => {
   const interval = setInterval(() => {
