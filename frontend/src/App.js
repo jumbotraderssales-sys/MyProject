@@ -258,6 +258,11 @@ function App() {
     status: 'active'
   });
 
+  // ========== NEW REFERRAL STATE ==========
+  const [referralInfo, setReferralInfo] = useState(null);
+  const [referralSettings, setReferralSettings] = useState({ target: 20, rewardName: 'Beginner Challenge', rewardAmount: 20000 });
+  const [referralCodeFromUrl, setReferralCodeFromUrl] = useState('');
+
   // Draggable button state
   const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
   const [isDragging, setIsDragging] = useState(false);
@@ -349,6 +354,36 @@ function App() {
   useEffect(() => {
     positionsRef.current = positions;
   }, [positions]);
+
+  // ========== CAPTURE REFERRAL CODE FROM URL ==========
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setReferralCodeFromUrl(ref);
+    }
+  }, []);
+
+  // ========== FETCH REFERRAL INFO ==========
+  const fetchReferralInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('https://myproject1-d097.onrender.com/api/user/referral', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReferralInfo(data);
+        setReferralSettings({
+          target: data.target,
+          rewardName: data.rewardName,
+          rewardAmount: data.rewardAmount
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch referral info:', error);
+    }
+  };
 
   // Calculate margin and available funds
   useEffect(() => {
@@ -1164,7 +1199,8 @@ function App() {
             body: JSON.stringify({
                 name: userData.name,
                 email: userData.email,
-                password: userData.password
+                password: userData.password,
+                ref: referralCodeFromUrl // include referral code if present
             })
         });
         
@@ -2152,6 +2188,13 @@ function App() {
     setShowPaymentDetails(true);
   };
 
+  // ========== FETCH REFERRAL INFO WHEN PROFILE ACTIVE ==========
+  useEffect(() => {
+    if (isLoggedIn && activeDashboard === 'Profile') {
+      fetchReferralInfo();
+    }
+  }, [isLoggedIn, activeDashboard]);
+
   const QuickTradeComponent = () => {
     const currentPrice = prices[selectedSymbol] || 
       cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
@@ -3098,6 +3141,76 @@ function App() {
                         <span className="profit-label">Profit: {challengeProgress.profit.toFixed(1)}%</span>
                         <span className="loss-label">Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ========== REFERRAL CARD ========== */}
+                {referralInfo && (
+                  <div className="profile-card referral-card" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                    <h3 style={{ color: 'white', marginBottom: '1rem' }}>👥 Referral Program</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div>
+                        <p style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>Your unique referral link:</p>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#2d3748', padding: '10px', borderRadius: '8px' }}>
+                          <code style={{ flex: 1, color: '#e2e8f0', fontSize: '0.9rem', wordBreak: 'break-all' }}>
+                            {`${window.location.origin}/register?ref=${referralInfo.referralCode}`}
+                          </code>
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/register?ref=${referralInfo.referralCode}`);
+                              alert('Referral link copied!');
+                            }}
+                            style={{ padding: '6px 12px', background: '#4f46e5', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer' }}
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '0.5rem' }}>
+                        <div style={{ background: 'rgba(30,41,59,0.5)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Your Referrals</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>{referralInfo.referralCount}</div>
+                        </div>
+                        <div style={{ background: 'rgba(30,41,59,0.5)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Target</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>{referralSettings.target}</div>
+                        </div>
+                        <div style={{ background: 'rgba(30,41,59,0.5)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Reward</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4caf50' }}>{referralSettings.rewardName}</div>
+                        </div>
+                      </div>
+
+                      {referralInfo.referralCount >= referralSettings.target ? (
+                        referralInfo.rewardAwarded ? (
+                          <div style={{ background: '#10b981', color: 'white', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                            ✅ You have already received your reward: {referralSettings.rewardName}
+                          </div>
+                        ) : (
+                          <div style={{ background: '#f59e0b', color: 'white', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                            ⏳ Congratulations! You've reached the target. Your reward is pending admin approval.
+                          </div>
+                        )
+                      ) : (
+                        <p style={{ color: '#94a3b8' }}>
+                          {referralSettings.target - referralInfo.referralCount} more referrals needed to get a free {referralSettings.rewardName}!
+                        </p>
+                      )}
+
+                      {referralInfo.referredUsers?.length > 0 && (
+                        <details style={{ marginTop: '0.5rem' }}>
+                          <summary style={{ cursor: 'pointer', color: '#94a3b8' }}>View your referred users</summary>
+                          <ul style={{ marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
+                            {referralInfo.referredUsers.map((u, idx) => (
+                              <li key={idx} style={{ padding: '5px 0', borderBottom: '1px solid #334155' }}>
+                                {u.name} ({u.email}) – joined {new Date(u.joinedAt).toLocaleDateString()}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                     </div>
                   </div>
                 )}
