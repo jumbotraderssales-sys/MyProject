@@ -27,22 +27,18 @@ const UsersPage = () => {
       
       // Handle different response formats
       if (Array.isArray(response)) {
-        // Direct array response (what our fixed backend returns)
         usersData = response;
         console.log('UsersPage: Got direct array with', usersData.length, 'users');
       } else if (response && response.users && Array.isArray(response.users)) {
-        // Nested response format
         usersData = response.users;
         console.log('UsersPage: Got nested users array with', usersData.length, 'users');
       } else if (response && response.data && Array.isArray(response.data)) {
-        // Another possible nested format
         usersData = response.data;
         console.log('UsersPage: Got data array with', usersData.length, 'users');
       } else {
         console.log('UsersPage: Unexpected response format:', response);
       }
       
-      // Log first few users for debugging
       if (usersData.length > 0) {
         console.log('UsersPage: First user sample:', usersData[0]);
       }
@@ -50,7 +46,7 @@ const UsersPage = () => {
       setUsers(usersData);
     } catch (error) {
       console.error('UsersPage: Error loading users:', error);
-      setUsers([]); // Set empty array on error
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -58,19 +54,18 @@ const UsersPage = () => {
 
   const getFilteredUsers = () => {
     return users.filter(user => {
-      // Search filter
       const userSearchable = [
         user.name || '',
         user.email || '',
         user.id ? user.id.toString() : '',
-        user.userName || ''
+        user.userName || '',
+        user.referralCode || '' // include referral code in search
       ].join(' ').toLowerCase();
       
       const searchMatch = 
         !searchTerm ||
         userSearchable.includes(searchTerm.toLowerCase());
       
-      // Status filter - handle different field names
       const userStatus = user.accountStatus || user.status || 'inactive';
       const statusMatch = 
         filterStatus === 'all' ||
@@ -86,7 +81,7 @@ const UsersPage = () => {
     const activeUsers = users.filter(u => 
       (u.accountStatus || u.status) === 'active'
     ).length;
-    const usersWithPlan = users.filter(u => u.currentPlan).length;
+    const usersWithPlan = users.filter(u => u.currentChallenge || u.currentPlan).length;
     
     const totalBalance = users.reduce((sum, user) => 
       sum + (user.realBalance || 0) + (user.paperBalance || 0), 0
@@ -95,13 +90,21 @@ const UsersPage = () => {
     const totalPaperBalance = users.reduce((sum, user) => sum + (user.paperBalance || 0), 0);
     const totalRealBalance = users.reduce((sum, user) => sum + (user.realBalance || 0), 0);
     
+    // ===== REFERRAL STATS =====
+    const totalReferrals = users.reduce((sum, user) => sum + (user.referralCount || 0), 0);
+    const usersWithReferrals = users.filter(u => (u.referralCount || 0) > 0).length;
+    const rewardsGiven = users.filter(u => u.referralReward?.awarded).length;
+    
     return {
       totalUsers,
       activeUsers,
       usersWithPlan,
       totalBalance,
       totalPaperBalance,
-      totalRealBalance
+      totalRealBalance,
+      totalReferrals,
+      usersWithReferrals,
+      rewardsGiven
     };
   };
 
@@ -111,12 +114,10 @@ const UsersPage = () => {
   const updateUserStatus = async (userId, newStatus) => {
     try {
       // In a real app, you would call an API endpoint to update user status
-      // For now, update locally
       const updatedUsers = users.map(user => 
         user.id === userId ? { ...user, accountStatus: newStatus } : user
       );
       setUsers(updatedUsers);
-      
       alert(`User status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating user status:', error);
@@ -124,7 +125,6 @@ const UsersPage = () => {
     }
   };
 
-  // Helper function to safely get user ID string
   const getUserIdString = (userId) => {
     if (!userId) return 'N/A';
     if (typeof userId === 'string') {
@@ -163,30 +163,33 @@ const UsersPage = () => {
         <div className="stat-card">
           <div className="stat-title">Total Users</div>
           <div className="stat-value">{stats.totalUsers}</div>
-          <div className="stat-detail">
-            {stats.activeUsers} active
-          </div>
+          <div className="stat-detail">{stats.activeUsers} active</div>
         </div>
         <div className="stat-card">
           <div className="stat-title">Users with Plan</div>
           <div className="stat-value">{stats.usersWithPlan}</div>
-          <div className="stat-detail">
-            {stats.totalUsers > 0 ? `${Math.round((stats.usersWithPlan / stats.totalUsers) * 100)}% of total` : '0%'}
-          </div>
+          <div className="stat-detail">{stats.totalUsers > 0 ? `${Math.round((stats.usersWithPlan / stats.totalUsers) * 100)}%` : '0%'}</div>
         </div>
         <div className="stat-card">
           <div className="stat-title">Total Paper Balance</div>
           <div className="stat-value">₹{(stats.totalPaperBalance || 0).toLocaleString()}</div>
-          <div className="stat-detail">
-            Trading balance
-          </div>
+          <div className="stat-detail">Trading balance</div>
         </div>
         <div className="stat-card">
           <div className="stat-title">Total Real Balance</div>
           <div className="stat-value">₹{(stats.totalRealBalance || 0).toLocaleString()}</div>
-          <div className="stat-detail">
-            Withdrawable balance
-          </div>
+          <div className="stat-detail">Withdrawable</div>
+        </div>
+        {/* ===== NEW REFERRAL STATS ===== */}
+        <div className="stat-card">
+          <div className="stat-title">Total Referrals</div>
+          <div className="stat-value">{stats.totalReferrals}</div>
+          <div className="stat-detail">{stats.usersWithReferrals} users referred</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-title">Rewards Given</div>
+          <div className="stat-value">{stats.rewardsGiven}</div>
+          <div className="stat-detail">Referral rewards</div>
         </div>
       </div>
 
@@ -197,7 +200,7 @@ const UsersPage = () => {
             <i className="fas fa-search"></i>
             <input
               type="text"
-              placeholder="Search by name, email, or ID..."
+              placeholder="Search by name, email, ID, or referral code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -236,6 +239,9 @@ const UsersPage = () => {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Plan</th>
+                <th>Referral Code</th>
+                <th>Referrals</th>
+                <th>Reward</th>
                 <th>Paper Balance</th>
                 <th>Real Balance</th>
                 <th>Status</th>
@@ -245,98 +251,108 @@ const UsersPage = () => {
             </thead>
             <tbody>
               {filteredUsers.length > 0 ? (
-                filteredUsers.map(user => {
-                  // Debug log for each user
-                  console.log('Rendering user:', user);
-                  
-                  return (
-                    <tr key={user.id || user._id}>
-                      <td>{getUserIdString(user.id)}</td>
-                      <td>
-                        <div className="user-info">
-                          <div className="user-name">{user.name || user.userName || 'N/A'}</div>
-                        </div>
-                      </td>
-                      <td>{user.email || 'No email'}</td>
-                      <td>
-                        <span className={`plan-badge ${user.currentPlan ? 'plan-active' : 'plan-none'}`}>
-                          {user.currentPlan || 'No Plan'}
-                        </span>
-                      </td>
-                      <td>₹{(user.paperBalance || 0).toLocaleString()}</td>
-                      <td>₹{(user.realBalance || 0).toLocaleString()}</td>
-                      <td>
-                        <span className={`status-badge status-${user.accountStatus || user.status || 'inactive'}`}>
-                          {user.accountStatus || user.status || 'inactive'}
-                        </span>
-                      </td>
-                      <td>
-                        {user.createdAt || user.joinDate
-                          ? new Date(user.createdAt || user.joinDate).toLocaleDateString()
-                          : 'N/A'
-                        }
-                      </td>
-                      <td>
-                        <div className="action-buttons">
+                filteredUsers.map(user => (
+                  <tr key={user.id || user._id}>
+                    <td>{getUserIdString(user.id)}</td>
+                    <td>
+                      <div className="user-info">
+                        <div className="user-name">{user.name || user.userName || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td>{user.email || 'No email'}</td>
+                    <td>
+                      <span className={`plan-badge ${user.currentChallenge || user.currentPlan ? 'plan-active' : 'plan-none'}`}>
+                        {user.currentChallenge || user.currentPlan || 'No Plan'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.referralCode ? (
+                        <code className="referral-code">{user.referralCode}</code>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>{user.referralCount || 0}</td>
+                    <td>
+                      {user.referralReward?.awarded ? (
+                        <span className="badge badge-success">✓ Awarded</span>
+                      ) : user.referralCount >= 20 ? (
+                        <span className="badge badge-warning">Pending</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>₹{(user.paperBalance || 0).toLocaleString()}</td>
+                    <td>₹{(user.realBalance || 0).toLocaleString()}</td>
+                    <td>
+                      <span className={`status-badge status-${user.accountStatus || user.status || 'inactive'}`}>
+                        {user.accountStatus || user.status || 'inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.createdAt || user.joinDate
+                        ? new Date(user.createdAt || user.joinDate).toLocaleDateString()
+                        : 'N/A'
+                      }
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn view"
+                          title="View Details"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </button>
+                        <button 
+                          className="action-btn edit"
+                          title="Edit User"
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button 
+                          className="action-btn wallet"
+                          title="Manage Wallet"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowWalletModal(true);
+                          }}
+                        >
+                          <i className="fas fa-wallet"></i>
+                        </button>
+                        <button 
+                          className="action-btn quick-add"
+                          title="Quick Add Funds"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowWalletModal(true);
+                          }}
+                        >
+                          <i className="fas fa-plus"></i>
+                        </button>
+                        {(user.accountStatus || user.status) === 'active' ? (
                           <button 
-                            className="action-btn view"
-                            title="View Details"
+                            className="action-btn deactivate"
+                            title="Deactivate User"
+                            onClick={() => updateUserStatus(user.id, 'inactive')}
                           >
-                            <i className="fas fa-eye"></i>
+                            <i className="fas fa-user-slash"></i>
                           </button>
+                        ) : (
                           <button 
-                            className="action-btn edit"
-                            title="Edit User"
+                            className="action-btn activate"
+                            title="Activate User"
+                            onClick={() => updateUserStatus(user.id, 'active')}
                           >
-                            <i className="fas fa-edit"></i>
+                            <i className="fas fa-user-check"></i>
                           </button>
-                          <button 
-                            className="action-btn wallet"
-                            title="Manage Wallet"
-                            onClick={() => {
-                              console.log('Selected user for wallet:', user);
-                              setSelectedUser(user);
-                              setShowWalletModal(true);
-                            }}
-                          >
-                            <i className="fas fa-wallet"></i>
-                          </button>
-                          <button 
-                            className="action-btn quick-add"
-                            title="Quick Add Funds"
-                            onClick={() => {
-                              console.log('Selected user for quick add:', user);
-                              setSelectedUser(user);
-                              setShowWalletModal(true);
-                            }}
-                          >
-                            <i className="fas fa-plus"></i>
-                          </button>
-                          {(user.accountStatus || user.status) === 'active' ? (
-                            <button 
-                              className="action-btn deactivate"
-                              title="Deactivate User"
-                              onClick={() => updateUserStatus(user.id, 'inactive')}
-                            >
-                              <i className="fas fa-user-slash"></i>
-                            </button>
-                          ) : (
-                            <button 
-                              className="action-btn activate"
-                              title="Activate User"
-                              onClick={() => updateUserStatus(user.id, 'active')}
-                            >
-                              <i className="fas fa-user-check"></i>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : (
                 <tr>
-                  <td colSpan="9" className="no-data">
+                  <td colSpan="12" className="no-data">
                     <i className="fas fa-users"></i>
                     <p>No users found {users.length > 0 ? '(filtered out)' : ''}</p>
                     {users.length === 0 && (
@@ -352,7 +368,6 @@ const UsersPage = () => {
         </div>
       </div>
 
-      {/* Wallet Management Modal */}
       {showWalletModal && selectedUser && (
         <UserWalletModal
           user={selectedUser}
