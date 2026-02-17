@@ -283,7 +283,7 @@ const getMinLot = (price) => {
   const positionsRef = useRef(positions);
 const selectedSymbolRef = useRef(selectedSymbol);
 
-  // ===== DRAGGABLE BUTTON HANDLERS =====
+ // ===== DRAGGABLE BUTTON HANDLERS =====
 const handleMouseDown = (e) => {
   e.preventDefault();
   const rect = buttonRef.current.getBoundingClientRect();
@@ -336,7 +336,7 @@ const handleTouchMove = (e) => {
 
 const handleDragEnd = () => {
   setIsDragging(false);
-};
+}; 
   // Update the ref whenever selectedSymbol changes (add this after the ref)
 useEffect(() => {
   selectedSymbolRef.current = selectedSymbol;
@@ -4673,29 +4673,6 @@ const QuickTradeComponent = () => {
   );
 
 }
-     {/* Floating Chart Button - Draggable */}
-      <div
-        ref={buttonRef}
-        className="floating-chart-btn"
-        style={{
-          position: 'fixed',
-          left: `${buttonPos.x}px`,
-          top: `${buttonPos.y}px`,
-          cursor: isDragging ? 'grabbing' : 'grab',
-          zIndex: 9999,
-          userSelect: 'none',
-          touchAction: 'none',
-        }}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onClick={() => {
-          if (!isDragging) {
-            window.open('https://t.me/+c0cqqAHpqkEwNDE1', '_blank');
-          }
-        }}
-      >
-        📊
-        <span className="tooltip">Chat on Telegram</span>
-      </div>
+  
 
 export default App;
