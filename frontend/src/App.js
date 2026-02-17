@@ -357,7 +357,7 @@ useEffect(() => {
   useEffect(() => {
   const interval = setInterval(() => {
     setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
-  }, 5000); // change every 5 seconds
+  }, 5000); // change every 3 seconds
   return () => clearInterval(interval);
 }, [carouselImages.length]);
   
