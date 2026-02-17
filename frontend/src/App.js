@@ -196,6 +196,11 @@ function App() {
     value: '',
     enabled: true
   });
+  // ===== DRAGGABLE BUTTON STATE =====
+const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+const [isDragging, setIsDragging] = useState(false);
+const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+const buttonRef = useRef(null);
   const [signals, setSignals] = useState([]);
   const [showUPIScanner, setShowUPIScanner] = useState(false);
   const [upiAmount, setUpiAmount] = useState('');
@@ -276,6 +281,61 @@ const getMinLot = (price) => {
 
   const positionsRef = useRef(positions);
 const selectedSymbolRef = useRef(selectedSymbol);
+
+  // ===== DRAGGABLE BUTTON HANDLERS =====
+const handleMouseDown = (e) => {
+  e.preventDefault();
+  const rect = buttonRef.current.getBoundingClientRect();
+  setDragOffset({
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+  });
+  setIsDragging(true);
+};
+
+const handleTouchStart = (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = buttonRef.current.getBoundingClientRect();
+  setDragOffset({
+    x: touch.clientX - rect.left,
+    y: touch.clientY - rect.top,
+  });
+  setIsDragging(true);
+};
+
+const handleMouseMove = (e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+  let newX = e.clientX - dragOffset.x;
+  let newY = e.clientY - dragOffset.y;
+
+  const buttonWidth = buttonRef.current?.offsetWidth || 60;
+  const buttonHeight = buttonRef.current?.offsetHeight || 60;
+  newX = Math.max(0, Math.min(newX, window.innerWidth - buttonWidth));
+  newY = Math.max(0, Math.min(newY, window.innerHeight - buttonHeight));
+
+  setButtonPos({ x: newX, y: newY });
+};
+
+const handleTouchMove = (e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  let newX = touch.clientX - dragOffset.x;
+  let newY = touch.clientY - dragOffset.y;
+
+  const buttonWidth = buttonRef.current?.offsetWidth || 60;
+  const buttonHeight = buttonRef.current?.offsetHeight || 60;
+  newX = Math.max(0, Math.min(newX, window.innerWidth - buttonWidth));
+  newY = Math.max(0, Math.min(newY, window.innerHeight - buttonHeight));
+
+  setButtonPos({ x: newX, y: newY });
+};
+
+const handleDragEnd = () => {
+  setIsDragging(false);
+};
   // Update the ref whenever selectedSymbol changes (add this after the ref)
 useEffect(() => {
   selectedSymbolRef.current = selectedSymbol;
@@ -366,6 +426,27 @@ useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
       if (!challenge) return;
+
+      // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
+useEffect(() => {
+  if (isDragging) {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleDragEnd);
+  } else {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleDragEnd);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleDragEnd);
+  }
+  return () => {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleDragEnd);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleDragEnd);
+  };
+}, [isDragging]);
       
       // Calculate daily loss from today's trades
       const today = new Date().toDateString();
@@ -2487,6 +2568,7 @@ const QuickTradeComponent = () => {
             </div>
           </div>
         )}
+          
 
         <div className={`center-panel ${isFullScreen ? 'fullscreen' : ''} ${activeDashboard === 'Challenges' || activeDashboard === 'Market' || activeDashboard === 'Profile' ? 'full-width' : ''}`}>
           {activeDashboard === 'Challenges' ? (
@@ -4584,6 +4666,30 @@ const QuickTradeComponent = () => {
           </div>
         </div>
       )}
+              {/* Floating Chart Button - Draggable */}
+      <div
+        ref={buttonRef}
+        className="floating-chart-btn"
+        style={{
+          position: 'fixed',
+          left: `${buttonPos.x}px`,
+          top: `${buttonPos.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          zIndex: 9999,
+          userSelect: 'none',
+          touchAction: 'none',
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        onClick={() => {
+          if (!isDragging) {
+            window.open('https://t.me/your_channel_username', '_blank');
+          }
+        }}
+      >
+        📊
+        <span className="tooltip">Chat on Telegram</span>
+      </div>
           
     </div>
   );
