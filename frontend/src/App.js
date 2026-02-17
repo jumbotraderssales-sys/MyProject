@@ -4670,6 +4670,8 @@ const QuickTradeComponent = () => {
     </div>
          
   );
+
+}
      {/* Floating Chart Button - Draggable */}
       <div
         ref={buttonRef}
@@ -4694,6 +4696,5 @@ const QuickTradeComponent = () => {
         📊
         <span className="tooltip">Chat on Telegram</span>
       </div>
-}
 
 export default App;
