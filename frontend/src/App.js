@@ -354,11 +354,6 @@ useEffect(() => {
   }
 }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
 
-const carouselImages = [
-  'https://github.com/jumbotraderssales-sys/MyProject/raw/main/frontend/src/data/1.png',
-  'https://github.com/jumbotraderssales-sys/MyProject/raw/main/frontend/src/data/2.png',
-  'https://github.com/jumbotraderssales-sys/MyProject/raw/main/frontend/src/data/3.png'
-];
   useEffect(() => {
   const interval = setInterval(() => {
     setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
@@ -2496,6 +2491,16 @@ const QuickTradeComponent = () => {
         <div className={`center-panel ${isFullScreen ? 'fullscreen' : ''} ${activeDashboard === 'Challenges' || activeDashboard === 'Market' || activeDashboard === 'Profile' ? 'full-width' : ''}`}>
           {activeDashboard === 'Challenges' ? (
             <div className="challenges-content">
+              {/* ===== INSERT CAROUSEL HERE ===== */}
+    <div className="challenges-carousel">
+      {carouselImages.map((img, index) => (
+        <div
+          key={index}
+          className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
+          style={{ backgroundImage: `url(${img})` }}
+        ></div>
+      ))}
+    </div>
               <div className="challenges-hero">
                 <h1>🚀 Paper2Real Trading Challenges</h1>
                 <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
