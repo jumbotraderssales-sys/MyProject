@@ -4683,7 +4683,7 @@ const QuickTradeComponent = () => {
         onTouchStart={handleTouchStart}
         onClick={() => {
           if (!isDragging) {
-            window.open('https://t.me/your_channel_username', '_blank');
+            window.open('https://t.me/+c0cqqAHpqkEwNDE1', '_blank');
           }
         }}
       >
