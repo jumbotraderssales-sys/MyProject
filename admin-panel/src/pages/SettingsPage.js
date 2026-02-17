@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -17,30 +17,77 @@ const SettingsPage = () => {
     maxDeposit: 100000,
     withdrawalFee: 1.5,
     referralBonus: 5,
-    riskWarning: 'Trading involves substantial risk of loss.'
+    riskWarning: 'Trading involves substantial risk of loss.',
+    // ===== REFERRAL SETTINGS =====
+    referralTarget: 20,
+    referralRewardName: 'Beginner Challenge',
+    referralRewardAmount: 20000
   });
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Fetch existing settings (including referral) on mount
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
+      const res = await fetch(`${baseURL}/api/admin/referral-settings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setSettings(prev => ({
+            ...prev,
+            referralTarget: data.settings.referralTarget,
+            referralRewardName: data.settings.referralRewardName,
+            referralRewardAmount: data.settings.referralRewardAmount
+          }));
+        }
+      }
+      // Also fetch other general settings if you have a separate endpoint
+    } catch (error) {
+      console.error('Error fetching referral settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSettingChange = (key, value) => {
     setSettings(prev => ({
       ...prev,
-      [key]: key === 'maintenanceMode' || key === 'allowRegistrations' || 
-              key === 'enableEmailNotifications' || key === 'enableSMSNotifications' 
-              ? !prev[key] 
-              : value
+      [key]: typeof value === 'boolean' ? !prev[key] : value
     }));
   };
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = localStorage.getItem('token');
+      const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
       
-      // In a real app, you would call: adminApi.updateSettings(settings)
-      console.log('Settings saved:', settings);
+      // Save referral settings (you might have separate endpoints)
+      const res = await fetch(`${baseURL}/api/admin/referral-settings`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          referralTarget: settings.referralTarget,
+          referralRewardName: settings.referralRewardName,
+          referralRewardAmount: settings.referralRewardAmount
+        })
+      });
+      
+      if (!res.ok) throw new Error('Failed to save referral settings');
       
       setSaveMessage('Settings saved successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
@@ -70,12 +117,17 @@ const SettingsPage = () => {
         maxDeposit: 100000,
         withdrawalFee: 1.5,
         referralBonus: 5,
-        riskWarning: 'Trading involves substantial risk of loss.'
+        riskWarning: 'Trading involves substantial risk of loss.',
+        referralTarget: 20,
+        referralRewardName: 'Beginner Challenge',
+        referralRewardAmount: 20000
       });
       setSaveMessage('Settings reset to default!');
       setTimeout(() => setSaveMessage(''), 3000);
     }
   };
+
+  if (loading) return <div className="loading-container">Loading settings...</div>;
 
   return (
     <div className="settings-page">
@@ -172,7 +224,7 @@ const SettingsPage = () => {
                   <input
                     type="checkbox"
                     checked={settings.maintenanceMode}
-                    onChange={() => handleSettingChange('maintenanceMode')}
+                    onChange={() => handleSettingChange('maintenanceMode', !settings.maintenanceMode)}
                   />
                   <span className="toggle-label">Maintenance Mode</span>
                 </label>
@@ -186,7 +238,7 @@ const SettingsPage = () => {
                   <input
                     type="checkbox"
                     checked={settings.allowRegistrations}
-                    onChange={() => handleSettingChange('allowRegistrations')}
+                    onChange={() => handleSettingChange('allowRegistrations', !settings.allowRegistrations)}
                   />
                   <span className="toggle-label">Allow New Registrations</span>
                 </label>
@@ -200,7 +252,7 @@ const SettingsPage = () => {
                   <input
                     type="checkbox"
                     checked={settings.enableEmailNotifications}
-                    onChange={() => handleSettingChange('enableEmailNotifications')}
+                    onChange={() => handleSettingChange('enableEmailNotifications', !settings.enableEmailNotifications)}
                   />
                   <span className="toggle-label">Email Notifications</span>
                 </label>
@@ -214,7 +266,7 @@ const SettingsPage = () => {
                   <input
                     type="checkbox"
                     checked={settings.enableSMSNotifications}
-                    onChange={() => handleSettingChange('enableSMSNotifications')}
+                    onChange={() => handleSettingChange('enableSMSNotifications', !settings.enableSMSNotifications)}
                   />
                   <span className="toggle-label">SMS Notifications</span>
                 </label>
@@ -317,6 +369,45 @@ const SettingsPage = () => {
                 max="50"
                 value={settings.referralBonus}
                 onChange={(e) => handleSettingChange('referralBonus', parseFloat(e.target.value))}
+                className="form-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ========== NEW REFERRAL SETTINGS SECTION ========== */}
+        <div className="settings-section">
+          <div className="section-header">
+            <h2><i className="fas fa-users"></i> Referral Program Settings</h2>
+          </div>
+          <div className="section-content">
+            <div className="form-group">
+              <label>Referral Target (number of signups)</label>
+              <input
+                type="number"
+                min="1"
+                value={settings.referralTarget}
+                onChange={(e) => handleSettingChange('referralTarget', parseInt(e.target.value))}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Reward Name (e.g., Beginner Challenge)</label>
+              <input
+                type="text"
+                value={settings.referralRewardName}
+                onChange={(e) => handleSettingChange('referralRewardName', e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Reward Amount (paper money in ₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                value={settings.referralRewardAmount}
+                onChange={(e) => handleSettingChange('referralRewardAmount', parseFloat(e.target.value))}
                 className="form-input"
               />
             </div>
