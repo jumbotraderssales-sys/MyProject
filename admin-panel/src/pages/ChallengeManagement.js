@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChallenge, setSelectedChallenge] = useState(null);
-  const [error, setError] = useState('');
 
   // Challenge configurations from backend
   const challengeConfigs = {
@@ -53,35 +51,18 @@ const ChallengeManagement = () => {
     }
   };
 
-  const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
-
   useEffect(() => {
     fetchChallenges();
   }, []);
 
   const fetchChallenges = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No authentication token found. Please login.');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${baseURL}/api/admin/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const baseURL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
       
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Unauthorized. Please login again.');
-        }
-        throw new Error('Failed to fetch users');
-      }
-
+      const response = await fetch(`${baseURL}/api/admin/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const users = await response.json();
       
       // Extract challenge data from users
@@ -107,10 +88,8 @@ const ChallengeManagement = () => {
       });
       
       setChallenges(challengeStats);
-      setError('');
     } catch (error) {
       console.error('Error fetching challenges:', error);
-      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -121,17 +100,6 @@ const ChallengeManagement = () => {
       <div className="loading-container">
         <div className="loading-spinner"></div>
         <p>Loading challenge data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <p><i className="fas fa-exclamation-triangle"></i> {error}</p>
-        <button className="btn btn-primary" onClick={fetchChallenges}>
-          Retry
-        </button>
       </div>
     );
   }
