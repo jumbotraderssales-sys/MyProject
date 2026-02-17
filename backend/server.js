@@ -1,4 +1,4 @@
-// server.js - Paper2Real Trading Platform Backend (Complete Updated Version)
+// server.js - Paper2Real Trading Platform Backend (Complete Updated Version with Referral System)
 const express = require('express');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -41,6 +41,8 @@ const PAYMENTS_FILE = path.join(__dirname, 'data', 'payments.json');
 const DEPOSITS_FILE = path.join(__dirname, 'data', 'deposits.json');
 const WITHDRAWALS_FILE = path.join(__dirname, 'data', 'withdrawals.json');
 const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
+// ========== NEW REFERRALS FILE ==========
+const REFERRALS_FILE = path.join(__dirname, 'data', 'referrals.json');
 
 // ========== CHALLENGE CONFIGURATION ==========
 const CHALLENGES = {
@@ -277,10 +279,14 @@ const readSettings = async () => {
     const data = await fs.readFile(SETTINGS_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
+    // Default settings including referral config
     return {
       upiQrCode: null,
       upiId: '7799191208-2@ybl',
       merchantName: 'Paper2Real Trading',
+      referralTarget: 20,
+      referralRewardName: 'Beginner Challenge',
+      referralRewardAmount: 20000,
       updatedAt: new Date().toISOString()
     };
   }
@@ -292,6 +298,27 @@ const writeSettings = async (settings) => {
     return true;
   } catch (error) {
     console.error('Error writing settings:', error.message);
+    return false;
+  }
+};
+
+// ========== NEW REFERRAL HELPER FUNCTIONS ==========
+const readReferrals = async () => {
+  try {
+    const data = await fs.readFile(REFERRALS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    // File doesn't exist or invalid JSON – return empty array
+    return [];
+  }
+};
+
+const writeReferrals = async (referrals) => {
+  try {
+    await fs.writeFile(REFERRALS_FILE, JSON.stringify(referrals, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing referrals:', error.message);
     return false;
   }
 };
@@ -333,7 +360,7 @@ app.get('/api/test', (req, res) => {
     message: 'Paper2Real Trading Platform Backend is running!',
     timestamp: new Date().toISOString(),
     version: '1.1.0',
-    features: ['Challenge System', 'Trading with Rules', 'UPI Payments', 'Withdrawals']
+    features: ['Challenge System', 'Trading with Rules', 'UPI Payments', 'Withdrawals', 'Referral System']
   });
 });
 
@@ -348,10 +375,10 @@ app.get('/api/health', (req, res) => {
 
 // ========== USER MANAGEMENT ROUTES ==========
 
-// Register route (POST)
+// Register route (POST) - UPDATED with referral support
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, ref } = req.body;
     
     if (!name || !email || !password) {
       return res.status(400).json({ 
@@ -367,6 +394,23 @@ app.post('/api/register', async (req, res) => {
         success: false, 
         error: 'User already exists' 
       });
+    }
+    
+    // Generate unique referral code
+    const baseCode = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const random = Math.random().toString(36).substring(2, 8);
+    let referralCode = `${baseCode}${random}`;
+    while (users.some(u => u.referralCode === referralCode)) {
+      referralCode = `${baseCode}${Math.random().toString(36).substring(2, 8)}`;
+    }
+    
+    // Check if referred by someone
+    let referredBy = null;
+    if (ref) {
+      const referrer = users.find(u => u.referralCode === ref);
+      if (referrer) {
+        referredBy = referrer.id;
+      }
     }
     
     const newUser = {
@@ -400,11 +444,45 @@ app.post('/api/register', async (req, res) => {
         winRate: 0,
         status: 'not_started',
         dailyResetTime: null
+      },
+      referralCode,
+      referredBy,
+      referralCount: 0,
+      referralReward: {
+        awarded: false,
+        awardedAt: null,
+        rewardType: null,
+        rewardName: null,
+        approvedBy: null
       }
     };
     
     users.push(newUser);
     await writeUsers(users);
+    
+    // If referred, update referrer and create referral record
+    if (referredBy) {
+      const referrerIndex = users.findIndex(u => u.id === referredBy);
+      if (referrerIndex !== -1) {
+        users[referrerIndex].referralCount = (users[referrerIndex].referralCount || 0) + 1;
+        if (!users[referrerIndex].referredUsers) users[referrerIndex].referredUsers = [];
+        users[referrerIndex].referredUsers.push(newUser.id);
+        users[referrerIndex].updatedAt = new Date().toISOString();
+        await writeUsers(users);
+        
+        const referrals = await readReferrals();
+        referrals.push({
+          id: `REF${Date.now()}${Math.floor(Math.random()*1000)}`,
+          referrerId: referredBy,
+          referredId: newUser.id,
+          referredName: newUser.name,
+          referredEmail: newUser.email,
+          createdAt: new Date().toISOString(),
+          rewardClaimed: false
+        });
+        await writeReferrals(referrals);
+      }
+    }
     
     const userResponse = { ...newUser };
     delete userResponse.password;
@@ -680,6 +758,60 @@ app.put('/api/user/bank-account', async (req, res) => {
     });
     
   } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ========== NEW USER REFERRAL INFO ENDPOINT ==========
+app.get('/api/user/referral', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const users = await readUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    const referrals = await readReferrals();
+    const referredUsers = referrals
+      .filter(r => r.referrerId === userId)
+      .map(r => ({
+        id: r.referredId,
+        name: r.referredName,
+        email: r.referredEmail,
+        joinedAt: r.createdAt
+      }));
+    
+    const settings = await readSettings();
+    
+    res.json({
+      success: true,
+      referralCode: user.referralCode,
+      referralCount: user.referralCount || 0,
+      referredUsers,
+      rewardAwarded: user.referralReward?.awarded || false,
+      rewardAwardedAt: user.referralReward?.awardedAt || null,
+      target: settings.referralTarget || 20,
+      rewardName: settings.referralRewardName || 'Beginner Challenge',
+      rewardAmount: settings.referralRewardAmount || 20000
+    });
+    
+  } catch (error) {
+    console.error('Error fetching referral info:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
@@ -1935,6 +2067,26 @@ app.get('/api/withdrawals/history', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
+// Simple admin check middleware
+const requireAdmin = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+    const userId = token.replace('token-', '');
+    const users = await readUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Admin access required' });
+    }
+    req.userId = userId;
+    next();
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Get all users (for admin panel)
 app.get('/api/admin/users', async (req, res) => {
   try {
@@ -2025,7 +2177,6 @@ app.put('/api/admin/users/:id/status', async (req, res) => {
 });
 
 // Add funds to user wallet
-
 app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
   try {
     const { id } = req.params;
@@ -2065,7 +2216,7 @@ app.post('/api/admin/users/:id/wallet/add', async (req, res) => {
   }
 });
 
-// ================= ADMIN DEDUCT WALLET =================
+// Admin deduct wallet
 app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
   try {
     const userId = req.params.id;
@@ -2088,7 +2239,7 @@ app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
 
     // Ensure fields exist
     user.paperBalance = Number(user.paperBalance || 0);
-    user.balance = Number(user.balance || 0); // real balance
+    user.realBalance = Number(user.realBalance || 0);
 
     if (type === 'paper') {
       if (user.paperBalance < amount) {
@@ -2097,10 +2248,10 @@ app.post('/api/admin/users/:id/wallet/deduct', async (req, res) => {
       user.paperBalance -= amount;
     } else {
       // default = real balance
-      if (user.balance < amount) {
+      if (user.realBalance < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient real balance' });
       }
-      user.balance -= amount;
+      user.realBalance -= amount;
     }
 
     users[userIndex] = user;
@@ -2376,6 +2527,171 @@ app.post('/api/admin/withdrawal/:id/reject', async (req, res) => {
   }
 });
 
+// ========== NEW ADMIN REFERRAL ENDPOINTS ==========
+
+// Get all users with referral data (admin only)
+app.get('/api/admin/referrals', requireAdmin, async (req, res) => {
+  try {
+    const users = await readUsers();
+    const referrals = await readReferrals();
+    
+    const data = users.map(user => {
+      const userReferrals = referrals.filter(r => r.referrerId === user.id);
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        referralCode: user.referralCode,
+        referralCount: user.referralCount || 0,
+        referredUsers: userReferrals.map(r => ({
+          id: r.referredId,
+          name: r.referredName,
+          email: r.referredEmail,
+          joinedAt: r.createdAt
+        })),
+        rewardAwarded: user.referralReward?.awarded || false,
+        rewardAwardedAt: user.referralReward?.awardedAt || null,
+        rewardName: user.referralReward?.rewardName || null,
+        role: user.role
+      };
+    });
+    
+    res.json({ success: true, users: data });
+  } catch (error) {
+    console.error('Error fetching referral users:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get referral settings (admin only)
+app.get('/api/admin/referral-settings', requireAdmin, async (req, res) => {
+  try {
+    const settings = await readSettings();
+    res.json({
+      success: true,
+      settings: {
+        referralTarget: settings.referralTarget || 20,
+        referralRewardName: settings.referralRewardName || 'Beginner Challenge',
+        referralRewardAmount: settings.referralRewardAmount || 20000
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update referral settings (admin only)
+app.put('/api/admin/referral-settings', requireAdmin, async (req, res) => {
+  try {
+    const { referralTarget, referralRewardName, referralRewardAmount } = req.body;
+    const settings = await readSettings();
+    
+    if (referralTarget !== undefined) settings.referralTarget = parseInt(referralTarget);
+    if (referralRewardName !== undefined) settings.referralRewardName = referralRewardName;
+    if (referralRewardAmount !== undefined) settings.referralRewardAmount = parseFloat(referralRewardAmount);
+    
+    settings.updatedAt = new Date().toISOString();
+    settings.updatedBy = req.userId; // from middleware
+    
+    await writeSettings(settings);
+    
+    res.json({
+      success: true,
+      message: 'Referral settings updated',
+      settings: {
+        referralTarget: settings.referralTarget,
+        referralRewardName: settings.referralRewardName,
+        referralRewardAmount: settings.referralRewardAmount
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Approve referral reward for a user (admin only)
+app.post('/api/admin/referrals/approve/:userId', requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminId = req.userId;
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const user = users[userIndex];
+    
+    // Check if already awarded
+    if (user.referralReward?.awarded) {
+      return res.json({ success: false, error: 'Reward already awarded' });
+    }
+    
+    const settings = await readSettings();
+    const target = settings.referralTarget || 20;
+    const rewardName = settings.referralRewardName || 'Beginner Challenge';
+    const rewardAmount = settings.referralRewardAmount || 20000;
+    
+    if ((user.referralCount || 0) < target) {
+      return res.json({ 
+        success: false, 
+        error: `User has only ${user.referralCount} referrals, need ${target}` 
+      });
+    }
+    
+    // Grant reward: add paper balance and set current challenge
+    user.paperBalance = (user.paperBalance || 0) + rewardAmount;
+    user.currentChallenge = rewardName;
+    user.referralReward = {
+      awarded: true,
+      awardedAt: new Date().toISOString(),
+      rewardType: 'challenge',
+      rewardName: rewardName,
+      approvedBy: adminId
+    };
+    
+    // Initialize challenge stats if needed
+    if (!user.challengeStats) {
+      user.challengeStats = {
+        startDate: new Date().toISOString(),
+        dailyLoss: 0,
+        totalLoss: 0,
+        totalProfit: 0,
+        currentProfit: 0,
+        maxDrawdown: 0,
+        tradesCount: 0,
+        winRate: 0,
+        status: 'active',
+        dailyResetTime: new Date().toISOString()
+      };
+    } else {
+      user.challengeStats.status = 'active';
+      user.challengeStats.startDate = new Date().toISOString();
+    }
+    
+    user.updatedAt = new Date().toISOString();
+    
+    await writeUsers(users);
+    
+    res.json({
+      success: true,
+      message: `Reward approved and granted: ${rewardName}`,
+      user: {
+        id: user.id,
+        name: user.name,
+        paperBalance: user.paperBalance,
+        currentChallenge: user.currentChallenge,
+        referralReward: user.referralReward
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error approving referral reward:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ========== ERROR HANDLING ==========
 
 // Handle 404
@@ -2407,12 +2723,13 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
-  console.log(`✅ Paper2Real Backend with Challenge System`);
+  console.log(`✅ Paper2Real Backend with Challenge System & Referral System`);
   console.log('');
   console.log('👥 USER ENDPOINTS:');
-  console.log('  POST /api/register             - User registration');
+  console.log('  POST /api/register             - User registration (with ref support)');
   console.log('  POST /api/login                - User login');
   console.log('  GET  /api/user/profile         - Get user profile');
+  console.log('  GET  /api/user/referral        - Get user referral info (NEW)');
   console.log('  GET  /api/upi-qr               - Get UPI QR code');
   console.log('  GET  /api/withdrawals/history  - Get user withdrawal history');
   console.log('  PUT  /api/user/bank-account    - Update bank account');
@@ -2437,6 +2754,7 @@ app.listen(PORT, () => {
   console.log('');
   console.log('🏦 WALLET MANAGEMENT:');
   console.log('  POST /api/admin/users/:id/wallet/add    - Add funds');
+  console.log('  POST /api/admin/users/:id/wallet/deduct - Deduct funds');
   console.log('');
   console.log('💸 WITHDRAWAL ENDPOINTS:');
   console.log('  POST /api/withdrawals/request  - Submit withdrawal request');
@@ -2449,13 +2767,18 @@ app.listen(PORT, () => {
   console.log('  GET  /api/admin/trades         - Get all trades');
   console.log('  GET  /api/admin/orders         - Get all orders');
   console.log('  GET  /api/admin/stats          - Get platform statistics');
-  console.log('  GET  /api/admin/deposits       - Get all deposits');
   console.log('  GET  /api/admin/payments       - Get all payments');
   console.log('  GET  /api/admin/withdrawals    - Get all withdrawals');
   console.log('  GET  /api/admin/upi-settings   - Get UPI settings');
   console.log('  POST /api/admin/upi-qr/upload  - Upload UPI QR code');
   console.log('  PUT  /api/admin/upi-settings   - Update UPI settings');
   console.log('  DELETE /api/admin/upi-qr       - Delete UPI QR code');
+  console.log('');
+  console.log('🎁 REFERRAL SYSTEM (NEW):');
+  console.log('  GET  /api/admin/referrals           - Get all referral data');
+  console.log('  GET  /api/admin/referral-settings   - Get referral settings');
+  console.log('  PUT  /api/admin/referral-settings   - Update referral settings');
+  console.log('  POST /api/admin/referrals/approve/:userId - Approve reward');
   console.log('');
   console.log('🌐 GENERAL ENDPOINTS:');
   console.log('  GET  /                         - API root');
