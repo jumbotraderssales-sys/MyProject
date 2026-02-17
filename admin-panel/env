@@ -3,7 +3,7 @@ PORT=3002
 NODE_ENV=production
 
 # Backend API URL (Update after deploying backend)
-REACT_APP_API_URL=https://myproject1-d097.onrender.com/api
+REACT_APP_API_URL=https://myproject1-d097.onrender.com
 VITE_API_URL=https://myproject1-d097.onrender.com/api
 
 # Frontend URL
@@ -15,3 +15,4 @@ SESSION_SECRET=your-session-secret-67890
 
 # CORS Configuration
 CORS_ORIGIN=https://myproject-frontend1.onrender.com,https://myproject-admin1.onrender.com
+
