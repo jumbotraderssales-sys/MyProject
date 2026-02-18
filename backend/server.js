@@ -1,5 +1,7 @@
 // server.js - Paper2Real Trading Platform Backend (Complete Updated Version with Referral System)
 const express = require('express');
+const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/user');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
