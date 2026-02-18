@@ -434,8 +434,6 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedSymbol]);
 
-  // (The automatic order size adjustment useEffect has been removed as requested)
-
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
@@ -2259,17 +2257,24 @@ function App() {
           </div>
         </div>
 
-        {/* Order Size Section - renamed, no min/max enforced */}
+        {/* Order Size Section - renamed, no min/max enforced, no arrows */}
         <div className="order-size-section">
           <div className="section-label">
             Order size in lot (Min recommended: {minLot})
           </div>
           <div className="order-size-controls">
             <input 
-              type="number"
-              step="any"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*\.?[0-9]*"
               value={orderSize}
-              onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Allow empty, numbers, and decimal point
+                if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                  setOrderSize(val === '' ? 0 : parseFloat(val));
+                }
+              }}
               className="order-size-input"
               disabled={!canTrade}
             />
