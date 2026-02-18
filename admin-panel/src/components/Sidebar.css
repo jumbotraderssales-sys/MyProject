@@ -257,15 +257,4 @@
 .logout-button:hover {
   background: #b91c1c;
 }
-/* Admin Panel - Referral Code Styling */
-.referral-code {
-  font-family: 'Courier New', monospace;
-  background: #2d3748;
-  color: #60a5fa;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  border: 1px solid #4a5568;
-  display: inline-block;
-}
+
