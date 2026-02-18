@@ -1,10 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
-import AccountSetup from './components/AccountSetup';
-import WithdrawalRequest from './components/WithdrawalRequest';
-import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
-import WithdrawalHistory from './components/WithdrawalHistory';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import img1 from './data/1.png';
 import img2 from './data/2.png';
@@ -12,7 +7,6 @@ import img3 from './data/3.png';
 const carouselImages = [img1, img2, img3];
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
-const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
 
 // Crypto data with details
 const cryptoData = [
@@ -28,18 +22,6 @@ const cryptoData = [
   { symbol: 'DOGEUSDT', name: 'Dogecoin', price: 0.18, change24h: 0.25, volume: '1.1B', marketCap: '26B', color: '#C2A633' },
   { symbol: 'LTCUSDT', name: 'Litecoin', price: 85.60, change24h: 0.92, volume: '450M', marketCap: '6.3B', color: '#BFBBBB' },
   { symbol: 'TRXUSDT', name: 'Tron', price: 0.12, change24h: 1.45, volume: '380M', marketCap: '11B', color: '#FF001B' },
-];
-
-// Chart types for TradingView
-const CHART_TYPES = [
-  { id: '0', name: 'Candles', icon: '📊' },
-  { id: '1', name: 'Bars', icon: '📈' },
-  { id: '9', name: 'HLC', icon: '📉' },
-  { id: '8', name: 'Line', icon: '➖' },
-  { id: '2', name: 'Area', icon: '▀' },
-  { id: '3', name: 'Heikin Ashi', icon: '🔄' },
-  { id: '7', name: 'Baseline', icon: '⚖️' },
-  { id: '4', name: 'Hollow Candles', icon: '🕯️' },
 ];
 
 // Indicator presets
@@ -140,7 +122,6 @@ function App() {
   });
  
   const [balance, setBalance] = useState(0);
-  const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [mode, setMode] = useState('DEMO');
@@ -154,7 +135,6 @@ function App() {
     upiId: ''
   });
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [withdrawalStatus, setWithdrawalStatus] = useState('pending');
   const [showAccountSetup, setShowAccountSetup] = useState(false);
   const [showWithdrawalRequest, setShowWithdrawalRequest] = useState(false);
   const [timeframe, setTimeframe] = useState('60');
@@ -174,7 +154,6 @@ function App() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showRegister, setShowRegister] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState({
     name: '',
@@ -268,8 +247,10 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const buttonRef = useRef(null);
+
+  // Ref to store previous orderSize to prevent infinite loops
   const prevOrderSizeRef = useRef(orderSize);
-  
+
   // Fetch real-time price for a single symbol from Binance
   const fetchRealPrice = async (symbol) => {
     try {
@@ -435,35 +416,36 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedSymbol]);
 
-  // Add separate useEffect for adjusting order size (prevent infinite loop)
-useEffect(() => {
-  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const paperUSD = userAccount.paperBalance / dollarRate;
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-    const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
-    const minLot = getMinLot(currentPrice);
-    const maxSize = maxOrderValueUSD / currentPrice;
+  // Add separate useEffect for adjusting order size (prevent infinite loop) - FIXED
+  useEffect(() => {
+    if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      const paperUSD = userAccount.paperBalance / dollarRate;
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+      const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
+      const minLot = getMinLot(currentPrice);
+      const maxSize = maxOrderValueUSD / currentPrice;
 
-    // Clamp current orderSize to valid range
-    let newSize = orderSize;
-    if (orderSize < minLot) newSize = minLot;
-    if (orderSize > maxSize) newSize = maxSize;
+      // Clamp current orderSize to valid range
+      let newSize = orderSize;
+      if (orderSize < minLot) newSize = minLot;
+      if (orderSize > maxSize) newSize = maxSize;
 
-    // Only update if different from previous (using ref)
-    if (Math.abs(newSize - prevOrderSizeRef.current) > 0.0001) {
-      setOrderSize(newSize);
-      prevOrderSizeRef.current = newSize;
+      // Only update if different from previous (using ref)
+      if (Math.abs(newSize - prevOrderSizeRef.current) > 0.0001) {
+        setOrderSize(newSize);
+        prevOrderSizeRef.current = newSize;
+      }
     }
-  }
-}, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
+  }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate, leverage]);
 
+  // Carousel effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [carouselImages.length]);
+  }, []); // removed unnecessary dependency
   
   // Calculate daily and total loss
   useEffect(() => {
@@ -510,10 +492,11 @@ useEffect(() => {
       // Check challenge rules
       checkChallengeRules();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
 
   // Check challenge rules
-  const checkChallengeRules = () => {
+  const checkChallengeRules = useCallback(() => {
     if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
     
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
@@ -536,7 +519,7 @@ useEffect(() => {
       alert(`🎉 Profit Target Achieved!\n\nCongratulations! You have reached the profit target of ${challenge.profitTarget}%.\nChallenge passed!`);
       updateChallengeStatus('passed', 'Profit target achieved');
     }
-  };
+  }, [dailyLoss, totalLoss, challengeProgress.profit, userAccount.currentChallenge, userAccount.challengeStats.status]);
 
   const updateChallengeStatus = (status, reason) => {
     setUserAccount(prev => ({
@@ -581,10 +564,12 @@ useEffect(() => {
       
       return () => clearInterval(paymentCheckInterval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, userAccount.id]);
 
   useEffect(() => {
     calculatePaymentStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payments]);
 
   useEffect(() => {
@@ -630,6 +615,7 @@ useEffect(() => {
       
       loadUserData(token);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -656,6 +642,7 @@ useEffect(() => {
     if (isLoggedIn && showUPIScanner) {
       loadUpiQrCode();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, showUPIScanner]);
 
   useEffect(() => {
@@ -779,6 +766,7 @@ useEffect(() => {
     }, 3000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -812,7 +800,7 @@ useEffect(() => {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleDragEnd);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleTouchMove]);
 
   const calculatePaymentStats = (paymentsList = payments) => {
     const stats = {
@@ -1069,40 +1057,6 @@ useEffect(() => {
         }, 500);
       }
     }
-  };
-
-  const simulateAdminApproval = (paymentId) => {
-    const payment = payments.find(p => p.id === paymentId);
-    if (!payment) return;
-    
-    setTimeout(() => {
-      const isApproved = Math.random() > 0.1;
-      
-      if (isApproved) {
-        updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
-        
-        const paperMoneyAmount = payment.challengeName.includes('Beginner') ? 20000 :
-                                payment.challengeName.includes('Intermediate') ? 50000 :
-                                payment.challengeName.includes('PRO') ? 100000 : 20000;
-        
-        const token = localStorage.getItem('token');
-        if (token) {
-          fetch('https://myproject1-d097.onrender.com/api/payments/' + paymentId + '/status', {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              status: 'approved',
-              notes: 'Payment approved by admin'
-            })
-          }).catch(console.error);
-        }
-      } else {
-        updatePaymentStatus(paymentId, 'rejected', 'Payment verification failed. Please contact support.');
-      }
-    }, 5000);
   };
 
   const submitPaymentToBackend = async (paymentData) => {
@@ -1902,27 +1856,6 @@ useEffect(() => {
     }
   };
 
-  const simulateUPIPayment = (appName) => {
-    if (window.confirm(`Open ${appName} to make payment of ₹${upiAmount}? `)) {
-      setTimeout(() => {
-        alert(`✅ Payment of ₹${upiAmount} successful via ${appName}!\n\nNow please upload your payment receipt.`);
-      }, 1500);
-    }
-  };
-
-  const simulateTestPayment = () => {
-    const mockFile = {
-      name: 'test_payment_receipt.jpg',
-      size: 1024 * 1024,
-      type: 'image/jpeg'
-    };
-    
-    setPaymentReceipt(mockFile);
-    setReceiptUploaded(true);
-    
-    window.alert('Test receipt uploaded! You can now submit for admin approval.');
-  };
-
   const handlePaymentSubmit = async () => {
     if (!receiptUploaded || !paymentReceipt) {
       alert('Please upload your payment receipt first.');
@@ -2010,41 +1943,6 @@ useEffect(() => {
       console.error('Payment submission error:', error);
       alert(`❌ Payment submission failed:\n${error.message}\n\nPlease try again or contact support.`);
     }
-  };
-
-  const simulateAdminApprovalUpdated = async (paymentId) => {
-    const payment = payments.find(p => p.id === paymentId);
-    if (!payment) return;
-    
-    setTimeout(async () => {
-      const isApproved = Math.random() > 0.1;
-      
-      if (isApproved) {
-        updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
-        
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            await fetch(`https://myproject1-d097.onrender.com/api/payments/${paymentId}/status`, {
-              method: 'PUT',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                status: 'approved',
-                notes: 'Payment verified successfully',
-                processedBy: 'admin'
-              })
-            });
-          } catch (error) {
-            console.error('Backend update failed:', error);
-          }
-        }
-      } else {
-        updatePaymentStatus(paymentId, 'rejected', 'Payment verification failed. Please contact support.');
-      }
-    }, 5000);
   };
 
   const addAlert = () => {
@@ -2152,8 +2050,6 @@ useEffect(() => {
     const amount = Math.abs(order.takeProfit - order.entryPrice) * order.size * order.leverage;
     return `$${amount.toFixed(2)}`;
   };
-
-  const currentSymbolPositions = positions.filter(pos => pos.symbol === selectedSymbol);
 
   const filteredCryptoData = cryptoData.filter(crypto => 
     crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
