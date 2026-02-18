@@ -138,7 +138,7 @@ function App() {
       dailyResetTime: null
     }
   });
- 
+ const [orderSizeInput, setOrderSizeInput] = useState('0.001');
   const [balance, setBalance] = useState(0);
   const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
@@ -2264,27 +2264,31 @@ function App() {
   </div>
   <div className="order-size-controls custom">
     <input
-      type="text"
+      type="number"
       inputMode="numeric"
       pattern="[0-9]*\.?[0-9]*"
-      value={orderSize}
+      value={orderSizeInput}
       onChange={(e) => {
         const val = e.target.value;
-        // Allow only numbers and a single decimal point
+        // Allow empty string or valid number pattern (including partial decimals)
         if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-          setOrderSize(val === '' ? 0 : parseFloat(val));
+          setOrderSizeInput(val);
         }
       }}
       onKeyDown={(e) => {
         // Arrow up: increase by minLot
         if (e.key === 'ArrowUp') {
           e.preventDefault();
-          setOrderSize(prev => prev + minLot);
+          const current = parseFloat(orderSizeInput) || 0;
+          const newVal = current + minLot;
+          setOrderSizeInput(newVal.toString());
         }
         // Arrow down: decrease by minLot (but not below 0)
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          setOrderSize(prev => Math.max(0, prev - minLot));
+          const current = parseFloat(orderSizeInput) || 0;
+          const newVal = Math.max(0, current - minLot);
+          setOrderSizeInput(newVal.toString());
         }
       }}
       className="order-size-input no-spinner"
