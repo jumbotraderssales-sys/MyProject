@@ -720,7 +720,8 @@ function App() {
   }, []);
 
   // SL/TP check function
-  const checkSLTP = () => {
+  // SL/TP check function (defined with useCallback to avoid unnecessary re-renders)
+  const checkSLTP = useCallback(() => {
     const currentPositions = positionsRef.current;
     currentPositions.forEach(position => {
       const currentPrice = prices[position.symbol] || position.entryPrice;
@@ -740,15 +741,49 @@ function App() {
         }
       }
     });
-  };
+  }, [prices]); // depends on prices to get latest values
 
+  // Run checkSLTP whenever prices change
+  useEffect(() => {
+    checkSLTP();
+  }, [checkSLTP]);
+
+  // Fetch real-time price for the selected symbol every 3 seconds
+  useEffect(() => {
+    if (!selectedSymbol) return;
+
+    const fetchLivePrice = async () => {
+      try {
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${selectedSymbol}`);
+        const data = await response.json();
+        const realPrice = parseFloat(data.price);
+        if (!isNaN(realPrice) && realPrice > 0) {
+          setPrices(prev => {
+            const newPrices = { ...prev, [selectedSymbol]: realPrice };
+            // Immediately check SL/TP after updating price (redundant but safe)
+            setTimeout(checkSLTP, 0);
+            return newPrices;
+          });
+          console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
+        }
+      } catch (error) {
+        console.error('Failed to fetch live price:', error);
+      }
+    };
+
+    fetchLivePrice();
+    const interval = setInterval(fetchLivePrice, 3000);
+    return () => clearInterval(interval);
+  }, [selectedSymbol, checkSLTP]);
+
+  // Simulated price updates for other symbols (interval effect)
   useEffect(() => {
     const interval = setInterval(() => {
       setPrices(prev => {
         const newPrices = { ...prev };
         const currentSelected = selectedSymbolRef.current;
         Object.keys(newPrices).forEach(symbol => {
-          if (symbol === currentSelected) return;
+          if (symbol === currentSelected) return; // selected symbol is updated by Binance
           const crypto = cryptoData.find(c => c.symbol === symbol);
           const baseChange = crypto?.change24h || 0;
           const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
@@ -757,7 +792,7 @@ function App() {
             newPrices[symbol] * 0.998
           );
         });
-        setTimeout(checkSLTP, 100);
+        // No need to call checkSLTP here; the useEffect on prices will handle it
         return newPrices;
       });
     }, 3000);
