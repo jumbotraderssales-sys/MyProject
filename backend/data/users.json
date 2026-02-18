@@ -52,7 +52,7 @@
     "realBalance": 5000,
     "paperBalance": 100000,
     "accountStatus": "active",
-    "role": "user",
+    "role": "admin",
     "currentPlan": null,
     "createdAt": "2026-01-14T12:49:54.473Z",
     "lastLogin": "2026-01-14T15:24:27.746Z"
@@ -183,22 +183,5 @@
     "lastLogin": "2026-01-26T21:16:03.006Z",
     "updatedAt": "2026-01-27T13:25:28.300Z"
   }
-  {
-  "id": "1768394994473",
-  "name": "Admin User",
-  "email": "paper2real.info@gmail.com",
-  "password": "admin123",
-  "realBalance": 5000,
-  "paperBalance": 100000,
-  "accountStatus": "active",
-  "role": "admin",
-  "currentPlan": null,
-  "createdAt": "2026-01-14T12:49:54.473Z",
-  "lastLogin": "2026-01-14T15:24:27.746Z",
-  "referralCode": "admin123",
-  "referralCount": 0,
-  "referredBy": null,
-  "referralReward": { "awarded": false },
-  "referredUsers": []
-}
+ 
 ]
