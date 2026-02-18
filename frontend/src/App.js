@@ -268,7 +268,8 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const buttonRef = useRef(null);
-
+  const prevOrderSizeRef = useRef(orderSize);
+  
   // Fetch real-time price for a single symbol from Binance
   const fetchRealPrice = async (symbol) => {
     try {
@@ -435,24 +436,27 @@ function App() {
   }, [selectedSymbol]);
 
   // Add separate useEffect for adjusting order size (prevent infinite loop)
-  useEffect(() => {
-    if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-      const paperUSD = userAccount.paperBalance / dollarRate;
-      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-      const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
-      const minLot = getMinLot(currentPrice);
-      const maxSize = maxOrderValueUSD / currentPrice;
+useEffect(() => {
+  if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
+    const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const paperUSD = userAccount.paperBalance / dollarRate;
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
+    const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
+    const minLot = getMinLot(currentPrice);
+    const maxSize = maxOrderValueUSD / currentPrice;
 
-      setOrderSize(prevSize => {
-        let newSize = prevSize;
-        if (prevSize < minLot) newSize = minLot;
-        if (prevSize > maxSize) newSize = maxSize;
-        if (Math.abs(prevSize - newSize) > 0.0001) return newSize;
-        return prevSize;
-      });
+    // Clamp current orderSize to valid range
+    let newSize = orderSize;
+    if (orderSize < minLot) newSize = minLot;
+    if (orderSize > maxSize) newSize = maxSize;
+
+    // Only update if different from previous (using ref)
+    if (Math.abs(newSize - prevOrderSizeRef.current) > 0.0001) {
+      setOrderSize(newSize);
+      prevOrderSizeRef.current = newSize;
     }
-  }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
+  }
+}, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate]);
 
   useEffect(() => {
     const interval = setInterval(() => {
