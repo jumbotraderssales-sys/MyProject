@@ -2259,27 +2259,20 @@ function App() {
 
         {/* Order Size Section - renamed, no min/max enforced, no arrows */}
         <div className="order-size-section">
-          <div className="section-label">
-            Order size in lot (Min recommended: {minLot})
-          </div>
-          <div className="order-size-controls">
-            <input 
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*\.?[0-9]*"
-              value={orderSize}
-              onChange={(e) => {
-                const val = e.target.value;
-                // Allow empty, numbers, and decimal point
-                if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-                  setOrderSize(val === '' ? 0 : parseFloat(val));
-                }
-              }}
-              className="order-size-input"
-              disabled={!canTrade}
-            />
-          </div>
-        </div>
+  <div className="section-label">
+    Order size in lot (Min recommended: {minLot})
+  </div>
+  <div className="order-size-controls">
+    <input 
+      type="number"
+      step="any"
+      value={orderSize}
+      onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
+      className="order-size-input no-spinner"
+      disabled={!canTrade}
+    />
+  </div>
+</div>
 
         {/* Challenge Limits */}
         {challenge && (
