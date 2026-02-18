@@ -322,7 +322,57 @@ const writeReferrals = async (referrals) => {
     return false;
   }
 };
-
+// ========== SEED DEFAULT ADMIN USER IF NONE EXISTS ==========
+(async () => {
+  try {
+    const users = await readUsers();
+    if (users.length === 0) {
+      console.log('No users found. Creating default admin user...');
+      const defaultAdmin = {
+        id: Date.now().toString(),
+        name: 'Admin',
+        email: 'paper2real.info@gmail.com',      // ← change to your email
+        password: 'admin123',            // ← change to your password
+        realBalance: 0,
+        paperBalance: 100000,
+        accountStatus: 'active',
+        role: 'admin',
+        currentChallenge: null,
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        bankAccount: {
+          accountNumber: '',
+          accountHolder: '',
+          bankName: '',
+          ifscCode: '',
+          upiId: ''
+        },
+        challengeStats: {
+          startDate: null,
+          dailyLoss: 0,
+          totalLoss: 0,
+          totalProfit: 0,
+          currentProfit: 0,
+          maxDrawdown: 0,
+          tradesCount: 0,
+          winRate: 0,
+          status: 'not_started',
+          dailyResetTime: null
+        },
+        referralCode: 'admin',
+        referredBy: null,
+        referralCount: 0,
+        referralReward: { awarded: false }
+      };
+      users.push(defaultAdmin);
+      await writeUsers(users);
+      console.log('Default admin user created.');
+    }
+  } catch (error) {
+    console.error('Error seeding admin user:', error);
+  }
+})();
 // ========== ADMIN ROUTES (MODULAR) ==========
 const adminRoutes = require('./routes/admin');
 app.use('/api/admin', adminRoutes);
