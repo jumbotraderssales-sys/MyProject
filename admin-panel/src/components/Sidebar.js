@@ -1,14 +1,15 @@
-// components/Sidebar.js - Updated with Referrals link
+// components/Sidebar.js - Updated with Logout button
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom'; // ← import useNavigate
 import './Sidebar.css';
 
 const Sidebar = () => {
+  const navigate = useNavigate(); // ← for redirect after logout
+
   const navItems = [
     { path: '/dashboard', icon: 'fas fa-chart-line', label: 'Dashboard' },
     { path: '/users', icon: 'fas fa-users', label: 'Users' },
-    // ===== NEW REFERRALS LINK =====
-    { path: '/referrals', icon: 'fas fa-users', label: 'Referrals' }, // added here
+    { path: '/referrals', icon: 'fas fa-users', label: 'Referrals' },
     { path: '/trades', icon: 'fas fa-exchange-alt', label: 'Trades' },
     { path: '/challenges', icon: 'fas fa-trophy', label: 'Challenges' },
     { path: '/challenge-history', icon: 'fas fa-history', label: 'Challenge History' },
@@ -19,6 +20,12 @@ const Sidebar = () => {
     { path: '/upi-settings', icon: 'fas fa-qrcode', label: 'UPI Settings' },
     { path: '/settings', icon: 'fas fa-cog', label: 'Settings' }
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   return (
     <div className="sidebar">
@@ -50,6 +57,10 @@ const Sidebar = () => {
           <span>v1.1.0</span>
           <small>Challenge System</small>
         </div>
+        {/* ===== LOGOUT BUTTON ===== */}
+        <button className="logout-button" onClick={handleLogout}>
+          <i className="fas fa-sign-out-alt"></i> Logout
+        </button>
       </div>
     </div>
   );
