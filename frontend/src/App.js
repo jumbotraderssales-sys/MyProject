@@ -2096,167 +2096,159 @@ function App() {
   }, [isLoggedIn, activeDashboard]);
 
   const QuickTradeComponent = () => {
-    const currentPrice = prices[selectedSymbol] || 
-      cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const minLot = getMinLot(currentPrice);
+  // Use live price directly – no state lag
+  const currentPrice = prices[selectedSymbol] || 
+    cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+  const minLot = getMinLot(currentPrice);
 
-    const totalPaperUSD = userAccount.paperBalance / dollarRate;
+  const totalPaperUSD = userAccount.paperBalance / dollarRate;
+  const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+    const posValue = pos.entryPrice * pos.size;
+    return sum + (posValue / pos.leverage);
+  }, 0);
+  const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
-    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
-      const posValue = pos.entryPrice * pos.size;
-      return sum + (posValue / pos.leverage);
-    }, 0);
+  const challenge = userAccount.currentChallenge
+    ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
+    : null;
+  const maxOrderSizePercent = challenge?.maxOrderSize || 20;
+  const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-    const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
+  // Compute margin required on the fly
+  const orderValue = currentPrice * orderSize;
+  const marginRequiredNow = orderValue / leverage;
 
-    const challenge = userAccount.currentChallenge
-      ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
-      : null;
+  return (
+    <div className="quick-trade-top mobile-quick-trade-component">
+      <h3>Quick Trade</h3>
 
-    const maxOrderSizePercent = challenge?.maxOrderSize || 20;
-    const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
-
-    const orderValue = currentPrice * orderSize;
-    const marginRequired = orderValue / leverage;
-
-    return (
-      <div className="quick-trade-top mobile-quick-trade-component">
-        <h3>Quick Trade</h3>
-
-        {/* Trade Actions */}
-        <div className="trade-actions-top">
-          <button 
-            className="trade-btn-top buy-btn-top"
-            onClick={() => handleTrade('LONG')}
-            disabled={!canTrade}
-          >
-            {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
-          </button>
-          <button 
-            className="trade-btn-top sell-btn-top"
-            onClick={() => handleTrade('SHORT')}
-            disabled={!canTrade}
-          >
-            {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
-          </button>
-        </div>
-
-        {/* Funds Information */}
-        <div className="funds-info-section">
-          <div className="funds-item">
-            <span className="funds-label">Available Funds:</span>
-            <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
-          </div>
-          <div className="funds-item">
-            <span className="funds-label">
-              Max Margin ({maxOrderSizePercent}% of total):
-            </span>
-            <span className="funds-value">${maxAllowedMarginUSD.toFixed(2)}</span>
-          </div>
-          <div className="funds-item">
-            <span className="funds-label">Margin Required:</span>
-            <span className={`funds-value ${marginRequired > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
-              ${marginRequired.toFixed(2)}
-              {marginRequired > maxAllowedMarginUSD + 0.0001 && 
-                <span className="warning-text"> (Margin exceeds max!)</span>}
-            </span>
-          </div>
-        </div>
-
-        {/* Leverage Section */}
-        <div className="leverage-section-top">
-          <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-          <div className="leverage-buttons-top">
-            {[1, 5, 10, 20].map(lev => (
-              <button
-                key={lev}
-                className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-                onClick={() => setLeverage(lev)}
-                disabled={!canTrade}
-              >
-                {lev}x
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* SL/TP Section */}
-        <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-            <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
-            <input 
-              type="number"
-              value={stopLoss}
-              onChange={(e) => setStopLoss(e.target.value)}
-              placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
-              className="sl-input-adjusted"
-              disabled={!canTrade}
-              style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
-            />
-          </div>
-          <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-            <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
-            <input 
-              type="number"
-              value={takeProfit}
-              onChange={(e) => setTakeProfit(e.target.value)}
-              placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
-              className="tp-input-adjusted"
-              disabled={!canTrade}
-              style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
-            />
-          </div>
-        </div>
-
-        {/* Order Size Section */}
-        <div className="order-size-section">
-          <div className="section-label">
-            Order Size (Min: {minLot})
-          </div>
-          <div className="order-size-controls">
-            <input 
-              type="number" 
-              step={minLot}
-              value={orderSize}
-              onChange={(e) => {
-                const newSize = parseFloat(e.target.value) || 0;
-                const maxSize = maxAllowedMarginUSD * leverage / currentPrice;
-                const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-                setOrderSize(clampedSize);
-              }}
-              className="order-size-input"
-              disabled={!canTrade}
-            />
-          </div>
-        </div>
-
-        {/* Challenge Limits */}
-        {challenge && (
-          <div className="challenge-limits">
-            <div className="limit-item">
-              <span>Daily Loss:</span>
-              <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
-                {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
-              </span>
-            </div>
-            <div className="limit-item">
-              <span>Max Loss:</span>
-              <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
-                {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
-              </span>
-            </div>
-            <div className="limit-item">
-              <span>Profit Target:</span>
-              <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
-                {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
-              </span>
-            </div>
-          </div>
-        )}
+      <div className="trade-actions-top">
+        <button 
+          className="trade-btn-top buy-btn-top"
+          onClick={() => handleTrade('LONG')}
+          disabled={!canTrade}
+        >
+          {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
+        </button>
+        <button 
+          className="trade-btn-top sell-btn-top"
+          onClick={() => handleTrade('SHORT')}
+          disabled={!canTrade}
+        >
+          {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
+        </button>
       </div>
-    );
-  };
 
+      <div className="funds-info-section">
+        <div className="funds-item">
+          <span className="funds-label">Available Funds:</span>
+          <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+        </div>
+        <div className="funds-item">
+          <span className="funds-label">
+            Max Margin ({maxOrderSizePercent}% of total):
+          </span>
+          <span className="funds-value">${maxAllowedMarginUSD.toFixed(2)}</span>
+        </div>
+        <div className="funds-item">
+          <span className="funds-label">Margin Required:</span>
+          <span className={`funds-value ${marginRequiredNow > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
+            ${marginRequiredNow.toFixed(2)}
+            {marginRequiredNow > maxAllowedMarginUSD + 0.0001 && 
+              <span className="warning-text"> (Margin exceeds max!)</span>}
+          </span>
+        </div>
+      </div>
+
+      <div className="leverage-section-top">
+        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+        <div className="leverage-buttons-top">
+          {[1, 5, 10, 20].map(lev => (
+            <button
+              key={lev}
+              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+              onClick={() => setLeverage(lev)}
+              disabled={!canTrade}
+            >
+              {lev}x
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+          <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
+          <input 
+            type="number"
+            value={stopLoss}
+            onChange={(e) => setStopLoss(e.target.value)}
+            placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+            className="sl-input-adjusted"
+            disabled={!canTrade}
+            style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+          />
+        </div>
+        <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+          <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
+          <input 
+            type="number"
+            value={takeProfit}
+            onChange={(e) => setTakeProfit(e.target.value)}
+            placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
+            className="tp-input-adjusted"
+            disabled={!canTrade}
+            style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+          />
+        </div>
+      </div>
+
+      <div className="order-size-section">
+        <div className="section-label">
+          Order Size (Min: {minLot})
+        </div>
+        <div className="order-size-controls">
+          <input 
+            type="number" 
+            step={minLot}
+            value={orderSize}
+            onChange={(e) => {
+              const newSize = parseFloat(e.target.value) || 0;
+              const maxSize = maxAllowedMarginUSD * leverage / currentPrice;
+              const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
+              setOrderSize(clampedSize);
+            }}
+            className="order-size-input"
+            disabled={!canTrade}
+          />
+        </div>
+      </div>
+
+      {challenge && (
+        <div className="challenge-limits">
+          <div className="limit-item">
+            <span>Daily Loss:</span>
+            <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
+              {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
+            </span>
+          </div>
+          <div className="limit-item">
+            <span>Max Loss:</span>
+            <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
+              {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
+            </span>
+          </div>
+          <div className="limit-item">
+            <span>Profit Target:</span>
+            <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
+              {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
