@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
 import AccountSetup from './components/AccountSetup';
 import WithdrawalRequest from './components/WithdrawalRequest';
 import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
@@ -270,6 +269,17 @@ function App() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const buttonRef = useRef(null);
 
+  const positionsRef = useRef(positions);
+  const selectedSymbolRef = useRef(selectedSymbol);
+
+  useEffect(() => {
+    positionsRef.current = positions;
+  }, [positions]);
+
+  useEffect(() => {
+    selectedSymbolRef.current = selectedSymbol;
+  }, [selectedSymbol]);
+
   // Fetch real-time price for a single symbol from Binance
   const fetchRealPrice = async (symbol) => {
     try {
@@ -288,9 +298,6 @@ function App() {
     if (price >= 1000) return 0.1;
     return 1;
   };
-
-  const positionsRef = useRef(positions);
-  const selectedSymbolRef = useRef(selectedSymbol);
 
   // ===== DRAGGABLE BUTTON HANDLERS =====
   const handleMouseDown = (e) => {
@@ -347,14 +354,26 @@ function App() {
     setIsDragging(false);
   };
 
-  // Update the ref whenever selectedSymbol changes
+  // DRAGGABLE BUTTON EVENT LISTENERS
   useEffect(() => {
-    selectedSymbolRef.current = selectedSymbol;
-  }, [selectedSymbol]);
-  
-  useEffect(() => {
-    positionsRef.current = positions;
-  }, [positions]);
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleDragEnd);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging]);
 
   // ========== CAPTURE REFERRAL CODE FROM URL ==========
   useEffect(() => {
@@ -412,7 +431,35 @@ function App() {
       setAvailableFunds(availableUSD);
     }
   }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSizeInput, leverage, dollarRate]);
-  
+
+  // SL/TP check function
+  const checkSLTP = useCallback(() => {
+    const currentPositions = positionsRef.current;
+    currentPositions.forEach(position => {
+      const currentPrice = prices[position.symbol] || position.entryPrice;
+      if (position.side === 'LONG') {
+        if (position.stopLoss && currentPrice <= position.stopLoss) {
+          closePosition(position.id, 'STOP_LOSS');
+        }
+        if (position.takeProfit && currentPrice >= position.takeProfit) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      } else if (position.side === 'SHORT') {
+        if (position.stopLoss && currentPrice >= position.stopLoss) {
+          closePosition(position.id, 'STOP_LOSS');
+        }
+        if (position.takeProfit && currentPrice <= position.takeProfit) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      }
+    });
+  }, [prices]);
+
+  // Run checkSLTP whenever prices change
+  useEffect(() => {
+    checkSLTP();
+  }, [checkSLTP]);
+
   // Fetch real-time price for the selected symbol every 3 seconds
   useEffect(() => {
     if (!selectedSymbol) return;
@@ -425,8 +472,8 @@ function App() {
         if (!isNaN(realPrice) && realPrice > 0) {
           setPrices(prev => {
             const newPrices = { ...prev, [selectedSymbol]: realPrice };
-            // Immediately check SL/TP after updating price
-            setTimeout(checkSLTP, 50);
+            // Immediate check (optional, the effect on prices will also catch it)
+            setTimeout(checkSLTP, 0);
             return newPrices;
           });
           console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
@@ -439,7 +486,30 @@ function App() {
     fetchLivePrice();
     const interval = setInterval(fetchLivePrice, 3000);
     return () => clearInterval(interval);
-  }, [selectedSymbol]);
+  }, [selectedSymbol, checkSLTP]);
+
+  // Simulated price updates for other symbols
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPrices(prev => {
+        const newPrices = { ...prev };
+        const currentSelected = selectedSymbolRef.current;
+        Object.keys(newPrices).forEach(symbol => {
+          if (symbol === currentSelected) return; // selected symbol updated by Binance
+          const crypto = cryptoData.find(c => c.symbol === symbol);
+          const baseChange = crypto?.change24h || 0;
+          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
+          newPrices[symbol] = Math.max(
+            newPrices[symbol] * (1 + changePercent),
+            newPrices[symbol] * 0.998
+          );
+        });
+        return newPrices;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -719,52 +789,6 @@ function App() {
     setMarketNews(news);
   }, []);
 
-  // SL/TP check function
-  const checkSLTP = () => {
-    const currentPositions = positionsRef.current;
-    currentPositions.forEach(position => {
-      const currentPrice = prices[position.symbol] || position.entryPrice;
-      if (position.side === 'LONG') {
-        if (position.stopLoss && currentPrice <= position.stopLoss) {
-          closePosition(position.id, 'STOP_LOSS');
-        }
-        if (position.takeProfit && currentPrice >= position.takeProfit) {
-          closePosition(position.id, 'TAKE_PROFIT');
-        }
-      } else if (position.side === 'SHORT') {
-        if (position.stopLoss && currentPrice >= position.stopLoss) {
-          closePosition(position.id, 'STOP_LOSS');
-        }
-        if (position.takeProfit && currentPrice <= position.takeProfit) {
-          closePosition(position.id, 'TAKE_PROFIT');
-        }
-      }
-    });
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPrices(prev => {
-        const newPrices = { ...prev };
-        const currentSelected = selectedSymbolRef.current;
-        Object.keys(newPrices).forEach(symbol => {
-          if (symbol === currentSelected) return;
-          const crypto = cryptoData.find(c => c.symbol === symbol);
-          const baseChange = crypto?.change24h || 0;
-          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
-          newPrices[symbol] = Math.max(
-            newPrices[symbol] * (1 + changePercent),
-            newPrices[symbol] * 0.998
-          );
-        });
-        setTimeout(checkSLTP, 100);
-        return newPrices;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   useEffect(() => {
     let total = 0;
     positions.forEach(pos => {
@@ -776,27 +800,6 @@ function App() {
     setTotalPnl(total);
     setEquity(balance + total);
   }, [positions, prices, balance]);
-
-  // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleDragEnd);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleDragEnd);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleDragEnd);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleDragEnd);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleDragEnd);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleDragEnd);
-    };
-  }, [isDragging]);
 
   const calculatePaymentStats = (paymentsList = payments) => {
     const stats = {
@@ -2334,8 +2337,7 @@ function App() {
     );
   };
 
-  return 
-    
+  return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
