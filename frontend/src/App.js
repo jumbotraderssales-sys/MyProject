@@ -1,5 +1,10 @@
 import React from 'react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import AccountSetup from './components/AccountSetup';
+import WithdrawalRequest from './components/WithdrawalRequest';
+import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
+import WithdrawalHistory from './components/WithdrawalHistory';
 import './App.css';
 import img1 from './data/1.png';
 import img2 from './data/2.png';
@@ -7,6 +12,7 @@ import img3 from './data/3.png';
 const carouselImages = [img1, img2, img3];
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
+const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
 
 // Crypto data with details
 const cryptoData = [
@@ -24,6 +30,18 @@ const cryptoData = [
   { symbol: 'TRXUSDT', name: 'Tron', price: 0.12, change24h: 1.45, volume: '380M', marketCap: '11B', color: '#FF001B' },
 ];
 
+// Chart types for TradingView
+const CHART_TYPES = [
+  { id: '0', name: 'Candles', icon: '📊' },
+  { id: '1', name: 'Bars', icon: '📈' },
+  { id: '9', name: 'HLC', icon: '📉' },
+  { id: '8', name: 'Line', icon: '➖' },
+  { id: '2', name: 'Area', icon: '▀' },
+  { id: '3', name: 'Heikin Ashi', icon: '🔄' },
+  { id: '7', name: 'Baseline', icon: '⚖️' },
+  { id: '4', name: 'Hollow Candles', icon: '🕯️' },
+];
+
 // Indicator presets
 const INDICATOR_PRESETS = [
   { name: 'MA Cross', indicators: ['Moving Average', 'EMA'] },
@@ -33,7 +51,7 @@ const INDICATOR_PRESETS = [
   { name: 'All Oscillators', indicators: ['RSI', 'MACD', 'Stochastic'] },
 ];
 
-// Challenges Data - Updated with new requirements
+// Challenges Data
 const CHALLENGES = [
   {
     id: 1,
@@ -45,7 +63,7 @@ const CHALLENGES = [
     maxLossLimit: 10,
     maxOrderSize: 20, // percentage of capital
     maxLeverage: 10,
-    autoStopLossTarget: 10, // percentage of order value
+    autoStopLossTarget: 10, // kept for reference but no longer auto-applied
     oneTradeAtTime: true,
     reward: "Fee Refund + Skill Reward (20% of paper profit)",
     color: "#22c55e",
@@ -122,6 +140,7 @@ function App() {
   });
  
   const [balance, setBalance] = useState(0);
+  const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [mode, setMode] = useState('DEMO');
@@ -135,6 +154,7 @@ function App() {
     upiId: ''
   });
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalStatus, setWithdrawalStatus] = useState('pending');
   const [showAccountSetup, setShowAccountSetup] = useState(false);
   const [showWithdrawalRequest, setShowWithdrawalRequest] = useState(false);
   const [timeframe, setTimeframe] = useState('60');
@@ -154,6 +174,7 @@ function App() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showRegister, setShowRegister] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState({
     name: '',
@@ -248,9 +269,6 @@ function App() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const buttonRef = useRef(null);
 
-  // Ref to store previous orderSize to prevent infinite loops
-  const prevOrderSizeRef = useRef(orderSize);
-
   // Fetch real-time price for a single symbol from Binance
   const fetchRealPrice = async (symbol) => {
     try {
@@ -263,7 +281,7 @@ function App() {
     }
   };
 
-  // Determine minimum order lot size based on current price
+  // Determine minimum order lot size based on current price (informational only)
   const getMinLot = (price) => {
     if (price >= 10000) return 0.001;
     if (price >= 1000) return 0.1;
@@ -416,36 +434,14 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedSymbol]);
 
-  // Add separate useEffect for adjusting order size (prevent infinite loop) - FIXED
-  useEffect(() => {
-    if (isLoggedIn && userAccount.currentChallenge && userAccount.paperBalance > 0) {
-      const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-      const paperUSD = userAccount.paperBalance / dollarRate;
-      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge) || CHALLENGES[0];
-      const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
-      const minLot = getMinLot(currentPrice);
-      const maxSize = maxOrderValueUSD / currentPrice;
+  // (The automatic order size adjustment useEffect has been removed as requested)
 
-      // Clamp current orderSize to valid range
-      let newSize = orderSize;
-      if (orderSize < minLot) newSize = minLot;
-      if (orderSize > maxSize) newSize = maxSize;
-
-      // Only update if different from previous (using ref)
-      if (Math.abs(newSize - prevOrderSizeRef.current) > 0.0001) {
-        setOrderSize(newSize);
-        prevOrderSizeRef.current = newSize;
-      }
-    }
-  }, [selectedSymbol, prices, userAccount.currentChallenge, isLoggedIn, userAccount.paperBalance, dollarRate, leverage]);
-
-  // Carousel effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []); // removed unnecessary dependency
+  }, [carouselImages.length]);
   
   // Calculate daily and total loss
   useEffect(() => {
@@ -492,11 +488,10 @@ function App() {
       // Check challenge rules
       checkChallengeRules();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
 
   // Check challenge rules
-  const checkChallengeRules = useCallback(() => {
+  const checkChallengeRules = () => {
     if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
     
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
@@ -519,7 +514,7 @@ function App() {
       alert(`🎉 Profit Target Achieved!\n\nCongratulations! You have reached the profit target of ${challenge.profitTarget}%.\nChallenge passed!`);
       updateChallengeStatus('passed', 'Profit target achieved');
     }
-  }, [dailyLoss, totalLoss, challengeProgress.profit, userAccount.currentChallenge, userAccount.challengeStats.status]);
+  };
 
   const updateChallengeStatus = (status, reason) => {
     setUserAccount(prev => ({
@@ -564,12 +559,10 @@ function App() {
       
       return () => clearInterval(paymentCheckInterval);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, userAccount.id]);
 
   useEffect(() => {
     calculatePaymentStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payments]);
 
   useEffect(() => {
@@ -615,7 +608,6 @@ function App() {
       
       loadUserData(token);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -642,7 +634,6 @@ function App() {
     if (isLoggedIn && showUPIScanner) {
       loadUpiQrCode();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, showUPIScanner]);
 
   useEffect(() => {
@@ -766,7 +757,6 @@ function App() {
     }, 3000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -800,7 +790,7 @@ function App() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleDragEnd);
     };
-  }, [isDragging, handleMouseMove, handleTouchMove]);
+  }, [isDragging]);
 
   const calculatePaymentStats = (paymentsList = payments) => {
     const stats = {
@@ -1059,6 +1049,40 @@ function App() {
     }
   };
 
+  const simulateAdminApproval = (paymentId) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) return;
+    
+    setTimeout(() => {
+      const isApproved = Math.random() > 0.1;
+      
+      if (isApproved) {
+        updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
+        
+        const paperMoneyAmount = payment.challengeName.includes('Beginner') ? 20000 :
+                                payment.challengeName.includes('Intermediate') ? 50000 :
+                                payment.challengeName.includes('PRO') ? 100000 : 20000;
+        
+        const token = localStorage.getItem('token');
+        if (token) {
+          fetch('https://myproject1-d097.onrender.com/api/payments/' + paymentId + '/status', {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              status: 'approved',
+              notes: 'Payment approved by admin'
+            })
+          }).catch(console.error);
+        }
+      } else {
+        updatePaymentStatus(paymentId, 'rejected', 'Payment verification failed. Please contact support.');
+      }
+    }, 5000);
+  };
+
   const submitPaymentToBackend = async (paymentData) => {
     try {
       const token = localStorage.getItem('token');
@@ -1291,15 +1315,6 @@ function App() {
     const paperUSD = userAccount.paperBalance / dollarRate;
     const orderValueUSD = currentPrice * orderSize;
     const marginUSD = orderValueUSD / leverage;
-    const minLot = getMinLot(currentPrice);
-    const maxOrderValueUSD = (paperUSD * challenge.maxOrderSize) / 100;
-
-    // Minimum order size check
-    if (orderSize < minLot) {
-      return { valid: false, message: `Minimum order size is ${minLot}` };
-    }
-
-    // Calculate total margin used by open positions
     const totalMarginUsedUSD = positions.reduce((sum, pos) => {
       const posValueUSD = pos.entryPrice * pos.size;
       return sum + (posValueUSD / pos.leverage);
@@ -1316,12 +1331,10 @@ function App() {
 
     const totalPaperUSD = userAccount.paperBalance / dollarRate;
     const maxAllowedMarginUSD = totalPaperUSD * (challenge.maxOrderSize / 100);
-    const marginRequired = orderValueUSD / leverage;
-
-    if (marginRequired > maxAllowedMarginUSD) {
+    if (marginUSD > maxAllowedMarginUSD) {
       return {
         valid: false,
-        message: `Margin required ($${marginRequired.toFixed(2)}) exceeds max allowed ($${maxAllowedMarginUSD.toFixed(2)})`
+        message: `Margin required ($${marginUSD.toFixed(2)}) exceeds ${challenge.maxOrderSize}% of capital ($${maxAllowedMarginUSD.toFixed(2)})`
       };
     }
 
@@ -1357,24 +1370,10 @@ function App() {
 
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     
-    // Calculate auto SL and TP (10% of order value)
-    const slPercentage = challenge.autoStopLossTarget / 100;
-    const tpPercentage = challenge.autoStopLossTarget / 100;
-    
-    let sl = stopLoss;
-    let tp = takeProfit;
-    
-    if (!sl) {
-      sl = side === 'LONG' 
-        ? currentPrice * (1 - slPercentage)
-        : currentPrice * (1 + slPercentage);
-    }
-    
-    if (!tp) {
-      tp = side === 'LONG'
-        ? currentPrice * (1 + tpPercentage)
-        : currentPrice * (1 - tpPercentage);
-    }
+    // Auto SL/TP removed – user must manually enter or leave blank.
+    // Parse SL and TP, treat empty strings as null
+    const sl = stopLoss ? parseFloat(stopLoss) : null;
+    const tp = takeProfit ? parseFloat(takeProfit) : null;
     
     try {
       const token = localStorage.getItem('token');
@@ -1384,8 +1383,8 @@ function App() {
         size: orderSize,
         leverage: leverage,
         entryPrice: currentPrice,
-        stopLoss: parseFloat(sl) || 0,
-        takeProfit: parseFloat(tp) || 0,
+        stopLoss: sl,
+        takeProfit: tp,
         margin: marginRequired
       };
       
@@ -1856,6 +1855,27 @@ function App() {
     }
   };
 
+  const simulateUPIPayment = (appName) => {
+    if (window.confirm(`Open ${appName} to make payment of ₹${upiAmount}? `)) {
+      setTimeout(() => {
+        alert(`✅ Payment of ₹${upiAmount} successful via ${appName}!\n\nNow please upload your payment receipt.`);
+      }, 1500);
+    }
+  };
+
+  const simulateTestPayment = () => {
+    const mockFile = {
+      name: 'test_payment_receipt.jpg',
+      size: 1024 * 1024,
+      type: 'image/jpeg'
+    };
+    
+    setPaymentReceipt(mockFile);
+    setReceiptUploaded(true);
+    
+    window.alert('Test receipt uploaded! You can now submit for admin approval.');
+  };
+
   const handlePaymentSubmit = async () => {
     if (!receiptUploaded || !paymentReceipt) {
       alert('Please upload your payment receipt first.');
@@ -1943,6 +1963,41 @@ function App() {
       console.error('Payment submission error:', error);
       alert(`❌ Payment submission failed:\n${error.message}\n\nPlease try again or contact support.`);
     }
+  };
+
+  const simulateAdminApprovalUpdated = async (paymentId) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) return;
+    
+    setTimeout(async () => {
+      const isApproved = Math.random() > 0.1;
+      
+      if (isApproved) {
+        updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
+        
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            await fetch(`https://myproject1-d097.onrender.com/api/payments/${paymentId}/status`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                status: 'approved',
+                notes: 'Payment verified successfully',
+                processedBy: 'admin'
+              })
+            });
+          } catch (error) {
+            console.error('Backend update failed:', error);
+          }
+        }
+      } else {
+        updatePaymentStatus(paymentId, 'rejected', 'Payment verification failed. Please contact support.');
+      }
+    }, 5000);
   };
 
   const addAlert = () => {
@@ -2051,6 +2106,8 @@ function App() {
     return `$${amount.toFixed(2)}`;
   };
 
+  const currentSymbolPositions = positions.filter(pos => pos.symbol === selectedSymbol);
+
   const filteredCryptoData = cryptoData.filter(crypto => 
     crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
@@ -2096,159 +2153,156 @@ function App() {
   }, [isLoggedIn, activeDashboard]);
 
   const QuickTradeComponent = () => {
-  // Use live price directly – no state lag
-  const currentPrice = prices[selectedSymbol] || 
-    cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-  const minLot = getMinLot(currentPrice);
+    const currentPrice = prices[selectedSymbol] || 
+      cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    const minLot = getMinLot(currentPrice); // informational only
 
-  const totalPaperUSD = userAccount.paperBalance / dollarRate;
-  const totalMarginUsedUSD = positions.reduce((sum, pos) => {
-    const posValue = pos.entryPrice * pos.size;
-    return sum + (posValue / pos.leverage);
-  }, 0);
-  const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
+    const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
-  const challenge = userAccount.currentChallenge
-    ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
-    : null;
-  const maxOrderSizePercent = challenge?.maxOrderSize || 20;
-  const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
+    const totalMarginUsedUSD = positions.reduce((sum, pos) => {
+      const posValue = pos.entryPrice * pos.size;
+      return sum + (posValue / pos.leverage);
+    }, 0);
 
-  // Compute margin required on the fly
-  const orderValue = currentPrice * orderSize;
-  const marginRequiredNow = orderValue / leverage;
+    const availableFundsUSD = totalPaperUSD - totalMarginUsedUSD;
 
-  return (
-    <div className="quick-trade-top mobile-quick-trade-component">
-      <h3>Quick Trade</h3>
+    const challenge = userAccount.currentChallenge
+      ? CHALLENGES.find(c => c.name === userAccount.currentChallenge)
+      : null;
 
-      <div className="trade-actions-top">
-        <button 
-          className="trade-btn-top buy-btn-top"
-          onClick={() => handleTrade('LONG')}
-          disabled={!canTrade}
-        >
-          {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
-        </button>
-        <button 
-          className="trade-btn-top sell-btn-top"
-          onClick={() => handleTrade('SHORT')}
-          disabled={!canTrade}
-        >
-          {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
-        </button>
-      </div>
+    const maxOrderSizePercent = challenge?.maxOrderSize || 20;
+    const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-      <div className="funds-info-section">
-        <div className="funds-item">
-          <span className="funds-label">Available Funds:</span>
-          <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+    const orderValue = currentPrice * orderSize;
+    const marginRequired = orderValue / leverage;
+
+    return (
+      <div className="quick-trade-top mobile-quick-trade-component">
+        <h3>Quick Trade</h3>
+
+        {/* Trade Actions */}
+        <div className="trade-actions-top">
+          <button 
+            className="trade-btn-top buy-btn-top"
+            onClick={() => handleTrade('LONG')}
+            disabled={!canTrade}
+          >
+            {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
+          </button>
+          <button 
+            className="trade-btn-top sell-btn-top"
+            onClick={() => handleTrade('SHORT')}
+            disabled={!canTrade}
+          >
+            {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
+          </button>
         </div>
-        <div className="funds-item">
-          <span className="funds-label">
-            Max Margin ({maxOrderSizePercent}% of total):
-          </span>
-          <span className="funds-value">${maxAllowedMarginUSD.toFixed(2)}</span>
-        </div>
-        <div className="funds-item">
-          <span className="funds-label">Margin Required:</span>
-          <span className={`funds-value ${marginRequiredNow > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
-            ${marginRequiredNow.toFixed(2)}
-            {marginRequiredNow > maxAllowedMarginUSD + 0.0001 && 
-              <span className="warning-text"> (Margin exceeds max!)</span>}
-          </span>
-        </div>
-      </div>
 
-      <div className="leverage-section-top">
-        <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
-        <div className="leverage-buttons-top">
-          {[1, 5, 10, 20].map(lev => (
-            <button
-              key={lev}
-              className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
-              onClick={() => setLeverage(lev)}
+        {/* Funds Information - Removed Max Margin display */}
+        <div className="funds-info-section">
+          <div className="funds-item">
+            <span className="funds-label">Available Funds:</span>
+            <span className="funds-value available">${availableFundsUSD.toFixed(2)}</span>
+          </div>
+          <div className="funds-item">
+            <span className="funds-label">Margin Required:</span>
+            <span className={`funds-value ${marginRequired > maxAllowedMarginUSD + 0.0001 ? 'warning' : ''}`}>
+              ${marginRequired.toFixed(2)}
+              {marginRequired > maxAllowedMarginUSD + 0.0001 && 
+                <span className="warning-text"> (Exceeds {maxOrderSizePercent}% of capital!)</span>}
+            </span>
+          </div>
+        </div>
+
+        {/* Leverage Section */}
+        <div className="leverage-section-top">
+          <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
+          <div className="leverage-buttons-top">
+            {[1, 5, 10, 20].map(lev => (
+              <button
+                key={lev}
+                className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
+                onClick={() => setLeverage(lev)}
+                disabled={!canTrade}
+              >
+                {lev}x
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* SL/TP Section - Manual input only */}
+        <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+            <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss (optional)</div>
+            <input 
+              type="number"
+              value={stopLoss}
+              onChange={(e) => setStopLoss(e.target.value)}
+              placeholder="Enter price"
+              className="sl-input-adjusted"
               disabled={!canTrade}
-            >
-              {lev}x
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-          <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss</div>
-          <input 
-            type="number"
-            value={stopLoss}
-            onChange={(e) => setStopLoss(e.target.value)}
-            placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
-            className="sl-input-adjusted"
-            disabled={!canTrade}
-            style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
-          />
-        </div>
-        <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
-          <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit</div>
-          <input 
-            type="number"
-            value={takeProfit}
-            onChange={(e) => setTakeProfit(e.target.value)}
-            placeholder={`Auto (${challenge?.autoStopLossTarget || 10}%)`}
-            className="tp-input-adjusted"
-            disabled={!canTrade}
-            style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
-          />
-        </div>
-      </div>
-
-      <div className="order-size-section">
-        <div className="section-label">
-          Order Size (Min: {minLot})
-        </div>
-        <div className="order-size-controls">
-          <input 
-            type="number" 
-            step={minLot}
-            value={orderSize}
-            onChange={(e) => {
-              const newSize = parseFloat(e.target.value) || 0;
-              const maxSize = maxAllowedMarginUSD * leverage / currentPrice;
-              const clampedSize = Math.min(Math.max(newSize, minLot), maxSize);
-              setOrderSize(clampedSize);
-            }}
-            className="order-size-input"
-            disabled={!canTrade}
-          />
-        </div>
-      </div>
-
-      {challenge && (
-        <div className="challenge-limits">
-          <div className="limit-item">
-            <span>Daily Loss:</span>
-            <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
-              {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
-            </span>
+              style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+            />
           </div>
-          <div className="limit-item">
-            <span>Max Loss:</span>
-            <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
-              {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
-            </span>
-          </div>
-          <div className="limit-item">
-            <span>Profit Target:</span>
-            <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
-              {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
-            </span>
+          <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
+            <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit (optional)</div>
+            <input 
+              type="number"
+              value={takeProfit}
+              onChange={(e) => setTakeProfit(e.target.value)}
+              placeholder="Enter price"
+              className="tp-input-adjusted"
+              disabled={!canTrade}
+              style={{ width: '100%', padding: '0.3rem', fontSize: '0.85rem' }}
+            />
           </div>
         </div>
-      )}
-    </div>
-  );
-};
+
+        {/* Order Size Section - renamed, no min/max enforced */}
+        <div className="order-size-section">
+          <div className="section-label">
+            Order size in lot (Min recommended: {minLot})
+          </div>
+          <div className="order-size-controls">
+            <input 
+              type="number"
+              step="any"
+              value={orderSize}
+              onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
+              className="order-size-input"
+              disabled={!canTrade}
+            />
+          </div>
+        </div>
+
+        {/* Challenge Limits */}
+        {challenge && (
+          <div className="challenge-limits">
+            <div className="limit-item">
+              <span>Daily Loss:</span>
+              <span className={`limit-value ${dailyLoss >= challenge.dailyLossLimit ? 'danger' : ''}`}>
+                {dailyLoss.toFixed(2)}% / {challenge.dailyLossLimit}%
+              </span>
+            </div>
+            <div className="limit-item">
+              <span>Max Loss:</span>
+              <span className={`limit-value ${totalLoss >= challenge.maxLossLimit ? 'danger' : ''}`}>
+                {totalLoss.toFixed(2)}% / {challenge.maxLossLimit}%
+              </span>
+            </div>
+            <div className="limit-item">
+              <span>Profit Target:</span>
+              <span className={`limit-value ${challengeProgress.profit >= challenge.profitTarget ? 'success' : ''}`}>
+                {challengeProgress.profit.toFixed(2)}% / {challenge.profitTarget}%
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
@@ -3851,17 +3905,61 @@ function App() {
                               </span>
                               <span>${order.entryPrice?.toFixed(2)}</span>
                               <span>
-                                <div className="sl-info">
-                                  <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
-                                  <div className="sl-amount">{slAmount}</div>
-                                </div>
+                                {isOpenOrder && editingOrderId === order.id ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <input
+                                      type="number"
+                                      value={editSL}
+                                      onChange={(e) => setEditSL(e.target.value)}
+                                      placeholder="SL"
+                                      style={{ width: '60px', fontSize: '0.7rem' }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="sl-info">
+                                    <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
+                                    <div className="sl-amount">{slAmount}</div>
+                                    {isOpenOrder && (
+                                      <button
+                                        className="edit-sltp-btn"
+                                        onClick={() => {
+                                          setEditingOrderId(order.id);
+                                          setEditSL(order.stopLoss?.toString() || '');
+                                          setEditTP(order.takeProfit?.toString() || '');
+                                        }}
+                                        style={{ marginLeft: '5px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                                        title="Edit SL/TP"
+                                      >
+                                        ✎
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </span>
                               <span>
-                                <div className="tp-info">
-                                  <div>${order.takeProfit?.toFixed(2) || 'N/A'}</div>
-                                  <div className="tp-amount">{tpAmount}</div>
-                                </div>
+                                {isOpenOrder && editingOrderId === order.id ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <input
+                                      type="number"
+                                      value={editTP}
+                                      onChange={(e) => setEditTP(e.target.value)}
+                                      placeholder="TP"
+                                      style={{ width: '60px', fontSize: '0.7rem' }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="tp-info">
+                                    <div>${order.takeProfit?.toFixed(2) || 'N/A'}</div>
+                                    <div className="tp-amount">{tpAmount}</div>
+                                  </div>
+                                )}
                               </span>
+                              {isOpenOrder && editingOrderId === order.id && (
+                                <span>
+                                  <button onClick={() => updateOrderSLTP(order.id, editSL, editTP)} style={{ fontSize: '0.7rem', padding: '2px 4px', background: '#4f46e5' }}>Save</button>
+                                  <button onClick={() => setEditingOrderId(null)} style={{ fontSize: '0.7rem', padding: '2px 4px', background: '#6b7280', marginLeft: '2px' }}>Cancel</button>
+                                </span>
+                              )}
                               <span>
                                 <span className={`order-status ${order.status === 'OPEN' ? 'active-badge' : 'triggered-badge'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
                                   {order.status}
