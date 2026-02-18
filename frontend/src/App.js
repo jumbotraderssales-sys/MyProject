@@ -138,7 +138,7 @@ function App() {
       dailyResetTime: null
     }
   });
- const [orderSizeInput, setOrderSizeInput] = useState('0.001');
+ const currentOrderSize = parseFloat(orderSizeInput) || 0;
   const [balance, setBalance] = useState(0);
   const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
@@ -164,7 +164,7 @@ function App() {
   const [positions, setPositions] = useState([]);
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
-  const [orderSize, setOrderSize] = useState(0.001);
+  
   const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
@@ -395,7 +395,7 @@ function App() {
       const paperUSD = userAccount.paperBalance / dollarRate;
 
       // Margin required for the current order (USD)
-      const orderValueUSD = currentPrice * orderSize;
+    const orderValue = currentPrice * currentOrderSize;
       const marginUSD = orderValueUSD / leverage;
       setMarginRequired(marginUSD);
 
@@ -1311,8 +1311,8 @@ function App() {
 
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const paperUSD = userAccount.paperBalance / dollarRate;
-    const orderValueUSD = currentPrice * orderSize;
-    const marginUSD = orderValueUSD / leverage;
+   const orderValue = currentPrice * currentOrderSize;
+      const marginRequired = orderValue / leverage;
     const totalMarginUsedUSD = positions.reduce((sum, pos) => {
       const posValueUSD = pos.entryPrice * pos.size;
       return sum + (posValueUSD / pos.leverage);
@@ -2171,7 +2171,7 @@ function App() {
     const maxOrderSizePercent = challenge?.maxOrderSize || 20;
     const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-    const orderValue = currentPrice * orderSize;
+   const orderValue = currentPrice * currentOrderSize;
     const marginRequired = orderValue / leverage;
 
     return (
