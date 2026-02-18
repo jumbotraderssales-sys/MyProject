@@ -138,7 +138,7 @@ function App() {
       dailyResetTime: null
     }
   });
- const currentOrderSize = parseFloat(orderSizeInput) || 0;
+ 
   const [balance, setBalance] = useState(0);
   const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
@@ -164,7 +164,8 @@ function App() {
   const [positions, setPositions] = useState([]);
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
-  
+  // Change orderSize to string for manual typing
+  const [orderSizeInput, setOrderSizeInput] = useState('0.001');
   const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
@@ -395,7 +396,8 @@ function App() {
       const paperUSD = userAccount.paperBalance / dollarRate;
 
       // Margin required for the current order (USD)
-    const orderValue = currentPrice * currentOrderSize;
+      const orderSizeNum = parseFloat(orderSizeInput) || 0;
+      const orderValueUSD = currentPrice * orderSizeNum;
       const marginUSD = orderValueUSD / leverage;
       setMarginRequired(marginUSD);
 
@@ -409,7 +411,7 @@ function App() {
       const availableUSD = paperUSD - totalMarginUsedUSD;
       setAvailableFunds(availableUSD);
     }
-  }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);
+  }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSizeInput, leverage, dollarRate]);
   
   // Fetch real-time price for the selected symbol every 3 seconds
   useEffect(() => {
@@ -421,7 +423,12 @@ function App() {
         const data = await response.json();
         const realPrice = parseFloat(data.price);
         if (!isNaN(realPrice) && realPrice > 0) {
-          setPrices(prev => ({ ...prev, [selectedSymbol]: realPrice }));
+          setPrices(prev => {
+            const newPrices = { ...prev, [selectedSymbol]: realPrice };
+            // Immediately check SL/TP after updating price
+            setTimeout(checkSLTP, 50);
+            return newPrices;
+          });
           console.log(`Live price for ${selectedSymbol}: $${realPrice}`);
         }
       } catch (error) {
@@ -712,29 +719,30 @@ function App() {
     setMarketNews(news);
   }, []);
 
-  useEffect(() => {
-    const checkSLTP = () => {
-      const currentPositions = positionsRef.current;
-      currentPositions.forEach(position => {
-        const currentPrice = prices[position.symbol] || position.entryPrice;
-        if (position.side === 'LONG') {
-          if (position.stopLoss && currentPrice <= position.stopLoss) {
-            closePosition(position.id, 'STOP_LOSS');
-          }
-          if (position.takeProfit && currentPrice >= position.takeProfit) {
-            closePosition(position.id, 'TAKE_PROFIT');
-          }
-        } else if (position.side === 'SHORT') {
-          if (position.stopLoss && currentPrice >= position.stopLoss) {
-            closePosition(position.id, 'STOP_LOSS');
-          }
-          if (position.takeProfit && currentPrice <= position.takeProfit) {
-            closePosition(position.id, 'TAKE_PROFIT');
-          }
+  // SL/TP check function
+  const checkSLTP = () => {
+    const currentPositions = positionsRef.current;
+    currentPositions.forEach(position => {
+      const currentPrice = prices[position.symbol] || position.entryPrice;
+      if (position.side === 'LONG') {
+        if (position.stopLoss && currentPrice <= position.stopLoss) {
+          closePosition(position.id, 'STOP_LOSS');
         }
-      });
-    };
+        if (position.takeProfit && currentPrice >= position.takeProfit) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      } else if (position.side === 'SHORT') {
+        if (position.stopLoss && currentPrice >= position.stopLoss) {
+          closePosition(position.id, 'STOP_LOSS');
+        }
+        if (position.takeProfit && currentPrice <= position.takeProfit) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      }
+    });
+  };
 
+  useEffect(() => {
     const interval = setInterval(() => {
       setPrices(prev => {
         const newPrices = { ...prev };
@@ -1311,8 +1319,9 @@ function App() {
 
     const currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
     const paperUSD = userAccount.paperBalance / dollarRate;
-   const orderValue = currentPrice * currentOrderSize;
-      const marginRequired = orderValue / leverage;
+    const orderSizeNum = parseFloat(orderSizeInput) || 0;
+    const orderValueUSD = currentPrice * orderSizeNum;
+    const marginUSD = orderValueUSD / leverage;
     const totalMarginUsedUSD = positions.reduce((sum, pos) => {
       const posValueUSD = pos.entryPrice * pos.size;
       return sum + (posValueUSD / pos.leverage);
@@ -1368,17 +1377,17 @@ function App() {
 
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     
-    // Auto SL/TP removed – user must manually enter or leave blank.
     // Parse SL and TP, treat empty strings as null
     const sl = stopLoss ? parseFloat(stopLoss) : null;
     const tp = takeProfit ? parseFloat(takeProfit) : null;
+    const size = parseFloat(orderSizeInput) || 0;
     
     try {
       const token = localStorage.getItem('token');
       const tradeData = {
         symbol: selectedSymbol,
         side: side,
-        size: orderSize,
+        size: size,
         leverage: leverage,
         entryPrice: currentPrice,
         stopLoss: sl,
@@ -1422,7 +1431,7 @@ function App() {
           pnl: 0,
           currentPrice: currentPrice,
           positionValue: data.trade.positionValue,
-          marginUsed: (currentPrice * orderSize) / leverage
+          marginUsed: (currentPrice * size) / leverage
         };
         
         setOrderHistory(prev => [newOrder, ...prev]);
@@ -2171,7 +2180,8 @@ function App() {
     const maxOrderSizePercent = challenge?.maxOrderSize || 20;
     const maxAllowedMarginUSD = totalPaperUSD * (maxOrderSizePercent / 100);
 
-   const orderValue = currentPrice * currentOrderSize;
+    const orderSizeNum = parseFloat(orderSizeInput) || 0;
+    const orderValue = currentPrice * orderSizeNum;
     const marginRequired = orderValue / leverage;
 
     return (
@@ -2257,45 +2267,46 @@ function App() {
           </div>
         </div>
 
-        {/* Order Size Section - renamed, no min/max enforced, no arrows */}
+        {/* Order Size Section - string input for full manual control */}
         <div className="order-size-section">
-  <div className="section-label">
-    Order size in lot (Min recommended: {minLot})
-  </div>
-  <div className="order-size-controls custom">
-    <input
-      type="number"
-      inputMode="numeric"
-      pattern="[0-9]*\.?[0-9]*"
-      value={orderSizeInput}
-      onChange={(e) => {
-        const val = e.target.value;
-        // Allow empty string or valid number pattern (including partial decimals)
-        if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-          setOrderSizeInput(val);
-        }
-      }}
-      onKeyDown={(e) => {
-        // Arrow up: increase by minLot
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          const current = parseFloat(orderSizeInput) || 0;
-          const newVal = current + minLot;
-          setOrderSizeInput(newVal.toString());
-        }
-        // Arrow down: decrease by minLot (but not below 0)
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          const current = parseFloat(orderSizeInput) || 0;
-          const newVal = Math.max(0, current - minLot);
-          setOrderSizeInput(newVal.toString());
-        }
-      }}
-      className="order-size-input no-spinner"
-      disabled={!canTrade}
-    />
-  </div>
-</div>
+          <div className="section-label">
+            Order size in lot (Min recommended: {minLot})
+          </div>
+          <div className="order-size-controls custom">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*\.?[0-9]*"
+              value={orderSizeInput}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Allow empty string or valid number pattern (including partial decimals)
+                if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                  setOrderSizeInput(val);
+                }
+              }}
+              onKeyDown={(e) => {
+                // Arrow up: increase by minLot
+                if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  const current = parseFloat(orderSizeInput) || 0;
+                  const newVal = current + minLot;
+                  setOrderSizeInput(newVal.toString());
+                }
+                // Arrow down: decrease by minLot (but not below 0)
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  const current = parseFloat(orderSizeInput) || 0;
+                  const newVal = Math.max(0, current - minLot);
+                  setOrderSizeInput(newVal.toString());
+                }
+              }}
+              className="order-size-input no-spinner"
+              disabled={!canTrade}
+            />
+          </div>
+        </div>
+
         {/* Challenge Limits */}
         {challenge && (
           <div className="challenge-limits">
@@ -2324,6 +2335,7 @@ function App() {
   };
 
   return (
+   
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
