@@ -2262,18 +2262,36 @@ function App() {
   <div className="section-label">
     Order size in lot (Min recommended: {minLot})
   </div>
-  <div className="order-size-controls">
-    <input 
-      type="number"
-      step="any"
+  <div className="order-size-controls custom">
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*\.?[0-9]*"
       value={orderSize}
-      onChange={(e) => setOrderSize(parseFloat(e.target.value) || 0)}
+      onChange={(e) => {
+        const val = e.target.value;
+        // Allow only numbers and a single decimal point
+        if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+          setOrderSize(val === '' ? 0 : parseFloat(val));
+        }
+      }}
+      onKeyDown={(e) => {
+        // Arrow up: increase by minLot
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setOrderSize(prev => prev + minLot);
+        }
+        // Arrow down: decrease by minLot (but not below 0)
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setOrderSize(prev => Math.max(0, prev - minLot));
+        }
+      }}
       className="order-size-input no-spinner"
       disabled={!canTrade}
     />
   </div>
 </div>
-
         {/* Challenge Limits */}
         {challenge && (
           <div className="challenge-limits">
