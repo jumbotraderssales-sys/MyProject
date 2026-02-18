@@ -1723,6 +1723,8 @@ body {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+  color: #333;            /* dark text */
+  background: #fff;       /* white background */
 }
 
 .login-box .error-message {
