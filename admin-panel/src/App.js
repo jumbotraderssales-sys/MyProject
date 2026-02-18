@@ -162,35 +162,6 @@ function App() {
   useEffect(() => {
     fetchSystemStats();
   }, []);
- useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    // No token, redirect to login
-    window.location.href = '/login';
-    return;
-  }
-  // Validate token by fetching user profile (optional)
-  fetch(`${baseURL}/api/user/profile`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Invalid token');
-      return res.json();
-    })
-    .then(data => {
-      if (data.success && data.user.role === 'admin') {
-        // Token valid, proceed to load data
-        fetchSystemStats();
-      } else {
-        throw new Error('Not admin');
-      }
-    })
-    .catch(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    });
-}, []); 
 
   const refreshStats = () => {
     fetchSystemStats();
