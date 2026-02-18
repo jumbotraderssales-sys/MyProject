@@ -720,20 +720,17 @@ function App() {
 const sl = Number(position.stopLoss);
 const tp = Number(position.takeProfit);
 
-if (position.side === 'LONG') {
-  if (sl && currentPrice <= sl) {
-    closePosition(position.id, 'STOP_LOSS');
-  }
-  if (tp && currentPrice >= tp) {
-    closePosition(position.id, 'TAKE_PROFIT');
-  }
-} else if (position.side === 'SHORT') {
-  if (sl && currentPrice >= sl) {
-    closePosition(position.id, 'STOP_LOSS');
-  }
-  if (tp && currentPrice <= tp) {
-    closePosition(position.id, 'TAKE_PROFIT');
-  }
+if (sl && currentPrice <= sl) {
+  closePosition(position.id, 'STOP_LOSS');
+}
+if (tp && currentPrice >= tp) {
+  closePosition(position.id, 'TAKE_PROFIT');
+}
+if (sl && currentPrice >= sl) {
+  closePosition(position.id, 'STOP_LOSS');
+}
+if (tp && currentPrice <= tp) {
+  closePosition(position.id, 'TAKE_PROFIT');
 }
     const interval = setInterval(() => {
       setPrices(prev => {
