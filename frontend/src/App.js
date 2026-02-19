@@ -676,11 +676,12 @@ useEffect(() => {
     hide_side_toolbar: false,
   });
 
-  window.tvWidget.onChartReady(() => {
+  // 🔴 IMPORTANT: wait and then draw
+  setTimeout(() => {
     if (positions.length > 0) {
       drawTradeLines(positions[0]);
     }
-  });
+  }, 1200);
 
 }, [
   widgetScriptLoaded,
@@ -691,7 +692,8 @@ useEffect(() => {
   activeIndicators,
   activeDashboard
 ]);
-  useEffect(() => {
+
+useEffect(() => {
   if (window.tvWidget && positions.length > 0) {
     drawTradeLines(positions[0]);
   }
@@ -1690,46 +1692,56 @@ if (side === 'LONG') {
     setEditPositionSL('');
     setEditPositionTP('');
   };
-  const drawTradeLines = (position) => {
+ const drawTradeLines = (position) => {
   if (!window.tvWidget || !position) return;
 
-  const chart = window.tvWidget.chart();
+  try {
+    const chart = window.tvWidget.chart
+      ? window.tvWidget.chart()
+      : window.tvWidget;
 
-  chart.removeAllShapes();
+    if (!chart) return;
 
-  chart.createOrderLine()
-    .setPrice(position.entryPrice)
-    .setText('Entry')
-    .setLineColor('#2962FF')
-    .setLineWidth(2)
-    .setEditable(false);
+    chart.removeAllShapes();
 
-  if (position.stopLoss) {
-    const slLine = chart.createOrderLine()
-      .setPrice(position.stopLoss)
-      .setText('SL')
-      .setLineColor('#D32F2F')
+    chart.createOrderLine()
+      .setPrice(position.entryPrice)
+      .setText('Entry')
+      .setLineColor('#2962FF')
       .setLineWidth(2)
-      .setEditable(true);
+      .setEditable(false);
 
-    slLine.onMove((newPrice) => {
-      updatePositionSLTP(position.id, newPrice, position.takeProfit);
-    });
-  }
+    if (position.stopLoss) {
+      const slLine = chart.createOrderLine()
+        .setPrice(position.stopLoss)
+        .setText('SL')
+        .setLineColor('#D32F2F')
+        .setLineWidth(2)
+        .setEditable(true);
 
-  if (position.takeProfit) {
-    const tpLine = chart.createOrderLine()
-      .setPrice(position.takeProfit)
-      .setText('TP')
-      .setLineColor('#2E7D32')
-      .setLineWidth(2)
-      .setEditable(true);
+      slLine.onMove((newPrice) => {
+        updatePositionSLTP(position.id, newPrice, position.takeProfit);
+      });
+    }
 
-    tpLine.onMove((newPrice) => {
-      updatePositionSLTP(position.id, position.stopLoss, newPrice);
-    });
+    if (position.takeProfit) {
+      const tpLine = chart.createOrderLine()
+        .setPrice(position.takeProfit)
+        .setText('TP')
+        .setLineColor('#2E7D32')
+        .setLineWidth(2)
+        .setEditable(true);
+
+      tpLine.onMove((newPrice) => {
+        updatePositionSLTP(position.id, position.stopLoss, newPrice);
+      });
+    }
+
+  } catch (e) {
+    console.log("Line draw error:", e);
   }
 };
+
 
 
  const updateOrderSLTP = async (orderId, sl, tp) => {
