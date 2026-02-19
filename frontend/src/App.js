@@ -2222,11 +2222,16 @@ function App() {
         <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
             <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss (optional)</div>
-           <input
+<input
   type="number"
   step="0.01"
-  placeholder={prices[selectedSymbol]?.toFixed(2)}
   value={stopLoss}
+  placeholder={prices[selectedSymbol] ? prices[selectedSymbol].toFixed(2) : ''}
+  onFocus={() => {
+    if (!stopLoss && prices[selectedSymbol]) {
+      setStopLoss(prices[selectedSymbol].toFixed(2));
+    }
+  }}
   onChange={(e) => setStopLoss(e.target.value)}
               placeholder="Enter price"
               className="sl-input-adjusted"
@@ -2236,11 +2241,16 @@ function App() {
           </div>
           <div className="tp-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
             <div className="section-label" style={{ fontSize: '0.8rem' }}>Take Profit (optional)</div>
-           <input
+<input
   type="number"
   step="0.01"
-  placeholder={prices[selectedSymbol]?.toFixed(2)}
   value={takeProfit}
+  placeholder={prices[selectedSymbol] ? prices[selectedSymbol].toFixed(2) : ''}
+  onFocus={() => {
+    if (!takeProfit && prices[selectedSymbol]) {
+      setTakeProfit(prices[selectedSymbol].toFixed(2));
+    }
+  }}
   onChange={(e) => setTakeProfit(e.target.value)}
               placeholder="Enter price"
               className="tp-input-adjusted"
