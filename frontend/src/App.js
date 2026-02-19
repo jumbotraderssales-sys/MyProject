@@ -1529,12 +1529,7 @@ if (side === 'LONG') {
   },
   ...prev
 ]);
-  setPositions(prev => {
-    const updated = [newPosition, ...prev];
-    drawTradeLines(newPosition);
-    return updated;
-  });
-
+ 
   setBalance(data.newBalance);
 
   const newOrder = {
