@@ -645,16 +645,6 @@ function App() {
       container.removeChild(container.firstChild);
     }
     
- useEffect(() => {
-  if (!widgetScriptLoaded || !window.TradingView || activeDashboard !== 'Trading') return;
-
-  const container = document.getElementById('tradingview-chart-container');
-  if (!container) return;
-
-  while (container.firstChild) {
-    container.removeChild(container.firstChild);
-  }
-
   window.tvWidget = new window.TradingView.widget({
     container_id: 'tradingview-chart-container',
     width: '100%',
