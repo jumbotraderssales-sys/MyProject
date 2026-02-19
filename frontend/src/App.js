@@ -712,28 +712,31 @@ function App() {
     setMarketNews(news);
   }, []);
 
-  useEffect(() => {
+    useEffect(() => {
     const checkSLTP = () => {
       const currentPositions = positionsRef.current;
       currentPositions.forEach(position => {
-const currentPrice = Number(prices[position.symbol] || position.entryPrice);
+        const currentPrice = Number(prices[position.symbol] || position.entryPrice);
 const sl = Number(position.stopLoss);
 const tp = Number(position.takeProfit);
 
 if (position.side === 'LONG') {
- if (sl && currentPrice <= sl) {
-  closePosition(position.id, 'STOP_LOSS');
-}
-if (tp && currentPrice >= tp) {
-  closePosition(position.id, 'TAKE_PROFIT');
-}
-if (sl && currentPrice >= sl) {
-  closePosition(position.id, 'STOP_LOSS');
-}
-if (tp && currentPrice <= tp) {
-  closePosition(position.id, 'TAKE_PROFIT');
-}
-
+          if (position.stopLoss && currentPrice <= position.stopLoss) {
+            closePosition(position.id, 'STOP_LOSS');
+          }
+          if (position.takeProfit && currentPrice >= position.takeProfit) {
+            closePosition(position.id, 'TAKE_PROFIT');
+          }
+        } else if (position.side === 'SHORT') {
+          if (position.stopLoss && currentPrice >= position.stopLoss) {
+            closePosition(position.id, 'STOP_LOSS');
+          }
+          if (position.takeProfit && currentPrice <= position.takeProfit) {
+            closePosition(position.id, 'TAKE_PROFIT');
+          }
+        }
+      });
+    };
     const interval = setInterval(() => {
       setPrices(prev => {
         const newPrices = { ...prev };
