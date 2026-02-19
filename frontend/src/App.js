@@ -712,51 +712,39 @@ function App() {
     setMarketNews(news);
   }, []);
 
-    useEffect(() => {
-    const checkSLTP = () => {
-      const currentPositions = positionsRef.current;
-      currentPositions.forEach(position => {
-        const currentPrice = Number(prices[position.symbol] || position.entryPrice);
-const sl = Number(position.stopLoss);
-const tp = Number(position.takeProfit);
+ useEffect(() => {
+  const checkSLTP = () => {
+    const currentPositions = positionsRef.current;
 
-if (position.side === 'LONG') {
-        if (sl && currentPrice <= sl) {
-  closePosition(position.id, 'STOP_LOSS');
-}
-if (tp && currentPrice >= tp) {
-  closePosition(position.id, 'TAKE_PROFIT');
-}
-        } if (sl && currentPrice >= sl) {
-  closePosition(position.id, 'STOP_LOSS');
-}
-if (tp && currentPrice <= tp) {
-  closePosition(position.id, 'TAKE_PROFIT');
-}
+    currentPositions.forEach(position => {
+      const currentPrice = Number(prices[position.symbol] || position.entryPrice);
+      const sl = position.stopLoss !== null && position.stopLoss !== undefined ? Number(position.stopLoss) : null;
+      const tp = position.takeProfit !== null && position.takeProfit !== undefined ? Number(position.takeProfit) : null;
+
+      if (position.side === 'LONG') {
+        if (sl !== null && currentPrice <= sl) {
+          closePosition(position.id, 'STOP_LOSS');
         }
-      });
-    };
-    const interval = setInterval(() => {
-      setPrices(prev => {
-        const newPrices = { ...prev };
-        const currentSelected = selectedSymbolRef.current;
-        Object.keys(newPrices).forEach(symbol => {
-          if (symbol === currentSelected) return;
-          const crypto = cryptoData.find(c => c.symbol === symbol);
-          const baseChange = crypto?.change24h || 0;
-          const changePercent = (Math.random() - 0.5) * 0.001 + (baseChange / 10000);
-          newPrices[symbol] = Math.max(
-            newPrices[symbol] * (1 + changePercent),
-            newPrices[symbol] * 0.998
-          );
-        });
-        setTimeout(checkSLTP, 100);
-        return newPrices;
-      });
-    }, 3000);
+        if (tp !== null && currentPrice >= tp) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      } else if (position.side === 'SHORT') {
+        if (sl !== null && currentPrice >= sl) {
+          closePosition(position.id, 'STOP_LOSS');
+        }
+        if (tp !== null && currentPrice <= tp) {
+          closePosition(position.id, 'TAKE_PROFIT');
+        }
+      }
+    });
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const interval = setInterval(() => {
+    checkSLTP();
+  }, 2000);
+
+  return () => clearInterval(interval);
+}, [prices]);
 
   useEffect(() => {
     let total = 0;
