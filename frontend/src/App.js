@@ -1443,6 +1443,7 @@ if (side === 'LONG') {
      setPositions(prev => [newPosition, ...prev]);
        setPositions(prev => {
   const updated = [newPosition, ...prev];
+         
   drawTradeLines(newPosition);
   return updated;
 });
