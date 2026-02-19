@@ -1602,36 +1602,7 @@ if (side === 'LONG') {
               updatedStats.totalLoss += Math.abs(pnl);
             }
 
-            const drawTradeLines = (position) => {
-  if (!window.tvWidget) return;
-
-  window.tvWidget.onChartReady(() => {
-    const chart = window.tvWidget.chart();
-
-    // ENTRY
-    chart.createOrderLine()
-      .setPrice(position.entryPrice)
-      .setText(`Entry`)
-      .setLineColor('#2962FF')
-      .setLineWidth(2);
-
-    // STOP LOSS
-    chart.createOrderLine()
-      .setPrice(position.stopLoss)
-      .setText(`SL -₹${position.slAmount.toFixed(0)}`)
-      .setLineColor('#D32F2F')
-      .setLineWidth(2);
-
-    // TAKE PROFIT
-    chart.createOrderLine()
-      .setPrice(position.takeProfit)
-      .setText(`TP +₹${position.tpAmount.toFixed(0)}`)
-      .setLineColor('#2E7D32')
-      .setLineWidth(2);
-  });
-};
-
-            
+                    
             // Calculate win rate
             const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
             const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
@@ -1707,6 +1678,52 @@ if (side === 'LONG') {
     setEditPositionSL('');
     setEditPositionTP('');
   };
+  const drawTradeLines = (position) => {
+  if (!window.tvWidget || !position) return;
+
+  window.tvWidget.onChartReady(() => {
+    const chart = window.tvWidget.chart();
+
+    chart.removeAllShapes();
+
+    // ENTRY
+    chart.createOrderLine()
+      .setPrice(position.entryPrice)
+      .setText('Entry')
+      .setLineColor('#2962FF')
+      .setLineWidth(2)
+      .setEditable(false);
+
+    // STOP LOSS
+    if (position.stopLoss) {
+      const slLine = chart.createOrderLine()
+        .setPrice(position.stopLoss)
+        .setText('SL')
+        .setLineColor('#D32F2F')
+        .setLineWidth(2)
+        .setEditable(true);
+
+      slLine.onMove((newPrice) => {
+        updatePositionSLTP(position.id, newPrice, position.takeProfit);
+      });
+    }
+
+    // TAKE PROFIT
+    if (position.takeProfit) {
+      const tpLine = chart.createOrderLine()
+        .setPrice(position.takeProfit)
+        .setText('TP')
+        .setLineColor('#2E7D32')
+        .setLineWidth(2)
+        .setEditable(true);
+
+      tpLine.onMove((newPrice) => {
+        updatePositionSLTP(position.id, position.stopLoss, newPrice);
+      });
+    }
+  });
+};
+
 
  const updateOrderSLTP = async (orderId, sl, tp) => {
   const order = orderHistory.find(o => o.id === orderId);
