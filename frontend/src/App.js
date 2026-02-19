@@ -1374,8 +1374,8 @@ let sl = null;
 let tp = null;
 
 // money risked and reward based on margin used
-const slAmount = marginRequired * 0.10; // 10% loss of margin
-const tpAmount = marginRequired * 0.20; // 20% profit of margin
+const slAmount = marginRequired * 0.30; // 30% loss of margin
+const tpAmount = marginRequired * 0.60; // 60% profit of margin
 
 // price movement needed for that PnL
 const priceMoveForSL = slAmount / (orderSize * leverage);
