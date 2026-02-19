@@ -105,6 +105,73 @@ const CHALLENGES = [
     description: "For advanced traders ready for maximum rewards"
   }
 ];
+const PriceLineOverlay = ({ position, currentPrice }) => {
+  if (!currentPrice) return null;
+
+  const chartHeight = 500;
+  const priceRange = currentPrice * 0.05;
+
+  const mapPriceToY = (price) => {
+    const topPrice = currentPrice + priceRange;
+    const percent = (topPrice - price) / (priceRange * 2);
+    return percent * chartHeight;
+  };
+
+  const entryY = mapPriceToY(position.entryPrice);
+  const slY = position.stopLoss ? mapPriceToY(position.stopLoss) : null;
+  const tpY = position.takeProfit ? mapPriceToY(position.takeProfit) : null;
+
+  const pnl =
+    (currentPrice - position.entryPrice) *
+    position.size *
+    position.leverage *
+    (position.side === 'LONG' ? 1 : -1);
+
+  return (
+    <>
+      <div style={{ position: 'absolute', top: entryY, left: 0, right: 0, height: 2, background: '#2962FF' }}>
+        <span style={boxStyle}>Entry</span>
+      </div>
+
+      {slY !== null && (
+        <div style={{ position: 'absolute', top: slY, left: 0, right: 0, height: 2, background: '#D32F2F' }}>
+          <span style={boxStyle}>SL</span>
+        </div>
+      )}
+
+      {tpY !== null && (
+        <div style={{ position: 'absolute', top: tpY, left: 0, right: 0, height: 2, background: '#2E7D32' }}>
+          <span style={boxStyle}>TP</span>
+        </div>
+      )}
+
+      <div style={{
+        position: 'absolute',
+        top: mapPriceToY(currentPrice),
+        right: 10,
+        background: pnl >= 0 ? '#2E7D32' : '#D32F2F',
+        color: '#fff',
+        padding: '2px 6px',
+        borderRadius: 4,
+        fontSize: 12
+      }}>
+        {pnl.toFixed(2)}
+      </div>
+    </>
+  );
+};
+
+const boxStyle = {
+  position: 'absolute',
+  right: 0,
+  top: -8,
+  background: '#000',
+  color: '#fff',
+  padding: '2px 6px',
+  fontSize: 10,
+  borderRadius: 4
+};
+
 
 function App() {
   const [userAccount, setUserAccount] = useState({
@@ -441,74 +508,7 @@ function App() {
     }, 5000);
     return () => clearInterval(interval);
   }, [carouselImages.length]);
-  const PriceLineOverlay = ({ position, currentPrice }) => {
-  if (!currentPrice) return null;
-
-  const chartHeight = 500;
-  const priceRange = currentPrice * 0.05;
-
-  const mapPriceToY = (price) => {
-    const topPrice = currentPrice + priceRange;
-    const percent = (topPrice - price) / (priceRange * 2);
-    return percent * chartHeight;
-  };
-
-  const entryY = mapPriceToY(position.entryPrice);
-  const slY = position.stopLoss ? mapPriceToY(position.stopLoss) : null;
-  const tpY = position.takeProfit ? mapPriceToY(position.takeProfit) : null;
-
-  const pnl =
-    (currentPrice - position.entryPrice) *
-    position.size *
-    position.leverage *
-    (position.side === 'LONG' ? 1 : -1);
-
-  return (
-    <>
-      <div style={{ position: 'absolute', top: entryY, left: 0, right: 0, height: 2, background: '#2962FF' }}>
-        <span style={boxStyle}>Entry</span>
-      </div>
-
-      {slY !== null && (
-        <div style={{ position: 'absolute', top: slY, left: 0, right: 0, height: 2, background: '#D32F2F' }}>
-          <span style={boxStyle}>SL</span>
-        </div>
-      )}
-
-      {tpY !== null && (
-        <div style={{ position: 'absolute', top: tpY, left: 0, right: 0, height: 2, background: '#2E7D32' }}>
-          <span style={boxStyle}>TP</span>
-        </div>
-      )}
-
-      <div style={{
-        position: 'absolute',
-        top: mapPriceToY(currentPrice),
-        right: 10,
-        background: pnl >= 0 ? '#2E7D32' : '#D32F2F',
-        color: '#fff',
-        padding: '2px 6px',
-        borderRadius: 4,
-        fontSize: 12
-      }}>
-        {pnl.toFixed(2)}
-      </div>
-    </>
-  );
-};
-
-const boxStyle = {
-  position: 'absolute',
-  right: 0,
-  top: -8,
-  background: '#000',
-  color: '#fff',
-  padding: '2px 6px',
-  fontSize: 10,
-  borderRadius: 4
-};
-
-  
+ 
   // Calculate daily and total loss
   useEffect(() => {
     if (userAccount.currentChallenge && userAccount.challengeStats) {
