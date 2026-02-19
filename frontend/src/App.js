@@ -1360,16 +1360,26 @@ function App() {
     // Auto SL/TP removed – user must manually enter or leave blank.
     // Parse SL and TP, treat empty strings as null
   // Auto SL = 10%, Auto TP = 20%
+// Auto SL = 10% of margin, Auto TP = 20% of margin
 let sl = null;
 let tp = null;
 
+// money risked and reward based on margin used
+const slAmount = marginRequired * 0.10; // 10% loss of margin
+const tpAmount = marginRequired * 0.20; // 20% profit of margin
+
+// price movement needed for that PnL
+const priceMoveForSL = slAmount / (orderSize * leverage);
+const priceMoveForTP = tpAmount / (orderSize * leverage);
+
 if (side === 'LONG') {
-  sl = parseFloat((currentPrice * 0.90).toFixed(2));
-  tp = parseFloat((currentPrice * 1.20).toFixed(2));
+  sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
 } else if (side === 'SHORT') {
-  sl = parseFloat((currentPrice * 1.10).toFixed(2));
-  tp = parseFloat((currentPrice * 0.80).toFixed(2));
+  sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
 }
+
     
     try {
       const token = localStorage.getItem('token');
