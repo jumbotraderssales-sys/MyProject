@@ -635,16 +635,16 @@ function App() {
     }
   }, [isLoggedIn, showUPIScanner]);
 
-  useEffect(() => {
-    if (!widgetScriptLoaded || !window.TradingView || activeDashboard !== 'Trading') return;
-    
-    const container = document.getElementById('tradingview-chart-container');
-    if (!container) return;
-    
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
-    
+useEffect(() => {
+  if (!widgetScriptLoaded || !window.TradingView || activeDashboard !== 'Trading') return;
+
+  const container = document.getElementById('tradingview-chart-container');
+  if (!container) return;
+
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+
   window.tvWidget = new window.TradingView.widget({
     container_id: 'tradingview-chart-container',
     width: '100%',
@@ -675,6 +675,13 @@ function App() {
     popup_height: '650',
     hide_side_toolbar: false,
   });
+
+  window.tvWidget.onChartReady(() => {
+    if (positions.length > 0) {
+      drawTradeLines(positions[0]);
+    }
+  });
+
 }, [
   widgetScriptLoaded,
   selectedSymbol,
@@ -684,6 +691,11 @@ function App() {
   activeIndicators,
   activeDashboard
 ]);
+  useEffect(() => {
+  if (window.tvWidget && positions.length > 0) {
+    drawTradeLines(positions[0]);
+  }
+}, [positions]);
 
   useEffect(() => {
     const generateSignals = () => {
@@ -1681,56 +1693,43 @@ if (side === 'LONG') {
   const drawTradeLines = (position) => {
   if (!window.tvWidget || !position) return;
 
-  try {
-    const chart = window.tvWidget.chart
-      ? window.tvWidget.chart()
-      : window.tvWidget;
+  const chart = window.tvWidget.chart();
 
-    if (!chart) return;
+  chart.removeAllShapes();
 
-    chart.removeAllShapes();
+  chart.createOrderLine()
+    .setPrice(position.entryPrice)
+    .setText('Entry')
+    .setLineColor('#2962FF')
+    .setLineWidth(2)
+    .setEditable(false);
 
-    // ENTRY
-    chart.createOrderLine()
-      .setPrice(position.entryPrice)
-      .setText('Entry')
-      .setLineColor('#2962FF')
+  if (position.stopLoss) {
+    const slLine = chart.createOrderLine()
+      .setPrice(position.stopLoss)
+      .setText('SL')
+      .setLineColor('#D32F2F')
       .setLineWidth(2)
-      .setEditable(false);
+      .setEditable(true);
 
-    // STOP LOSS
-    if (position.stopLoss) {
-      const slLine = chart.createOrderLine()
-        .setPrice(position.stopLoss)
-        .setText('SL')
-        .setLineColor('#D32F2F')
-        .setLineWidth(2)
-        .setEditable(true);
+    slLine.onMove((newPrice) => {
+      updatePositionSLTP(position.id, newPrice, position.takeProfit);
+    });
+  }
 
-      slLine.onMove((newPrice) => {
-        updatePositionSLTP(position.id, newPrice, position.takeProfit);
-      });
-    }
+  if (position.takeProfit) {
+    const tpLine = chart.createOrderLine()
+      .setPrice(position.takeProfit)
+      .setText('TP')
+      .setLineColor('#2E7D32')
+      .setLineWidth(2)
+      .setEditable(true);
 
-    // TAKE PROFIT
-    if (position.takeProfit) {
-      const tpLine = chart.createOrderLine()
-        .setPrice(position.takeProfit)
-        .setText('TP')
-        .setLineColor('#2E7D32')
-        .setLineWidth(2)
-        .setEditable(true);
-
-      tpLine.onMove((newPrice) => {
-        updatePositionSLTP(position.id, position.stopLoss, newPrice);
-      });
-    }
-
-  } catch (err) {
-    console.error("Draw line error:", err);
+    tpLine.onMove((newPrice) => {
+      updatePositionSLTP(position.id, position.stopLoss, newPrice);
+    });
   }
 };
-
 
 
  const updateOrderSLTP = async (orderId, sl, tp) => {
