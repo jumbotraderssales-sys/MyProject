@@ -164,7 +164,7 @@ function App() {
   const [positions, setPositions] = useState([]);
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
-  const [orderSize, setOrderSize] = useState(0.001);
+ const [orderSize, setOrderSize] = useState('');
   const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
   const [orderHistory, setOrderHistory] = useState([]);
@@ -1387,7 +1387,7 @@ if (side === 'LONG') {
       const tradeData = {
         symbol: selectedSymbol,
         side: side,
-        size: orderSize,
+        size: parseFloat(orderSize),
         leverage: leverage,
         entryPrice: currentPrice,
         stopLoss: sl,
@@ -2300,20 +2300,22 @@ if (side === 'LONG') {
             />
           </div>
         </div>
-*/}
-    {/* Order Size Section - dynamic min lot & smooth typing */}
+*/}{/* Order Size Section - dynamic min lot & smooth typing */}
 <div className="order-size-section">
   <div className="section-label">
     Order size in lot (Min recommended: {minLot})
   </div>
   <div className="order-size-controls">
     <input 
-      type="number"
-      step={minLot}
-      min={minLot}
+      type="text"
+      inputMode="decimal"
       value={orderSize}
       onChange={(e) => {
-        setOrderSize(e.target.value); // keep as string while typing
+        const val = e.target.value;
+        // allow only numbers and decimal, keep as string
+        if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+          setOrderSize(val);
+        }
       }}
       onBlur={() => {
         if (!orderSize || parseFloat(orderSize) < minLot) {
@@ -2325,6 +2327,14 @@ if (side === 'LONG') {
     />
   </div>
 </div>
+
+useEffect(() => {
+  const price = prices[selectedSymbol];
+  if (!price) return;
+
+  const min = getMinLotSize(price);
+  setOrderSize(min.toString());
+}, [selectedSymbol, prices]);
 
 
         {/* Challenge Limits */}
