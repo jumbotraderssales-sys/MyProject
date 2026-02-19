@@ -1359,8 +1359,17 @@ function App() {
     
     // Auto SL/TP removed – user must manually enter or leave blank.
     // Parse SL and TP, treat empty strings as null
-    const sl = stopLoss ? parseFloat(stopLoss) : null;
-    const tp = takeProfit ? parseFloat(takeProfit) : null;
+    // Auto SL = 10%, Auto TP = 20%
+let sl = null;
+let tp = null;
+
+if (side === 'LONG') {
+  sl = parseFloat((currentPrice * 0.90).toFixed(2)); // -10%
+  tp = parseFloat((currentPrice * 1.20).toFixed(2)); // +20%
+} else if (side === 'SHORT') {
+  sl = parseFloat((currentPrice * 1.10).toFixed(2)); // +10%
+  tp = parseFloat((currentPrice * 0.80).toFixed(2)); // -20%
+}
     
     try {
       const token = localStorage.getItem('token');
@@ -1388,6 +1397,7 @@ function App() {
       
       if (data.success) {
         const newPosition = {
+          
           id: data.trade.id,
           ...tradeData,
           status: 'OPEN',
@@ -1634,6 +1644,24 @@ function App() {
     setEditPositionSL('');
     setEditPositionTP('');
   };
+  const order = orderHistory.find(o => o.id === orderId);
+if (!order) return;
+
+// Discipline rule for Stop Loss
+if (sl) {
+  const newSL = parseFloat(sl);
+
+  if (order.side === 'LONG' && newSL < order.stopLoss) {
+    alert('❌ You can only reduce Stop Loss (cannot increase risk)');
+    return;
+  }
+
+  if (order.side === 'SHORT' && newSL > order.stopLoss) {
+    alert('❌ You can only reduce Stop Loss (cannot increase risk)');
+    return;
+  }
+}
+
 
   const updateOrderSLTP = async (orderId, sl, tp) => {
     try {
