@@ -1603,6 +1603,36 @@ if (side === 'LONG') {
             } else {
               updatedStats.totalLoss += Math.abs(pnl);
             }
+
+            const drawTradeLines = (position) => {
+  if (!window.tvWidget) return;
+
+  window.tvWidget.onChartReady(() => {
+    const chart = window.tvWidget.chart();
+
+    // ENTRY
+    chart.createOrderLine()
+      .setPrice(position.entryPrice)
+      .setText(`Entry`)
+      .setLineColor('#2962FF')
+      .setLineWidth(2);
+
+    // STOP LOSS
+    chart.createOrderLine()
+      .setPrice(position.stopLoss)
+      .setText(`SL -₹${position.slAmount.toFixed(0)}`)
+      .setLineColor('#D32F2F')
+      .setLineWidth(2);
+
+    // TAKE PROFIT
+    chart.createOrderLine()
+      .setPrice(position.takeProfit)
+      .setText(`TP +₹${position.tpAmount.toFixed(0)}`)
+      .setLineColor('#2E7D32')
+      .setLineWidth(2);
+  });
+};
+
             
             // Calculate win rate
             const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
