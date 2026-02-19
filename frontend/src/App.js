@@ -758,6 +758,14 @@ function App() {
     setTotalPnl(total);
     setEquity(balance + total);
   }, [positions, prices, balance]);
+  
+  useEffect(() => {
+  const price = prices[selectedSymbol];
+  if (!price) return;
+
+  const min = getMinLotSize(price);
+  setOrderSize(min.toString());
+}, [selectedSymbol, prices]);
 
   // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
   useEffect(() => {
@@ -2327,15 +2335,6 @@ if (side === 'LONG') {
     />
   </div>
 </div>
-
-useEffect(() => {
-  const price = prices[selectedSymbol];
-  if (!price) return;
-
-  const min = getMinLotSize(price);
-  setOrderSize(min.toString());
-}, [selectedSymbol, prices]);
-
 
         {/* Challenge Limits */}
         {challenge && (
