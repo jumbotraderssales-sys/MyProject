@@ -1359,16 +1359,16 @@ function App() {
     
     // Auto SL/TP removed – user must manually enter or leave blank.
     // Parse SL and TP, treat empty strings as null
-    // Auto SL = 10%, Auto TP = 20%
+// Auto SL = 10%, Auto TP = 20%
 let sl = null;
 let tp = null;
 
 if (side === 'LONG') {
-  sl = parseFloat((currentPrice * 0.90).toFixed(2)); // -10%
-  tp = parseFloat((currentPrice * 1.20).toFixed(2)); // +20%
+  sl = parseFloat((currentPrice * 0.90).toFixed(2));
+  tp = parseFloat((currentPrice * 1.20).toFixed(2));
 } else if (side === 'SHORT') {
-  sl = parseFloat((currentPrice * 1.10).toFixed(2)); // +10%
-  tp = parseFloat((currentPrice * 0.80).toFixed(2)); // -20%
+  sl = parseFloat((currentPrice * 1.10).toFixed(2));
+  tp = parseFloat((currentPrice * 0.80).toFixed(2));
 }
     
     try {
@@ -1663,7 +1663,67 @@ if (sl) {
 }
 
 
-  const updateOrderSLTP = async (orderId, sl, tp) => {
+ const updateOrderSLTP = async (orderId, sl, tp) => {
+  const order = orderHistory.find(o => o.id === orderId);
+  if (!order) return;
+
+  // Discipline rule for Stop Loss
+  if (sl) {
+    const newSL = parseFloat(sl);
+
+    if (order.side === 'LONG' && newSL < order.stopLoss) {
+      alert('❌ You can only reduce Stop Loss (cannot increase risk)');
+      return;
+    }
+
+    if (order.side === 'SHORT' && newSL > order.stopLoss) {
+      alert('❌ You can only reduce Stop Loss (cannot increase risk)');
+      return;
+    }
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${orderId}/update-sltp`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        stopLoss: sl ? parseFloat(sl) : undefined,
+        takeProfit: tp ? parseFloat(tp) : undefined
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      setOrderHistory(prev => prev.map(order => 
+        order.id === orderId ? {
+          ...order,
+          stopLoss: sl ? parseFloat(sl) : order.stopLoss,
+          takeProfit: tp ? parseFloat(tp) : order.takeProfit
+        } : order
+      ));
+      
+      setPositions(prev => prev.map(pos => 
+        pos.id === orderId ? {
+          ...pos,
+          stopLoss: sl ? parseFloat(sl) : pos.stopLoss,
+          takeProfit: tp ? parseFloat(tp) : pos.takeProfit
+        } : pos
+      ));
+    }
+  } catch (error) {
+    console.error('Error updating order SL/TP:', error);
+  }
+  
+  setEditingOrderId(null);
+  setEditSL('');
+  setEditTP('');
+};
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${orderId}/update-sltp`, {
