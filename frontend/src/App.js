@@ -716,22 +716,26 @@ function App() {
     const checkSLTP = () => {
       const currentPositions = positionsRef.current;
       currentPositions.forEach(position => {
-    const currentPrice = Number(prices[position.symbol] || position.entryPrice);
+    conconst currentPrice = Number(prices[position.symbol] || position.entryPrice);
 const sl = Number(position.stopLoss);
 const tp = Number(position.takeProfit);
 
-if (sl && currentPrice <= sl) {
-  closePosition(position.id, 'STOP_LOSS');
+if (position.side === 'LONG') {
+  if (sl && currentPrice <= sl) {
+    closePosition(position.id, 'STOP_LOSS');
+  }
+  if (tp && currentPrice >= tp) {
+    closePosition(position.id, 'TAKE_PROFIT');
+  }
+} else if (position.side === 'SHORT') {
+  if (sl && currentPrice >= sl) {
+    closePosition(position.id, 'STOP_LOSS');
+  }
+  if (tp && currentPrice <= tp) {
+    closePosition(position.id, 'TAKE_PROFIT');
+  }
 }
-if (tp && currentPrice >= tp) {
-  closePosition(position.id, 'TAKE_PROFIT');
-}
-if (sl && currentPrice >= sl) {
-  closePosition(position.id, 'STOP_LOSS');
-}
-if (tp && currentPrice <= tp) {
-  closePosition(position.id, 'TAKE_PROFIT');
-}
+
     const interval = setInterval(() => {
       setPrices(prev => {
         const newPrices = { ...prev };
