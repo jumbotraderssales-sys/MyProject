@@ -1681,8 +1681,12 @@ if (side === 'LONG') {
   const drawTradeLines = (position) => {
   if (!window.tvWidget || !position) return;
 
-  window.tvWidget.onChartReady(() => {
-    const chart = window.tvWidget.chart();
+  try {
+    const chart = window.tvWidget.chart
+      ? window.tvWidget.chart()
+      : window.tvWidget;
+
+    if (!chart) return;
 
     chart.removeAllShapes();
 
@@ -1721,8 +1725,12 @@ if (side === 'LONG') {
         updatePositionSLTP(position.id, position.stopLoss, newPrice);
       });
     }
-  });
+
+  } catch (err) {
+    console.error("Draw line error:", err);
+  }
 };
+
 
 
  const updateOrderSLTP = async (orderId, sl, tp) => {
