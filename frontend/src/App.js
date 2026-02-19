@@ -1509,26 +1509,21 @@ if (side === 'LONG') {
       });
       
       const data = await response.json();
-      if (data.success) {
+          if (data.success) {
   const newPosition = {
-   setChartHorizontalLines(prev => [
-  {
-    id: newPosition.id,
-    side: newPosition.side,
-    entryPrice: newPosition.entryPrice,
-    stopLoss: newPosition.stopLoss || 0,
-    takeProfit: newPosition.takeProfit || 0,
-    size: newPosition.size,
-    positionValue: newPosition.positionValue,
-    stopLossAmount: newPosition.stopLoss
-      ? Math.abs(newPosition.entryPrice - newPosition.stopLoss) * newPosition.size
-      : 0,
-    takeProfitAmount: newPosition.takeProfit
-      ? Math.abs(newPosition.takeProfit - newPosition.entryPrice) * newPosition.size
-      : 0
-  },
-  ...prev
-]);
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleTimeString(),
+    pnl: 0,
+    positionValue: data.trade.positionValue
+  };
+
+  setPositions(prev => {
+    const updated = [newPosition, ...prev];
+    drawTradeLines(newPosition);
+    return updated;
+  });
  
   setBalance(data.newBalance);
 
