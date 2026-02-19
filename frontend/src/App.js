@@ -1441,7 +1441,7 @@ if (side === 'LONG') {
         };
         
         setPositions(prev => [newPosition, ...prev]);
-        
+        drawTradeLines(newPosition);
         setUserAccount(prev => ({
           ...prev,
           paperBalance: data.newBalance
