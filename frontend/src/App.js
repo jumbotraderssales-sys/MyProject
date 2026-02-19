@@ -1428,50 +1428,47 @@ if (side === 'LONG') {
       });
       
       const data = await response.json();
-      
       if (data.success) {
-        const newPosition = {
-          
-          id: data.trade.id,
-          ...tradeData,
-          status: 'OPEN',
-          timestamp: new Date().toLocaleTimeString(),
-          pnl: 0,
-          positionValue: data.trade.positionValue
-        };
-        
-     setPositions(prev => [newPosition, ...prev]);
-       setPositions(prev => {
-  const updated = [newPosition, ...prev];
-         
-  drawTradeLines(newPosition);
-  return updated;
-});
-        setBalance(data.newBalance);
-        
-        const newOrder = {
-          id: data.trade.id,
-          ...tradeData,
-          status: 'OPEN',
-          timestamp: new Date().toLocaleString(),
-          pnl: 0,
-          currentPrice: currentPrice,
-          positionValue: data.trade.positionValue,
-          marginUsed: (currentPrice * orderSize) / leverage
-        };
-        
-        setOrderHistory(prev => [newOrder, ...prev]);
-        
-        setUserAccount(prev => ({
-          ...prev,
-          challengeStats: {
-            ...prev.challengeStats,
-            tradesCount: prev.challengeStats.tradesCount + 1
-          }
-        }));
-        
-        setStopLoss('');
-        setTakeProfit('');
+  const newPosition = {
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleTimeString(),
+    pnl: 0,
+    positionValue: data.trade.positionValue
+  };
+
+  setPositions(prev => {
+    const updated = [newPosition, ...prev];
+    drawTradeLines(newPosition);
+    return updated;
+  });
+
+  setBalance(data.newBalance);
+
+  const newOrder = {
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleString(),
+    pnl: 0,
+    currentPrice: currentPrice,
+    positionValue: data.trade.positionValue,
+    marginUsed: (currentPrice * orderSize) / leverage
+  };
+
+  setOrderHistory(prev => [newOrder, ...prev]);
+
+  setUserAccount(prev => ({
+    ...prev,
+    challengeStats: {
+      ...prev.challengeStats,
+      tradesCount: prev.challengeStats.tradesCount + 1
+    }
+  }));
+
+  setStopLoss('');
+  setTakeProfit('');
       } else {
         alert(data.error || 'Trade failed');
       }
