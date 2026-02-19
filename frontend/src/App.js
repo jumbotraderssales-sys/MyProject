@@ -645,31 +645,55 @@ function App() {
       container.removeChild(container.firstChild);
     }
     
- new window.TradingView.widget({
-      container_id: 'tradingview-chart-container',
-      width: '100%',
-      height: '100%',
-      symbol: `BINANCE:${selectedSymbol.replace('USDT', '')}USDT`,
-      interval: timeframe === '1D' ? 'D' : timeframe === '1W' ? 'W' : timeframe === '1M' ? 'M' : timeframe,
-      timezone: 'Etc/UTC',
-      theme: chartTheme,
-      style: chartType,
-      locale: 'en',
-      toolbar_bg: '#0a0e17',
-      enable_publishing: false,
-      allow_symbol_change: false,
-      save_image: true,
-      details: true,
-      hotlist: true,
-      calendar: true,
-      studies: activeIndicators,
-      show_popup_button: true,
-      popup_width: '1000',
-      popup_height: '650',
-      hide_side_toolbar: false,
-    });
-  }, [widgetScriptLoaded, selectedSymbol, timeframe, chartType, chartTheme, activeIndicators, activeDashboard]);
+ useEffect(() => {
+  if (!widgetScriptLoaded || !window.TradingView || activeDashboard !== 'Trading') return;
 
+  const container = document.getElementById('tradingview-chart-container');
+  if (!container) return;
+
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+
+  window.tvWidget = new window.TradingView.widget({
+    container_id: 'tradingview-chart-container',
+    width: '100%',
+    height: '100%',
+    symbol: `BINANCE:${selectedSymbol.replace('USDT', '')}USDT`,
+    interval:
+      timeframe === '1D'
+        ? 'D'
+        : timeframe === '1W'
+        ? 'W'
+        : timeframe === '1M'
+        ? 'M'
+        : timeframe,
+    timezone: 'Etc/UTC',
+    theme: chartTheme,
+    style: chartType,
+    locale: 'en',
+    toolbar_bg: '#0a0e17',
+    enable_publishing: false,
+    allow_symbol_change: false,
+    save_image: true,
+    details: true,
+    hotlist: true,
+    calendar: true,
+    studies: activeIndicators,
+    show_popup_button: true,
+    popup_width: '1000',
+    popup_height: '650',
+    hide_side_toolbar: false,
+  });
+}, [
+  widgetScriptLoaded,
+  selectedSymbol,
+  timeframe,
+  chartType,
+  chartTheme,
+  activeIndicators,
+  activeDashboard
+]);
 
   useEffect(() => {
     const generateSignals = () => {
