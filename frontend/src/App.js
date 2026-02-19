@@ -759,13 +759,13 @@ function App() {
     setEquity(balance + total);
   }, [positions, prices, balance]);
   
-  useEffect(() => {
+ useEffect(() => {
   const price = prices[selectedSymbol];
   if (!price) return;
 
   const min = getMinLotSize(price);
   setOrderSize(min.toString());
-}, [selectedSymbol, prices]);
+}, [selectedSymbol]);
 
   // ===== DRAGGABLE BUTTON EVENT LISTENERS =====
   useEffect(() => {
@@ -2308,19 +2308,38 @@ if (side === 'LONG') {
             />
           </div>
         </div>
-*/}{/* Order Size Section - dynamic min lot & smooth typing */}
+*/}
+{/* Order Size Section - stable cursor + custom arrows */}
 <div className="order-size-section">
   <div className="section-label">
     Order size in lot (Min recommended: {minLot})
   </div>
-  <div className="order-size-controls">
-    <input 
+
+  <div className="order-size-controls" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+    
+    {/* Down button */}
+    <button
+      type="button"
+      onClick={() => {
+        const current = parseFloat(orderSize || minLot);
+        const next = (current - minLot).toFixed(6);
+        if (parseFloat(next) >= minLot) {
+          setOrderSize(next);
+        }
+      }}
+      disabled={!canTrade}
+    >
+      ▼
+    </button>
+
+    {/* Input */}
+    <input
       type="text"
       inputMode="decimal"
       value={orderSize}
       onChange={(e) => {
         const val = e.target.value;
-        // allow only numbers and decimal, keep as string
+        // allow only numbers and one decimal
         if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
           setOrderSize(val);
         }
@@ -2332,9 +2351,24 @@ if (side === 'LONG') {
       }}
       className="order-size-input"
       disabled={!canTrade}
+      style={{ textAlign: 'center' }}
     />
+
+    {/* Up button */}
+    <button
+      type="button"
+      onClick={() => {
+        const current = parseFloat(orderSize || minLot);
+        const next = (current + minLot).toFixed(6);
+        setOrderSize(next);
+      }}
+      disabled={!canTrade}
+    >
+      ▲
+    </button>
   </div>
 </div>
+
 
         {/* Challenge Limits */}
         {challenge && (
