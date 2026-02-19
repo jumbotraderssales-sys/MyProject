@@ -138,7 +138,9 @@ function App() {
       dailyResetTime: null
     }
   });
- 
+ const entryLineRef = useRef(null);
+const slLineRef = useRef(null);
+const tpLineRef = useRef(null);
   const [balance, setBalance] = useState(0);
   const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
