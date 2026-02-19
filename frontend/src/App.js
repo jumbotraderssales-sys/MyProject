@@ -282,11 +282,12 @@ function App() {
   };
 
   // Determine minimum order lot size based on current price (informational only)
-  const getMinLot = (price) => {
-    if (price >= 10000) return 0.001;
-    if (price >= 1000) return 0.1;
-    return 1;
-  };
+  const getMinLotSize = (price) => {
+  if (!price) return 1;
+  if (price >= 10000) return 0.001;
+  if (price >= 1000) return 0.1;
+  return 1;
+};
 
   const positionsRef = useRef(positions);
   const selectedSymbolRef = useRef(selectedSymbol);
@@ -2181,7 +2182,7 @@ if (side === 'LONG') {
   const QuickTradeComponent = () => {
     const currentPrice = prices[selectedSymbol] || 
       cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    const minLot = getMinLot(currentPrice); // informational only
+    const minLot = getMinLotSize(prices[selectedSymbol]);
 
     const totalPaperUSD = userAccount.paperBalance / dollarRate;
 
@@ -2300,29 +2301,31 @@ if (side === 'LONG') {
           </div>
         </div>
 */}
-        {/* Order Size Section - renamed, no min/max enforced, no arrows */}
-        <div className="order-size-section">
-          <div className="section-label">
-            Order size in lot (Min recommended: {minLot})
-          </div>
-          <div className="order-size-controls">
-            <input 
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*\.?[0-9]*"
-              value={orderSize}
-              onChange={(e) => {
-                const val = e.target.value;
-                // Allow empty, numbers, and decimal point
-                if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-                  setOrderSize(val === '' ? 0 : parseFloat(val));
-                }
-              }}
-              className="order-size-input"
-              disabled={!canTrade}
-            />
-          </div>
-        </div>
+    {/* Order Size Section - dynamic min lot & smooth typing */}
+<div className="order-size-section">
+  <div className="section-label">
+    Order size in lot (Min recommended: {minLot})
+  </div>
+  <div className="order-size-controls">
+    <input 
+      type="number"
+      step={minLot}
+      min={minLot}
+      value={orderSize}
+      onChange={(e) => {
+        setOrderSize(e.target.value); // keep as string while typing
+      }}
+      onBlur={() => {
+        if (!orderSize || parseFloat(orderSize) < minLot) {
+          setOrderSize(minLot.toString());
+        }
+      }}
+      className="order-size-input"
+      disabled={!canTrade}
+    />
+  </div>
+</div>
+
 
         {/* Challenge Limits */}
         {challenge && (
