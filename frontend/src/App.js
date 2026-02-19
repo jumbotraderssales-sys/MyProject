@@ -2258,6 +2258,7 @@ if (side === 'LONG') {
         </div>
 
         {/* SL/TP Section - Manual input only */}
+{/* Hide stop loss and take profit 
         <div className="sl-tp-section-adjusted" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <div className="sl-section-adjusted" style={{ flex: '1', minWidth: '120px' }}>
             <div className="section-label" style={{ fontSize: '0.8rem' }}>Stop Loss (optional)</div>
@@ -2298,7 +2299,7 @@ if (side === 'LONG') {
             />
           </div>
         </div>
-
+*/}
         {/* Order Size Section - renamed, no min/max enforced, no arrows */}
         <div className="order-size-section">
           <div className="section-label">
