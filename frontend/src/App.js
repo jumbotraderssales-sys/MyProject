@@ -667,7 +667,7 @@ function App() {
   popup_width: '1000',
   popup_height: '650',
   hide_side_toolbar: false,
-});[widgetScriptLoaded, selectedSymbol, timeframe, chartType, chartTheme, activeIndicators, activeDashboard]);
+});
 
   useEffect(() => {
     const generateSignals = () => {
