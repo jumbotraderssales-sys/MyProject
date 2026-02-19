@@ -1441,11 +1441,11 @@ if (side === 'LONG') {
         };
         
      setPositions(prev => [newPosition, ...prev]);
-drawTradeLines(newPosition);
-        setUserAccount(prev => ({
-          ...prev,
-          paperBalance: data.newBalance
-        }));
+       setPositions(prev => {
+  const updated = [newPosition, ...prev];
+  drawTradeLines(newPosition);
+  return updated;
+});
         setBalance(data.newBalance);
         
         const newOrder = {
