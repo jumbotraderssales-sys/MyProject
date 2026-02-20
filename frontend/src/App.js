@@ -234,7 +234,8 @@ function App() {
  const [orderSize, setOrderSize] = useState('');
   const [leverage, setLeverage] = useState(5);
   const [totalPnl, setTotalPnl] = useState(0);
-  const [orderHistory, setOrderHistory] = useState([]);
+    const [orderHistory, setOrderHistory] = useState([]);
+  const orderHistoryRef = useRef(orderHistory);
   const [chartType, setChartType] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
   const [watchlist, setWatchlist] = useState(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
