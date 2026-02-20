@@ -509,7 +509,7 @@ function App() {
     return () => clearInterval(interval);
   }, [carouselImages.length]);
  
- useEffect(() => {
+useEffect(() => {
   if (userAccount.currentChallenge && userAccount.challengeStats) {
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     if (!challenge) return;
@@ -572,16 +572,7 @@ function App() {
     }
   }
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
-
-   const updateChallengeStatus = (status, reason) => {
-    setUserAccount(prev => ({
-      ...prev,
-      challengeStats: {
-        ...prev.challengeStats,
-        status,
-        endReason: reason
-      }
-    }));
+  
     // Update backend
     const token = localStorage.getItem('token');
     if (token) {
