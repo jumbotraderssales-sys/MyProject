@@ -1,4 +1,4 @@
-// server.js - Paper2Real Trading Platform Backend (with MongoDB backup, routes unchanged)
+// server.js - Paper2Real Trading Platform Backend (MongoDB backup, routes unchanged)
 const express = require('express');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -9,6 +9,7 @@ const multer = require('multer');
 const mongoose = require('mongoose');          // <-- ADDED
 const app = express();
 
+// Load environment variables
 dotenv.config();
 
 // ========== MONGODB CONNECTION (only if MONGO_URI exists) ==========
@@ -170,13 +171,27 @@ if (process.env.MONGO_URI) {
 }
 
 // ========== CORS CONFIGURATION ==========
-// ... (keep your exact CORS settings) ...
+app.use(cors({
+  origin: [
+    'https://myproject-frontend1.onrender.com',
+    'https://myproject-admin1.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type']
+}));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ========== FILE PATHS (unchanged) ==========
+// ========== FILE PATHS ==========
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const TRADES_FILE = path.join(__dirname, 'data', 'trades.json');
 const ORDERS_FILE = path.join(__dirname, 'data', 'orders.json');
@@ -187,14 +202,113 @@ const WITHDRAWALS_FILE = path.join(__dirname, 'data', 'withdrawals.json');
 const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 const REFERRALS_FILE = path.join(__dirname, 'data', 'referrals.json');
 
-// ========== CHALLENGE CONFIGURATION (unchanged) ==========
-const CHALLENGES = { ... }; // keep your existing object
+// ========== CHALLENGE CONFIGURATION ==========
+// Original CHALLENGES object – restored exactly as in your original server.js
+const CHALLENGES = {
+  "🚀 Beginner Challenge": {
+    id: 1,
+    fee: "₹1,000",
+    paperBalance: 20000,
+    profitTarget: 10,
+    dailyLossLimit: 4,
+    maxLossLimit: 10,
+    maxOrderSize: 20,
+    maxLeverage: 10,
+    autoStopLossTarget: 10,
+    oneTradeAtTime: true,
+    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    color: "#22c55e"
+  },
+  "🟡 Intermediate Challenge": {
+    id: 2,
+    fee: "₹2,500",
+    paperBalance: 50000,
+    profitTarget: 10,
+    dailyLossLimit: 4,
+    maxLossLimit: 10,
+    maxOrderSize: 20,
+    maxLeverage: 10,
+    autoStopLossTarget: 10,
+    oneTradeAtTime: true,
+    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    color: "#eab308"
+  },
+  "🔴 PRO Challenge": {
+    id: 3,
+    fee: "₹5,000",
+    paperBalance: 100000,
+    profitTarget: 10,
+    dailyLossLimit: 4,
+    maxLossLimit: 10,
+    maxOrderSize: 20,
+    maxLeverage: 10,
+    autoStopLossTarget: 10,
+    oneTradeAtTime: true,
+    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    color: "#ef4444"
+  }
+};
 
-// ========== FILE UPLOAD CONFIGURATION (unchanged) ==========
-// ...
+// ========== FILE UPLOAD CONFIGURATION ==========
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fsSync.existsSync(uploadsDir)) {
+  fsSync.mkdirSync(uploadsDir, { recursive: true });
+}
 
-// ========== CREATE DIRECTORIES (unchanged) ==========
-// ...
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Error: Only images (JPEG, JPG, PNG, GIF) and PDF files are allowed!'));
+    }
+  }
+});
+
+// ========== CREATE DIRECTORIES ==========
+const createDirectories = async () => {
+  const dirs = [
+    path.join(__dirname, 'data'),
+    path.join(__dirname, 'public', 'uploads')
+  ];
+  
+  for (const dir of dirs) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+    } catch (error) {
+      // Directory already exists
+    }
+  }
+};
+
+// Initialize directories
+createDirectories();
+
+// Serve static files
+app.use('/uploads', express.static(uploadsDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    }
+  }
+}));
 
 // ========== HELPER FUNCTIONS – MODIFIED to use MongoDB when available ==========
 const readUsers = async () => {
@@ -497,8 +611,8 @@ const writeReferrals = async (referrals) => {
   }
 };
 
-
-// ========== GENERAL ENDPOINTS ==========
+// ========== ALL YOUR EXISTING ROUTES – UNCHANGED ==========
+// (they all use the helpers above, so they now transparently use MongoDB when connected)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -2896,8 +3010,9 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
-console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
-  console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
+   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log(`✅ Paper2Real Backend with Challenge System & Referral System`);
   console.log('');
   console.log('👥 USER ENDPOINTS:');
