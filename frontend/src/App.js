@@ -574,32 +574,7 @@ useEffect(() => {
   }
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
 
-  // Check challenge rules
-  const checkChallengeRules = () => {
-    if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
-    
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-    if (!challenge) return;
-    
-    // Check daily loss limit
-    if (dailyLoss >= challenge.dailyLossLimit) {
-      alert(`❌ Daily Loss Limit Reached!\n\nYou have reached the daily loss limit of ${challenge.dailyLossLimit}%.\nTrading is blocked for today.`);
-      updateChallengeStatus('failed', 'Daily loss limit exceeded');
-    }
-    
-    // Check max loss limit
-    if (totalLoss >= challenge.maxLossLimit) {
-      alert(`❌ Maximum Loss Limit Reached!\n\nYou have reached the maximum loss limit of ${challenge.maxLossLimit}%.\nChallenge failed.`);
-      updateChallengeStatus('failed', 'Maximum loss limit exceeded');
-    }
-    
-    // Check profit target
-    if (challengeProgress.profit >= challenge.profitTarget) {
-      alert(`🎉 Profit Target Achieved!\n\nCongratulations! You have reached the profit target of ${challenge.profitTarget}%.\nChallenge passed!`);
-      updateChallengeStatus('passed', 'Profit target achieved');
-    }
-  };
-
+  
   const updateChallengeStatus = (status, reason) => {
     setUserAccount(prev => ({
       ...prev,
