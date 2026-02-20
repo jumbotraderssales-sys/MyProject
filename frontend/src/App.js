@@ -571,8 +571,7 @@ useEffect(() => {
       }
     }
   }
-}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
-  
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);  
     // Update backend
     const token = localStorage.getItem('token');
     if (token) {
