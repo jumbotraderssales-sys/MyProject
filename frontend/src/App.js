@@ -509,89 +509,69 @@ function App() {
     return () => clearInterval(interval);
   }, [carouselImages.length]);
  
-  // Calculate daily and total loss
-  useEffect(() => {
-    if (userAccount.currentChallenge && userAccount.challengeStats) {
-      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (!challenge) return;
-
-      // Calculate daily loss from today's trades
-      const today = new Date().toDateString();
-      const todayTrades = orderHistory.filter(order => {
-        const orderDate = new Date(order.timestamp).toDateString();
-        return orderDate === today && order.status === 'CLOSED';
-      });
-      
-      const dailyLossAmount = Math.abs(todayTrades
-        .filter(order => order.pnl < 0)
-        .reduce((sum, order) => sum + order.pnl, 0));
-      
-      const dailyLossPercentage = (dailyLossAmount / userAccount.paperBalance) * 100;
-      setDailyLoss(dailyLossPercentage);
-      
-      // Calculate total loss from all trades
-      const allLosses = orderHistory
-        .filter(order => order.status === 'CLOSED' && order.pnl < 0)
-        .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
-      
-      const totalLossPercentage = (allLosses / userAccount.paperBalance) * 100;
-      setTotalLoss(totalLossPercentage);
-      
-      // Update challenge progress
-      const totalProfit = orderHistory
-        .filter(order => order.status === 'CLOSED' && order.pnl > 0)
-        .reduce((sum, order) => sum + order.pnl, 0);
-      
-      const profitPercentage = (totalProfit / userAccount.paperBalance) * 100;
-      
-      setChallengeProgress({
-        profit: profitPercentage,
-        dailyLoss: dailyLossPercentage,
-        totalLoss: totalLossPercentage,
-        status: userAccount.challengeStats.status
-      });
-      
-      // Check challenge rules
-      checkChallengeRules();
-    }
-  }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
-
-  // Check challenge rules
-  const checkChallengeRules = () => {
-    if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
-    
+ useEffect(() => {
+  if (userAccount.currentChallenge && userAccount.challengeStats) {
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     if (!challenge) return;
-    
-    // Check daily loss limit
-    if (dailyLoss >= challenge.dailyLossLimit) {
-      alert(`❌ Daily Loss Limit Reached!\n\nYou have reached the daily loss limit of ${challenge.dailyLossLimit}%.\nTrading is blocked for today.`);
-      updateChallengeStatus('failed', 'Daily loss limit exceeded');
-    }
-    
-    // Check max loss limit
-    if (totalLoss >= challenge.maxLossLimit) {
-      alert(`❌ Maximum Loss Limit Reached!\n\nYou have reached the maximum loss limit of ${challenge.maxLossLimit}%.\nChallenge failed.`);
-      updateChallengeStatus('failed', 'Maximum loss limit exceeded');
-    }
-    
-    // Check profit target
-    if (challengeProgress.profit >= challenge.profitTarget) {
-      alert(`🎉 Profit Target Achieved!\n\nCongratulations! You have reached the profit target of ${challenge.profitTarget}%.\nChallenge passed!`);
-      updateChallengeStatus('passed', 'Profit target achieved');
-    }
-  };
 
-  const updateChallengeStatus = (status, reason) => {
-    setUserAccount(prev => ({
-      ...prev,
-      challengeStats: {
-        ...prev.challengeStats,
-        status,
-        endReason: reason
-      }
-    }));
+    // Calculate daily loss from today's closed trades
+    const today = new Date().toDateString();
+    const todayTrades = orderHistory.filter(order => {
+      const orderDate = new Date(order.timestamp).toDateString();
+      return orderDate === today && order.status === 'CLOSED';
+    });
     
+    const dailyLossAmount = Math.abs(todayTrades
+      .filter(order => order.pnl < 0)
+      .reduce((sum, order) => sum + order.pnl, 0));
+    
+    const dailyLossPercentage = (dailyLossAmount / userAccount.paperBalance) * 100;
+    setDailyLoss(dailyLossPercentage);
+    
+    // Calculate total loss from all closed trades
+    const allLosses = orderHistory
+      .filter(order => order.status === 'CLOSED' && order.pnl < 0)
+      .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
+    
+    const totalLossPercentage = (allLosses / userAccount.paperBalance) * 100;
+    setTotalLoss(totalLossPercentage);
+    
+    // Calculate total profit from all closed trades
+    const totalProfit = orderHistory
+      .filter(order => order.status === 'CLOSED' && order.pnl > 0)
+      .reduce((sum, order) => sum + order.pnl, 0);
+    
+    const profitPercentage = (totalProfit / userAccount.paperBalance) * 100;
+    
+    setChallengeProgress({
+      profit: profitPercentage,
+      dailyLoss: dailyLossPercentage,
+      totalLoss: totalLossPercentage,
+      status: userAccount.challengeStats.status
+    });
+    
+    // Check rules only if challenge is active
+    if (userAccount.challengeStats.status === 'active') {
+      // Daily loss limit reached → show alert but DO NOT fail challenge
+      if (dailyLossPercentage >= challenge.dailyLossLimit) {
+        alert(`⚠️ Daily Loss Limit Reached!\n\nYou have reached the daily loss limit of ${challenge.dailyLossLimit}%.\nTrading is blocked for today.`);
+        // No status change – challenge remains active
+      }
+      
+      // Max loss limit reached → challenge fails
+      if (totalLossPercentage >= challenge.maxLossLimit) {
+        alert(`❌ Maximum Loss Limit Reached!\n\nYou have reached the maximum loss limit of ${challenge.maxLossLimit}%.\nChallenge failed.`);
+        updateChallengeStatus('failed', 'Maximum loss limit exceeded');
+      }
+      
+      // Profit target achieved → challenge passes
+      if (profitPercentage >= challenge.profitTarget) {
+        alert(`🎉 Profit Target Achieved!\n\nCongratulations! You have reached the profit target of ${challenge.profitTarget}%.\nChallenge passed!`);
+        updateChallengeStatus('passed', 'Profit target achieved');
+      }
+    }
+  }
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
     // Update backend
     const token = localStorage.getItem('token');
     if (token) {
