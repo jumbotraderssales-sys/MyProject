@@ -1,6 +1,7 @@
 type: web
        env: node
     rootDirectory: backend
+MONGO_URI: mongodb+srv://jumbotraderssales_db_user:<0VdOjaaEkTGhzs1k>@paper2real0.dsopqy5.mongodb.net/?appName=Paper2real0
     buildCommand: npm install
     startCommand: npm start
     envVars:
