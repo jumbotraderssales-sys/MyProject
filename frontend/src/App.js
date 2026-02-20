@@ -575,15 +575,7 @@ useEffect(() => {
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
 
   
-  const updateChallengeStatus = (status, reason) => {
-    setUserAccount(prev => ({
-      ...prev,
-      challengeStats: {
-        ...prev.challengeStats,
-        status,
-        endReason: reason
-      }
-    }));
+
     
     // Update backend
     const token = localStorage.getItem('token');
