@@ -572,7 +572,17 @@ useEffect(() => {
     }
   }
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);  
-    // Update backend
+    
+    const updateChallengeStatus = (status, reason) => {
+    setUserAccount(prev => ({
+      ...prev,
+      challengeStats: {
+        ...prev.challengeStats,
+        status,
+        endReason: reason
+      }
+    }));
+  // Update backend
     const token = localStorage.getItem('token');
     if (token) {
       fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
