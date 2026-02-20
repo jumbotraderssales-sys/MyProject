@@ -3370,11 +3370,11 @@ if (side === 'LONG') {
                         <p style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>Your unique referral link:</p>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#2d3748', padding: '10px', borderRadius: '8px' }}>
                           <code style={{ flex: 1, color: '#e2e8f0', fontSize: '0.9rem', wordBreak: 'break-all' }}>
-                            {`${window.location.origin}/register?ref=${referralInfo.referralCode}`}
+                           {`${window.location.origin}/?ref=${referralInfo.referralCode}`}
                           </code>
                           <button 
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/register?ref=${referralInfo.referralCode}`);
+                              navigator.clipboard.writeText(`${window.location.origin}/?ref=${referralInfo.referralCode}`);
                               alert('Referral link copied!');
                             }}
                             style={{ padding: '6px 12px', background: '#4f46e5', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer' }}
