@@ -210,16 +210,5 @@ function App() {
     </Router>
   );
 }
-// ... your API routes ...
-// app.use('/api/admin', adminRoutes);
-
-// SERVE STATIC FILES (Your React build folder)
-app.use(express.static(path.join(__dirname, 'build')));
-
-// THE FIX: Catch-all route
-// Any request that doesn't match an API route gets sent to React
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
 
 export default App;
