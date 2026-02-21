@@ -13,162 +13,168 @@ const app = express();
 dotenv.config();
 
 // ========== MONGODB CONNECTION (only if MONGO_URI exists) ==========
+// ========== MONGODB CONNECTION (hardcoded URI) ==========
 let isMongoConnected = false;
 let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
 
-if (process.env.MONGO_URI) {
-  mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    isMongoConnected = true;
-    console.log('✅ MongoDB connected – data will be backed up');
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection failed, using file storage only', err.message);
-  });
+// Hardcoded MongoDB URI – replace with your actual connection string
+const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
 
-  // Define schemas (mirroring your JSON structure)
-  const userSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    name: String,
-    email: { type: String, unique: true },
-    password: String,
-    realBalance: Number,
-    paperBalance: Number,
-    accountStatus: String,
-    role: String,
-    currentChallenge: String,
-    createdAt: Date,
-    lastLogin: Date,
-    updatedAt: Date,
-    bankAccount: mongoose.Schema.Types.Mixed,
-    challengeStats: mongoose.Schema.Types.Mixed,
-    referralCode: String,
-    referredBy: String,
-    referralCount: Number,
-    referredUsers: [String],
-    referralReward: mongoose.Schema.Types.Mixed
-  });
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: {
+    version: '1',
+    strict: true,
+    deprecationErrors: true,
+  }
+})
+.then(() => {
+  isMongoConnected = true;
+  console.log('✅ MongoDB connected – data will be backed up');
+})
+.catch(err => {
+  console.error('❌ MongoDB connection failed, using file storage only', err.message);
+});
 
-  const tradeSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    userId: String,
-    userName: String,
-    symbol: String,
-    side: String,
-    size: Number,
-    leverage: Number,
-    entryPrice: Number,
-    stopLoss: Number,
-    takeProfit: Number,
-    status: String,
-    positionValue: Number,
-    marginUsed: Number,
-    pnl: Number,
-    currentPrice: Number,
-    exitPrice: Number,
-    closeReason: String,
-    closedAt: Date,
-    createdAt: Date,
-    updatedAt: Date
-  });
+// Define schemas (unchanged – keep the entire block below)
+const userSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  realBalance: Number,
+  paperBalance: Number,
+  accountStatus: String,
+  role: String,
+  currentChallenge: String,
+  createdAt: Date,
+  lastLogin: Date,
+  updatedAt: Date,
+  bankAccount: mongoose.Schema.Types.Mixed,
+  challengeStats: mongoose.Schema.Types.Mixed,
+  referralCode: String,
+  referredBy: String,
+  referralCount: Number,
+  referredUsers: [String],
+  referralReward: mongoose.Schema.Types.Mixed
+});
 
-  const orderSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    userId: String,
-    userName: String,
-    symbol: String,
-    side: String,
-    size: Number,
-    leverage: Number,
-    entryPrice: Number,
-    stopLoss: Number,
-    takeProfit: Number,
-    status: String,
-    currentPrice: Number,
-    positionValue: Number,
-    marginUsed: Number,
-    pnl: Number,
-    exitPrice: Number,
-    exitTime: Date,
-    closeReason: String,
-    timestamp: Date,
-    createdAt: Date,
-    updatedAt: Date
-  });
+const tradeSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  userId: String,
+  userName: String,
+  symbol: String,
+  side: String,
+  size: Number,
+  leverage: Number,
+  entryPrice: Number,
+  stopLoss: Number,
+  takeProfit: Number,
+  status: String,
+  positionValue: Number,
+  marginUsed: Number,
+  pnl: Number,
+  currentPrice: Number,
+  exitPrice: Number,
+  closeReason: String,
+  closedAt: Date,
+  createdAt: Date,
+  updatedAt: Date
+});
 
-  const paymentSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    userId: String,
-    userName: String,
-    userEmail: String,
-    challengeName: String,
-    amount: Number,
-    paymentMethod: String,
-    transactionId: String,
-    status: String,
-    submittedAt: Date,
-    notes: String,
-    receiptUrl: String,
-    processedAt: Date,
-    processedBy: String,
-    adminNotes: String,
-    updatedAt: Date
-  });
+const orderSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  userId: String,
+  userName: String,
+  symbol: String,
+  side: String,
+  size: Number,
+  leverage: Number,
+  entryPrice: Number,
+  stopLoss: Number,
+  takeProfit: Number,
+  status: String,
+  currentPrice: Number,
+  positionValue: Number,
+  marginUsed: Number,
+  pnl: Number,
+  exitPrice: Number,
+  exitTime: Date,
+  closeReason: String,
+  timestamp: Date,
+  createdAt: Date,
+  updatedAt: Date
+});
 
-  const withdrawalSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    userId: String,
-    userName: String,
-    userEmail: String,
-    amount: Number,
-    status: String,
-    bankName: String,
-    accountNumber: String,
-    accountHolderName: String,
-    ifscCode: String,
-    requestedAt: Date,
-    transactionId: String,
-    processedAt: Date,
-    processedBy: String,
-    notes: String,
-    rejectionReason: String
-  });
+const paymentSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  userId: String,
+  userName: String,
+  userEmail: String,
+  challengeName: String,
+  amount: Number,
+  paymentMethod: String,
+  transactionId: String,
+  status: String,
+  submittedAt: Date,
+  notes: String,
+  receiptUrl: String,
+  processedAt: Date,
+  processedBy: String,
+  adminNotes: String,
+  updatedAt: Date
+});
 
-  const referralSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true },
-    referrerId: String,
-    referredId: String,
-    referredName: String,
-    referredEmail: String,
-    createdAt: Date,
-    rewardClaimed: Boolean
-  });
+const withdrawalSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  userId: String,
+  userName: String,
+  userEmail: String,
+  amount: Number,
+  status: String,
+  bankName: String,
+  accountNumber: String,
+  accountHolderName: String,
+  ifscCode: String,
+  requestedAt: Date,
+  transactionId: String,
+  processedAt: Date,
+  processedBy: String,
+  notes: String,
+  rejectionReason: String
+});
 
-  const settingSchema = new mongoose.Schema({
-    upiQrCode: String,
-    upiId: String,
-    merchantName: String,
-    referralTarget: Number,
-    referralRewardName: String,
-    referralRewardAmount: Number,
-    updatedAt: Date,
-    updatedBy: String
-  });
+const referralSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  referrerId: String,
+  referredId: String,
+  referredName: String,
+  referredEmail: String,
+  createdAt: Date,
+  rewardClaimed: Boolean
+});
 
-  // Create models
-  UserModel = mongoose.model('User', userSchema);
-  TradeModel = mongoose.model('Trade', tradeSchema);
-  OrderModel = mongoose.model('Order', orderSchema);
-  PaymentModel = mongoose.model('Payment', paymentSchema);
-  WithdrawalModel = mongoose.model('Withdrawal', withdrawalSchema);
-  ReferralModel = mongoose.model('Referral', referralSchema);
-  SettingModel = mongoose.model('Setting', settingSchema);
-} else {
-  console.log('ℹ️ MONGO_URI not set, using file storage only');
-}
+const settingSchema = new mongoose.Schema({
+  upiQrCode: String,
+  upiId: String,
+  merchantName: String,
+  referralTarget: Number,
+  referralRewardName: String,
+  referralRewardAmount: Number,
+  updatedAt: Date,
+  updatedBy: String
+});
+
+// Create models
+UserModel = mongoose.model('User', userSchema);
+TradeModel = mongoose.model('Trade', tradeSchema);
+OrderModel = mongoose.model('Order', orderSchema);
+PaymentModel = mongoose.model('Payment', paymentSchema);
+WithdrawalModel = mongoose.model('Withdrawal', withdrawalSchema);
+ReferralModel = mongoose.model('Referral', referralSchema);
+SettingModel = mongoose.model('Setting', settingSchema);
+
 
 // ========== CORS CONFIGURATION ==========
 app.use(cors({
