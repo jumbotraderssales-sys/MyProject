@@ -728,45 +728,40 @@ useEffect(() => {
   }
 
  window.tvWidget = new window.TradingView.widget({
-  container_id: 'tradingview-chart-container',
-  width: '100%',
-  height: '100%',
-  symbol: `BINANCE:${selectedSymbol.replace('USDT', '')}USDT`,
-  interval:
-    timeframe === '1D'
-      ? 'D'
-      : timeframe === '1W'
-      ? 'W'
-      : timeframe === '1M'
-      ? 'M'
-      : timeframe,
-  timezone: 'Etc/UTC',
-  theme: chartTheme,
-  style: chartType,                     // keep this
-  locale: 'en',
-  toolbar_bg: '#0a0e17',
-  enable_publishing: false,
-  allow_symbol_change: false,
-  save_image: true,
-  details: true,
-  hotlist: true,
-  calendar: true,
-  studies: activeIndicators,
-  show_popup_button: true,
-  popup_width: '1000',
-  popup_height: '650',
-  hide_side_toolbar: false,
-  onChartReady: function() {            // add this callback
-    window.tvWidget.chart().setChartType(parseInt(chartType));
-  }
-});
-  // 🔴 IMPORTANT: wait and then draw
-  setTimeout(() => {
-    if (positions.length > 0) {
-      drawTradeLines(positions[0]);
+    container_id: 'tradingview-chart-container',
+    width: '100%',
+    height: '100%',
+    symbol: `BINANCE:${selectedSymbol.replace('USDT', '')}USDT`,
+    interval: timeframe === '1D' ? 'D' : timeframe === '1W' ? 'W' : timeframe === '1M' ? 'M' : timeframe,
+    timezone: 'Etc/UTC',
+    theme: chartTheme,
+    style: parseInt(chartType),          // 👈 ensure it's a number
+    locale: 'en',
+    toolbar_bg: '#0a0e17',
+    enable_publishing: false,
+    allow_symbol_change: false,
+    save_image: true,
+    details: true,
+    hotlist: true,
+    calendar: true,
+    studies: activeIndicators,
+    show_popup_button: true,
+    popup_width: '1000',
+    popup_height: '650',
+    hide_side_toolbar: false,
+    onChartReady: function() {
+      // Double‑check chart type once fully loaded
+      setTimeout(() => {
+        if (window.tvWidget && window.tvWidget.chart) {
+          window.tvWidget.chart().setChartType(parseInt(chartType));
+        }
+        // Redraw trade lines
+        if (positions.length > 0) {
+          drawTradeLines(positions[0]);
+        }
+      }, 300);
     }
-  }, 1200);
-
+  });
 }, [
   widgetScriptLoaded,
   selectedSymbol,
@@ -776,7 +771,6 @@ useEffect(() => {
   activeIndicators,
   activeDashboard
 ]);
-
 useEffect(() => {
   if (window.tvWidget && positions.length > 0) {
     drawTradeLines(positions[0]);
