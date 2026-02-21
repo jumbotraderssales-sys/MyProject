@@ -577,3 +577,16 @@
   height: auto;
   object-fit: contain; /* or cover, depending on design */
 }
+.upi-qr-code {
+  width: 300px;
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f0f0;
+}
+.upi-qr-code img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
