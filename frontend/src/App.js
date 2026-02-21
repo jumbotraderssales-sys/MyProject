@@ -13,23 +13,15 @@ import img2 from './data/2.png';
 import img3 from './data/3.png';
 const carouselImages = [img7, img6, img1, img2, img3];
 
-const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
+const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
 
 // Crypto data with details
 const cryptoData = [
   { symbol: 'BTCUSDT', name: 'Bitcoin', price: 91391.5, change24h: 2.34, volume: '42.5B', marketCap: '1.8T', color: '#F7931A' },
   { symbol: 'ETHUSDT', name: 'Ethereum', price: 3850.25, change24h: 1.56, volume: '18.3B', marketCap: '462B', color: '#627EEA' },
-  { symbol: 'SOLUSDT', name: 'Solana', price: 185.42, change24h: 5.23, volume: '3.2B', marketCap: '81B', color: '#00FFA3' },
-  { symbol: 'XRPUSDT', name: 'Ripple', price: 2.15, change24h: 0.89, volume: '1.8B', marketCap: '117B', color: '#23292F' },
-  { symbol: 'ADAUSDT', name: 'Cardano', price: 0.85, change24h: -0.45, volume: '850M', marketCap: '30B', color: '#0033AD' },
-  { symbol: 'DOTUSDT', name: 'Polkadot', price: 35.50, change24h: 1.23, volume: '650M', marketCap: '45B', color: '#E6007A' },
-  { symbol: 'AVAXUSDT', name: 'Avalanche', price: 45.20, change24h: 3.45, volume: '920M', marketCap: '16B', color: '#E84142' },
-  { symbol: 'MATICUSDT', name: 'Polygon', price: 1.25, change24h: -1.23, volume: '520M', marketCap: '12B', color: '#8247E5' },
   { symbol: 'BNBUSDT', name: 'Binance Coin', price: 650.30, change24h: 0.78, volume: '1.2B', marketCap: '100B', color: '#F0B90B' },
-  { symbol: 'DOGEUSDT', name: 'Dogecoin', price: 0.18, change24h: 0.25, volume: '1.1B', marketCap: '26B', color: '#C2A633' },
-  { symbol: 'LTCUSDT', name: 'Litecoin', price: 85.60, change24h: 0.92, volume: '450M', marketCap: '6.3B', color: '#BFBBBB' },
-  { symbol: 'TRXUSDT', name: 'Tron', price: 0.12, change24h: 1.45, volume: '380M', marketCap: '11B', color: '#FF001B' },
+  { symbol: 'SOLUSDT', name: 'Solana', price: 185.42, change24h: 5.23, volume: '3.2B', marketCap: '81B', color: '#00FFA3' },
 ];
 
 // Chart types for TradingView
