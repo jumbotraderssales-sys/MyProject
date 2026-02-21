@@ -2899,6 +2899,25 @@ if (side === 'LONG') {
                 {!isLoggedIn && (
                   <div className="discount-banner">
                     <span>Sign up to start your trading journey</span>
+                  <button
+      className="register-cta-btn"
+      onClick={() => {
+        setPendingChallengePurchase(false);
+        setShowRegister(true);
+      }}
+      style={{
+        marginTop: '10px',
+        padding: '8px 16px',
+        background: '#3b82f6',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold'
+      }}
+    >
+      Register Now
+    </button>
                   </div>
                 )}
                 {isLoggedIn && !userAccount.currentChallenge && (
