@@ -2958,7 +2958,7 @@ if (side === 'LONG') {
     right: '20px'
   }}>
     <a
-      href="/app/paper2real.apk"
+      href="/paper2real.apk"
       download
       style={{
         display: 'inline-flex',
