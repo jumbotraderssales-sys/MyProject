@@ -212,7 +212,7 @@ body {
   .carousel-slide.active {
     opacity: 1;
   }
-
+}
 /* Optional: Add a dark overlay for better text visibility if you plan to put text on images */
 .carousel-slide::after {
   content: '';
