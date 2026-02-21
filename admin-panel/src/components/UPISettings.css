@@ -571,3 +571,9 @@
     min-width: auto;
   }
 }
+.upi-qr-code img,
+.qr-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain; /* or cover, depending on design */
+}
