@@ -235,7 +235,7 @@ body {
 /* ============================================================================
    CHALLENGES PAGE STYLES
    ============================================================================ */
-<style>{`
+
   .challenges-carousel .carousel-slide {
     background-size: contain !important;
     background-repeat: no-repeat !important;
