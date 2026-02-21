@@ -5300,6 +5300,8 @@ const handleInstallClick = async () => {
           >
             ✕
           </button>
-        </div>
-      )}
+         </div>  {/* ← This must be the closing tag of the main div */}
+  );
+}
+
 export default App;
