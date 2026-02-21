@@ -2947,33 +2947,67 @@ if (side === 'LONG') {
     />
   ))}
 </div>
-              <div className="challenges-hero">
-                <h1>🚀 Paper2Real Trading Challenges</h1>
-                <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
-                {!isLoggedIn && (
-                  <div className="discount-banner">
-                    <span>Sign up to start your trading journey</span>
-                  <button
-      className="register-cta-btn"
-      onClick={() => {
-        setPendingChallengePurchase(false);
-        setShowRegister(true);
-      }}
+<div className="challenges-hero" style={{ position: 'relative' }}>
+  <h1>🚀 Paper2Real Trading Challenges</h1>
+  <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
+  
+  {/* Download App Button */}
+  <div style={{
+    position: 'absolute',
+    top: '20px',
+    right: '20px'
+  }}>
+    <a
+      href="/app/paper2real.apk"
+      download
       style={{
-        marginTop: '10px',
-        padding: '8px 16px',
-        background: '#3b82f6',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '10px 18px',
+        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
         color: 'white',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold'
+        borderRadius: '8px',
+        textDecoration: 'none',
+        fontWeight: '600',
+        fontSize: '0.9rem',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+        transition: 'all 0.2s',
+        cursor: 'pointer'
       }}
+      onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+      onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
     >
-      Register Now
-    </button>
-                  </div>
-                )}
+      <span style={{ fontSize: '1.2rem' }}>📱</span>
+      Download App
+    </a>
+  </div>
+
+  {!isLoggedIn && (
+    <div className="discount-banner">
+      <span>Sign up to start your trading journey</span>
+      <button
+        className="register-cta-btn"
+        onClick={() => {
+          setPendingChallengePurchase(false);
+          setShowRegister(true);
+        }}
+        style={{
+          marginTop: '10px',
+          padding: '8px 16px',
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+      >
+        Register Now
+      </button>
+    </div>
+  )}
+</div>
                 {isLoggedIn && !userAccount.currentChallenge && (
                   <div className="no-challenge-banner">
                     <span>⚠️ Purchase a challenge to start trading</span>
