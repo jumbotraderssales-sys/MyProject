@@ -2645,6 +2645,14 @@ if (side === 'LONG') {
                         <span className="nav-balance-dollar">
                           (${calculateDollarBalance(userAccount.paperBalance || 0)})
                         </span>
+                 {/* Refresh button added here */}
+        <button 
+          className="refresh-balance-btn" 
+          onClick={syncUserWallet} 
+          title="Refresh balance"
+        >
+          🔄
+        </button>
                       </div>
                       {userAccount.currentChallenge && (
                         <div className="nav-challenge-status">
