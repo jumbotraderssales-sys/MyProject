@@ -1047,10 +1047,24 @@ useEffect(() => {
         const uploadedQrUrl = data.qrCodeUrl; // URL of the uploaded image
 
         if (uploadedQrUrl) {
-          // Use the uploaded QR image
-          setUpiQrCode(uploadedQrUrl);
+          // Test if the image is accessible (HEAD request)
+          try {
+            const imgCheck = await fetch(uploadedQrUrl, { method: 'HEAD' });
+            if (imgCheck.ok) {
+              setUpiQrCode(uploadedQrUrl);
+            } else {
+              // Fallback to dynamic generation
+              throw new Error('Image not accessible');
+            }
+          } catch {
+            // Generate dynamic QR using the same UPI details
+            const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
+            const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
+            const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
+            setUpiQrCode(generatedQrUrl);
+          }
         } else {
-          // Generate dynamic QR code using external API
+          // No uploaded image, generate dynamic QR
           const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
           const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
           const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
@@ -1065,7 +1079,7 @@ useEffect(() => {
     console.log('Using fallback UPI settings:', error);
   }
 
-  // Fallback to dynamic generation with defaults
+  // Ultimate fallback (defaults)
   const defaultUpiId = '7799191208-2@ybl';
   const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
   const upiString = `upi://pay?pa=${encodeURIComponent(defaultUpiId)}&pn=Paper2Real Trading&am=${amount}&cu=INR&tn=Paper2Real Payment`;
