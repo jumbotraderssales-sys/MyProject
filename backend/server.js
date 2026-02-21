@@ -21,8 +21,6 @@ let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralMo
 const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
 
 mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverApi: {
     version: '1',
     strict: true,
