@@ -669,32 +669,33 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
     setChartHorizontalLines(lines);
   }, [positions, selectedSymbol]);
 
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn');
-    const token = localStorage.getItem('token');
-    const userDataStr = localStorage.getItem('userData');
-    const paymentsStr = localStorage.getItem('userPayments');
-    
-    if (loggedIn === 'true' && token && userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      setIsLoggedIn(true);
-      setUserAccount(userData);
-      setBalance(userData.paperBalance || 0);
-      setEquity(userData.paperBalance || 0);
-      
-      if (paymentsStr) {
-        try {
-          const savedPayments = JSON.parse(paymentsStr);
-          setPayments(savedPayments);
-          calculatePaymentStats(savedPayments);
-        } catch (e) {
-          console.error('Error parsing saved payments:', e);
-        }
+ useEffect(() => {
+  const loggedIn = localStorage.getItem('isLoggedIn');
+  const token = localStorage.getItem('token');
+  const userDataStr = localStorage.getItem('userData');
+  const paymentsStr = localStorage.getItem('userPayments');
+
+  if (loggedIn === 'true' && token && userDataStr) {
+    const userData = JSON.parse(userDataStr);
+    setIsLoggedIn(true);
+    setUserAccount(userData);
+    setBalance(userData.paperBalance || 0);
+    setEquity(userData.paperBalance || 0);
+
+    if (paymentsStr) {
+      try {
+        const savedPayments = JSON.parse(paymentsStr);
+        setPayments(savedPayments);
+        calculatePaymentStats(savedPayments);
+      } catch (e) {
+        console.error('Error parsing saved payments:', e);
       }
-      
-      loadUserData(token);
     }
-  }, []);
+
+    loadUserData(token);
+    syncUserWallet();  // 👈 add this line to refresh profile from backend
+  }
+}, []);
 
   useEffect(() => {
     const initialPrices = {};
@@ -961,38 +962,38 @@ useEffect(() => {
     setPaymentStats(stats);
   };
 
-  const syncUserWallet = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      
-      const response = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setUserAccount(prev => ({
-            ...prev,
-            realBalance: data.user.realBalance,
-            paperBalance: data.user.paperBalance,
-            currentChallenge: data.user.currentChallenge
-          }));
-          
-          setBalance(data.user.paperBalance);
-          setEquity(data.user.paperBalance + totalPnl);
-          
-          localStorage.setItem('userData', JSON.stringify(data.user));
-          
-          console.log('Wallet synced:', data.user.paperBalance);
-        }
+const syncUserWallet = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const response = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    } catch (error) {
-      console.error('Error syncing wallet:', error);
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        // Merge the backend user data into the current userAccount state
+        setUserAccount(prev => ({
+          ...prev,
+          ...data.user        // replaces all fields with latest backend data
+        }));
+
+        setBalance(data.user.paperBalance);
+        setEquity(data.user.paperBalance + totalPnl);
+
+        // Update localStorage
+        localStorage.setItem('userData', JSON.stringify(data.user));
+
+        console.log('Wallet synced – full user profile updated');
+      }
     }
-  };
+  } catch (error) {
+    console.error('Error syncing wallet:', error);
+  }
+};
 
   const loadUserPayments = async () => {
     if (!isLoggedIn) return;
