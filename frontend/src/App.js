@@ -2858,17 +2858,71 @@ if (side === 'LONG') {
           {activeDashboard === 'Challenges' ? (
             <div className="challenges-content">
               {/* Carousel */}
-              <div className="challenges-carousel">
-  {carouselImages.map((img, index) => (
-    <div
-      key={index}
-      className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
-      style={{ backgroundImage: `url(${img})` }}
-    ></div>
-  ))}
+              <div style={{ position: 'relative' }}>
+  <div className="challenges-carousel">
+    {carouselImages.map((img, index) => (
+      <div
+        key={index}
+        className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
+        style={{ backgroundImage: `url(${img})` }}
+      ></div>
+    ))}
+  </div>
+
+  {/* Previous button */}
+  <button
+    onClick={() => setCurrentSlide(prev => (prev === 0 ? carouselImages.length - 1 : prev - 1))}
+    style={{
+      position: 'absolute',
+      top: '50%',
+      left: '10px',
+      transform: 'translateY(-50%)',
+      background: 'rgba(0,0,0,0.5)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '40px',
+      height: '40px',
+      fontSize: '20px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10
+    }}
+    aria-label="Previous slide"
+  >
+    ❮
+  </button>
+
+  {/* Next button */}
+  <button
+    onClick={() => setCurrentSlide(prev => (prev === carouselImages.length - 1 ? 0 : prev + 1))}
+    style={{
+      position: 'absolute',
+      top: '50%',
+      right: '10px',
+      transform: 'translateY(-50%)',
+      background: 'rgba(0,0,0,0.5)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '40px',
+      height: '40px',
+      fontSize: '20px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10
+    }}
+    aria-label="Next slide"
+  >
+    ❯
+  </button>
 </div>
 
-{/* Manual navigation dots */}
+{/* Manual navigation dots (unchanged) */}
 <div style={{
   display: 'flex',
   justifyContent: 'center',
