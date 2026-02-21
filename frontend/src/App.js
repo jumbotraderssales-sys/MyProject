@@ -5235,7 +5235,7 @@ const handleInstallClick = async () => {
         </div>
       )}
 
-      {/* Floating Chart Button - Draggable */}
+        {/* Floating Chart Button - Draggable */}
       <div
         ref={buttonRef}
         className="floating-chart-btn"
@@ -5285,22 +5285,25 @@ const handleInstallClick = async () => {
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); setShowInstallButton(false); }}
-           style={{
-        background: 'rgba(255,255,255,0.3)',
-        border: 'none',
-        color: 'white',
-        borderRadius: '50%',
-        width: '24px',
-        height: '24px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      ✕
-    </button>
-  </div>
-)}
+            style={{
+              background: 'rgba(255,255,255,0.3)',
+              border: 'none',
+              color: 'white',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>  {/* ← This closes the main <div className="advanced-app"> */}
+  );
+}
 
 export default App;
