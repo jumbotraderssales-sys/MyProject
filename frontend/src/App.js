@@ -2295,16 +2295,16 @@ if (side === 'LONG') {
     return pnl;
   };
 
-  const calculateOrderPnL = (order) => {
-    if (order.status === 'CLOSED' || order.status === 'CANCELLED') {
-      return order.pnl || 0;
-    } else {
-      const currentPrice = prices[order.symbol] || order.entryPrice;
-      const pnl = (currentPrice - order.entryPrice) * order.size * order.leverage * 
-                  (order.side === 'LONG' ? 1 : -1);
-      return pnl;
-    }
-  };
+ const calculateOrderPnL = (order) => {
+  if (order.status?.toUpperCase() === 'CLOSED' || order.status?.toUpperCase() === 'CANCELLED') {
+    return order.pnl || 0;
+  } else {
+    const currentPrice = prices[order.symbol] || order.entryPrice;
+    const pnl = (currentPrice - order.entryPrice) * order.size * order.leverage * 
+                (order.side === 'LONG' ? 1 : -1);
+    return pnl;
+  }
+};
 
   const calculateSLAmount = (order) => {
     if (!order.stopLoss) return 'N/A';
