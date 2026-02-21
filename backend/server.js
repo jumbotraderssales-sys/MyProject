@@ -2364,12 +2364,15 @@ app.get('/api/withdrawals/history', async (req, res) => {
 const requireAdmin = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
+    console.log('Admin auth token:', token);
     if (!token) {
       return res.status(401).json({ success: false, error: 'No token provided' });
     }
     const userId = token.replace('token-', '');
+    console.log('User ID extracted:', userId);
     const users = await readUsers();
     const user = users.find(u => u.id === userId);
+    console.log('User found:', user ? user.email : 'not found');
     if (!user || user.role !== 'admin') {
       return res.status(403).json({ success: false, error: 'Admin access required' });
     }
