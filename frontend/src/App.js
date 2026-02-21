@@ -3007,7 +3007,7 @@ if (side === 'LONG') {
       </button>
     </div>
   )}
-</div>
+
                 {isLoggedIn && !userAccount.currentChallenge && (
                   <div className="no-challenge-banner">
                     <span>⚠️ Purchase a challenge to start trading</span>
