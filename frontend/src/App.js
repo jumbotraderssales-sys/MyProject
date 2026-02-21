@@ -1035,41 +1035,44 @@ useEffect(() => {
     }
   };
 
-  const loadUpiQrCode = async () => {
-    try {
-      const response = await fetch('https://myproject1-d097.onrender.com/api/upi-qr');
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success) {
-          const upiId = data.upiId || '7799191208-2@ybl';
-          const merchantName = data.merchantName || 'Paper2Real Trading';
-          
+ const loadUpiQrCode = async () => {
+  try {
+    // Add timestamp to avoid caching
+    const response = await fetch('https://myproject1-d097.onrender.com/api/upi-qr?t=' + Date.now());
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        const upiId = data.upiId || '7799191208-2@ybl';
+        const merchantName = data.merchantName || 'Paper2Real Trading';
+        const uploadedQrUrl = data.qrCodeUrl; // URL of the uploaded image
+
+        if (uploadedQrUrl) {
+          // Use the uploaded QR image
+          setUpiQrCode(uploadedQrUrl);
+        } else {
+          // Generate dynamic QR code using external API
           const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
           const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
-          const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
-          
-          setUpiQrCode(qrCodeUrl);
-          setUpiSettings({ upiId, merchantName });
-          return;
+          const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
+          setUpiQrCode(generatedQrUrl);
         }
+
+        setUpiSettings({ upiId, merchantName });
+        return;
       }
-    } catch (error) {
-      console.log('Using fallback UPI settings:', error);
     }
-    
-    const defaultUpiId = '7799191208-2@ybl';
-    const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
-    const upiString = `upi://pay?pa=${encodeURIComponent(defaultUpiId)}&pn=Paper2Real Trading&am=${amount}&cu=INR&tn=Paper2Real Payment`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiString)}`;
-    
-    setUpiSettings({
-      upiId: defaultUpiId,
-      merchantName: 'Paper2Real Trading'
-    });
-    setUpiQrCode(qrCodeUrl);
-  };
+  } catch (error) {
+    console.log('Using fallback UPI settings:', error);
+  }
+
+  // Fallback to dynamic generation with defaults
+  const defaultUpiId = '7799191208-2@ybl';
+  const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
+  const upiString = `upi://pay?pa=${encodeURIComponent(defaultUpiId)}&pn=Paper2Real Trading&am=${amount}&cu=INR&tn=Paper2Real Payment`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
+  setUpiSettings({ upiId: defaultUpiId, merchantName: 'Paper2Real Trading' });
+  setUpiQrCode(qrCodeUrl);
+};
 
   const addNewPayment = (paymentData) => {
     const newPayment = {
