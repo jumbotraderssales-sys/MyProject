@@ -1048,7 +1048,7 @@ useEffect(() => {
           
           const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
           const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
-          const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiString)}`;
+          const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
           
           setUpiQrCode(qrCodeUrl);
           setUpiSettings({ upiId, merchantName });
