@@ -145,8 +145,10 @@ const UPISettings = () => {
         console.log('Upload response:', response);
         
         if (response.success) {
-          setMessage({ 
-            type: 'success', 
+       setMessage({ 
+  type: 'success', 
+  text: 'UPI settings and QR code saved successfully!' 
+});
         // Build the correct preview URL
 let qrUrl = null;
 if (response.settings.qrCodeUrl) {
