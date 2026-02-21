@@ -6393,7 +6393,7 @@ html, body {
   -moz-appearance: textfield;
 }
 .upi-qr-code {
-  width: 400px;        /* or 300px, but 400px is more scannable */
+  width: 400px;
   height: 400px;
   display: flex;
   justify-content: center;
@@ -6403,14 +6403,10 @@ html, body {
   border-radius: 8px;
   overflow: hidden;
 }
-
 .upi-qr-code img {
   max-width: 100%;
   max-height: 100%;
-  width: auto;
-  height: auto;
   object-fit: contain;
 }
-
 
 /* End of CSS */
