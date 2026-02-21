@@ -6,12 +6,12 @@ import WithdrawalRequest from './components/WithdrawalRequest';
 import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
 import WithdrawalHistory from './components/WithdrawalHistory';
 import './App.css';
-import img1 from './data/01.png';
-import img2 from './data/02.png';
+import img1 from './data/4.png';
+import img2 from './data/5.png';
 import img1 from './data/1.png';
 import img2 from './data/2.png';
 import img3 from './data/3.png';
-const carouselImages = [img01, img02, img1, img2, img3];
+const carouselImages = [img4, img5, img1, img2, img3];
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
