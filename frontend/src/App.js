@@ -5301,8 +5301,8 @@ const handleInstallClick = async () => {
             ✕
           </button>
         </div>
-      )}
-    </div>  {/* ← This closes the main <div className="advanced-app"> */}
+   )}
+    </div>
   );
 }
 
