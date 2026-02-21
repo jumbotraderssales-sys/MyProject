@@ -3003,7 +3003,7 @@ const handleInstallClick = async () => {
   <h1>🚀 Paper2Real Trading Challenges</h1>
   <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
   
-  {/* Download App Button - hidden for now */}
+{/* Download App Button - hidden for now */}
 {false && (
   <div style={{
     position: 'absolute',
@@ -3035,6 +3035,7 @@ const handleInstallClick = async () => {
       Download App
     </a>
   </div>
+)}
 
   {!isLoggedIn && (
     <div className="discount-banner">
