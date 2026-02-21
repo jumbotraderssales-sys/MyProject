@@ -182,7 +182,7 @@ function App() {
                   <div className="content-area">
                     <Suspense fallback={<Loading />}>
                       <Routes>
-                        <Route path="/" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
+                        <Route index element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<DashboardPage systemStats={systemStats} loading={loading} />} />
                         <Route path="/dashboard-alt" element={<Dashboard systemStats={systemStats} loading={loading} />} />
                         <Route path="/users" element={<UsersPage />} />
