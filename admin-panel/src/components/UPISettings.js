@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import adminApi from '../services/api'; // Import the adminApi service
 import './UPISettings.css';
 
@@ -15,7 +15,7 @@ const UPISettings = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [imageError, setImageError] = useState(false);
-
+ const hasAttemptedReload = useRef(false);   // 👈 new ref
   // Fetch current UPI settings using adminApi
   const fetchUPISettings = async () => {
     try {
@@ -29,6 +29,7 @@ const UPISettings = () => {
       
       if (response.success) {
         const serverSettings = response.settings;
+        
         
         // Build QR code URL properly
         let qrUrl = null;
@@ -225,12 +226,33 @@ const UPISettings = () => {
   };
 
   // Handle image load error
+ 
   const handleImageError = () => {
     console.log('QR code image failed to load');
     setImageError(true);
-    // Try to get the QR code from server again
-    fetchUPISettings();
+    // Only reload once per image error cycle
+    if (!hasAttemptedReload.current) {
+      hasAttemptedReload.current = true;
+      fetchUPISettings();      // Try to get the QR code from server again
+    }
   };
+
+  const handleImageLoad = () => {
+    console.log('QR code image loaded successfully');
+    setImageError(false);
+    // Reset the flag so future errors can trigger a reload
+    hasAttemptedReload.current = false;
+  };
+
+  // In the JSX, update the img tag:
+  <img 
+    src={previewUrl} 
+    alt="UPI QR Code" 
+    className="qr-image"
+    onError={handleImageError}
+    onLoad={handleImageLoad}     // 👈 add onLoad
+    // remove crossOrigin if it's not needed
+  />
 
   // Clear QR code
   const clearQrCode = async () => {
