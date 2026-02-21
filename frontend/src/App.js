@@ -1046,17 +1046,22 @@ useEffect(() => {
         const merchantName = data.merchantName || 'Paper2Real Trading';
         const uploadedQrUrl = data.qrCodeUrl; // URL of the uploaded image
 
-        if (uploadedQrUrl) {
-          // Test if the image is accessible (HEAD request)
-          try {
-            const imgCheck = await fetch(uploadedQrUrl, { method: 'HEAD' });
-            if (imgCheck.ok) {
-              setUpiQrCode(uploadedQrUrl);
-            } else {
-              // Fallback to dynamic generation
-              throw new Error('Image not accessible');
-            }
-          } catch {
+      if (uploadedQrUrl) {
+  // Build the full URL pointing to the backend
+  const baseURL = 'https://myproject1-d097.onrender.com'; // Your backend
+  const fullImageUrl = uploadedQrUrl.startsWith('http') 
+    ? uploadedQrUrl 
+    : `${baseURL}${uploadedQrUrl}`;
+  
+  // Test if the image is accessible
+  try {
+    const imgCheck = await fetch(fullImageUrl, { method: 'HEAD' });
+    if (imgCheck.ok) {
+      setUpiQrCode(fullImageUrl);
+    } else {
+      throw new Error('Image not accessible');
+    }
+  } catch {
             // Generate dynamic QR using the same UPI details
             const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
             const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
