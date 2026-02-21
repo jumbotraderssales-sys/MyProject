@@ -147,16 +147,27 @@ const UPISettings = () => {
         if (response.success) {
           setMessage({ 
             type: 'success', 
-            text: 'UPI settings and QR code saved successfully!' 
-          });
-          
-          // Update local settings
-          setSettings({
-            upiId: response.settings.upiId,
-            merchantName: response.settings.merchantName,
-            qrCodeUrl: response.settings.qrCodeUrl,
-            upiQrCode: response.settings.upiQrCode
-          });
+        // Build the correct preview URL
+let qrUrl = null;
+if (response.settings.qrCodeUrl) {
+  qrUrl = response.settings.qrCodeUrl; // use as‑is if already full
+} else if (response.settings.upiQrCode) {
+  // Construct from filename – adjust base URL if needed
+  const baseURL = process.env.REACT_APP_API_URL || '';
+  qrUrl = `${baseURL}/uploads/${response.settings.upiQrCode}`;
+}
+
+setSettings({
+  upiId: response.settings.upiId,
+  merchantName: response.settings.merchantName,
+  qrCodeUrl: qrUrl,
+  upiQrCode: response.settings.upiQrCode
+});
+
+setPreviewUrl(qrUrl);
+setImageError(false);
+setQrCodeFile(null);
+document.getElementById('qrCodeFile').value = '';
           
           // Update preview URL from server response
           if (response.settings.qrCodeUrl) {
