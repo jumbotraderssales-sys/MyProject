@@ -5285,23 +5285,22 @@ const handleInstallClick = async () => {
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); setShowInstallButton(false); }}
-            style={{
-              background: 'rgba(255,255,255,0.3)',
-              border: 'none',
-              color: 'white',
-              borderRadius: '50%',
-              width: '24px',
-              height: '24px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ✕
-          </button>
-         </div>  {/* ← This must be the closing tag of the main div */}
-  );
-}
+           style={{
+        background: 'rgba(255,255,255,0.3)',
+        border: 'none',
+        color: 'white',
+        borderRadius: '50%',
+        width: '24px',
+        height: '24px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      ✕
+    </button>
+  </div>
+)}
 
 export default App;
