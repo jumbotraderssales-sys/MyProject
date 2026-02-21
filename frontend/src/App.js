@@ -332,6 +332,9 @@ function App() {
   const [referralInfo, setReferralInfo] = useState(null);
   const [referralSettings, setReferralSettings] = useState({ target: 20, rewardName: 'Beginner Challenge', rewardAmount: 20000 });
   const [referralCodeFromUrl, setReferralCodeFromUrl] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+const [showInstallButton, setShowInstallButton] = useState(false);
+const [isAppInstalled, setIsAppInstalled] = useState(false);
 
   // Draggable button state
   const [buttonPos, setButtonPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
@@ -896,7 +899,43 @@ useEffect(() => {
       window.removeEventListener('touchend', handleDragEnd);
     };
   }, [isDragging]);
+// Listen for beforeinstallprompt event
+useEffect(() => {
+  // Check if app is already installed via display mode
+  const checkIfInstalled = () => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsAppInstalled(true);
+    }
+  };
+  
+  checkIfInstalled();
 
+  const handleBeforeInstallPrompt = (e) => {
+    // Prevent Chrome 67+ from automatically showing the prompt
+    e.preventDefault();
+    // Stash the event so it can be triggered later
+    setDeferredPrompt(e);
+    // Show your custom install button
+    setShowInstallButton(true);
+    console.log('beforeinstallprompt fired - app is installable');
+  };
+
+  const handleAppInstalled = () => {
+    // Hide the install button
+    setShowInstallButton(false);
+    setDeferredPrompt(null);
+    setIsAppInstalled(true);
+    console.log('PWA was installed');
+  };
+
+  window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  window.addEventListener('appinstalled', handleAppInstalled);
+
+  return () => {
+    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.removeEventListener('appinstalled', handleAppInstalled);
+  };
+}, []);
   const calculatePaymentStats = (paymentsList = payments) => {
     const stats = {
       total: paymentsList.length,
@@ -1623,7 +1662,20 @@ if (side === 'LONG') {
       }, 500);
     }
   };
-
+const handleInstallClick = async () => {
+  if (!deferredPrompt) return;
+  
+  // Show the install prompt
+  deferredPrompt.prompt();
+  
+  // Wait for the user to respond to the prompt
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`User response to install prompt: ${outcome}`);
+  
+  // We've used the prompt, so clear it
+  setDeferredPrompt(null);
+  setShowInstallButton(false);
+};
   const handleCancelOrder = async (orderId) => {
     const confirmCancel = window.confirm('Are you sure you want to cancel this order?');
     if (!confirmCancel) return;
@@ -5207,9 +5259,47 @@ if (side === 'LONG') {
         📊
         <span className="tooltip">Chat on Telegram</span>
       </div>
-
-    </div>
-  );
-}
-
+      {/* PWA Install Popup */}
+      {showInstallButton && !isAppInstalled && (
+        <div className="install-pwa-popup" style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '50px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          cursor: 'pointer'
+        }}
+        onClick={handleInstallClick}>
+          <span style={{ fontSize: '24px' }}>📱</span>
+          <div>
+            <strong>Install Paper2Real App</strong>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>Add to home screen for easy access</div>
+          </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setShowInstallButton(false); }}
+            style={{
+              background: 'rgba(255,255,255,0.3)',
+              border: 'none',
+              color: 'white',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 export default App;
