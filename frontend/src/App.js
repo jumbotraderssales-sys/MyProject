@@ -2859,14 +2859,40 @@ if (side === 'LONG') {
             <div className="challenges-content">
               {/* Carousel */}
               <div className="challenges-carousel">
-                {carouselImages.map((img, index) => (
-                  <div
-                    key={index}
-                    className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
-                    style={{ backgroundImage: `url(${img})` }}
-                  ></div>
-                ))}
-              </div>
+  {carouselImages.map((img, index) => (
+    <div
+      key={index}
+      className={`carousel-slide ${index === currentSlide ? 'active' : ''}`}
+      style={{ backgroundImage: `url(${img})` }}
+    ></div>
+  ))}
+</div>
+
+{/* Manual navigation dots */}
+<div style={{
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '10px',
+  marginTop: '10px'
+}}>
+  {carouselImages.map((_, index) => (
+    <button
+      key={index}
+      onClick={() => setCurrentSlide(index)}
+      style={{
+        width: '12px',
+        height: '12px',
+        borderRadius: '50%',
+        border: 'none',
+        background: index === currentSlide ? '#3b82f6' : '#94a3b8',
+        cursor: 'pointer',
+        padding: 0,
+        transition: 'background 0.2s'
+      }}
+      aria-label={`Go to slide ${index + 1}`}
+    />
+  ))}
+</div>
               <div className="challenges-hero">
                 <h1>🚀 Paper2Real Trading Challenges</h1>
                 <p className="challenges-subtitle">Learn Trading without Losing Real Money</p>
