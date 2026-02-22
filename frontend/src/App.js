@@ -3213,30 +3213,33 @@ const handleInstallClick = async () => {
                 </div>
               </div>
             </div>
-          ) : activeDashboard === 'Market' ? (
-            <div className="market-content">
-              <div className="market-header">
-                <h2>Cryptocurrency Market</h2>
-                <div className="market-search">
-                  <input 
-                    type="text"
-                    placeholder="Search cryptocurrencies..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="market-search-input"
-                  />
-                  <div className="market-filters">
-                    <button className="market-filter-btn active">All</button>
-                    <button className="market-filter-btn">Gainers</button>
-                    <button className="market-filter-btn">Losers</button>
-                    <button className="market-filter-btn">Volume</button>
-                  </div>
-                </div>
-              </div>
+          ) : 
+            activeDashboard === 'Market' ? (
+  <div className="market-page">
+    <div className="market-content">
+      
+      <div className="market-header">
+        <h2>Cryptocurrency Market</h2>
+        <div className="market-search">
+          <input 
+            type="text"
+            placeholder="Search cryptocurrencies..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="market-search-input"
+          />
+          <div className="market-filters">
+            <button className="market-filter-btn active">All</button>
+            <button className="market-filter-btn">Gainers</button>
+            <button className="market-filter-btn">Losers</button>
+            <button className="market-filter-btn">Volume</button>
+          </div>
+        </div>
+      </div>
 
-              <div className="market-table-container">
-                <table className="market-table">
-                  <thead>
+      <div className="market-table-container">
+        <table className="market-table">
+            <thead>
                     <tr>
                       <th></th>
                       <th>Name</th>
