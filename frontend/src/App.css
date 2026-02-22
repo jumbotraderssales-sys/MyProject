@@ -6413,5 +6413,16 @@ html, body {
   background-repeat: no-repeat !important;
   background-position: center !important;
 }
-
+.pnl-indicator {
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.3);
+}
+.pnl-indicator.positive {
+  color: #4caf50;
+}
+.pnl-indicator.negative {
+  color: #f44336;
+}
 /* End of CSS */
