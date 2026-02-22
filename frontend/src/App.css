@@ -6475,54 +6475,94 @@ html, body {
     flex-wrap: wrap;
   }
 }
-/* Mobile Market Page Fixes */
+/* Mobile Market Table – compact layout */
 @media (max-width: 768px) {
-  /* Hide Market Cap and 24h Volume columns */
-  .market-table th:nth-child(5),
-  .market-table td:nth-child(5),
-  .market-table th:nth-child(6),
-  .market-table td:nth-child(6) {
-    display: none;
-  }
-
-  /* Make table container scrollable only if needed */
   .market-table-container {
     width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden; /* prevent any accidental horizontal scroll */
   }
 
-  /* Ensure the table itself does not exceed container width */
   .market-table {
     width: 100%;
-    min-width: 600px; /* adjust based on remaining columns */
+    table-layout: fixed; /* helps control column widths */
+    font-size: 12px;
   }
 
-  /* Optional: reduce padding on remaining cells */
   .market-table th,
   .market-table td {
-    padding: 8px 6px;
-    white-space: nowrap;
+    padding: 6px 3px;    /* reduce padding */
+    text-align: center;
+    word-break: break-word; /* allow long text to wrap */
   }
 
-  /* Fix any other overflowing elements */
-  .market-content {
-    width: 100%;
-    max-width: 100vw;
-    overflow-x: hidden;
-    padding-left: 10px;
-    padding-right: 10px;
-    box-sizing: border-box;
+  /* Make the watchlist star column narrower */
+  .market-table th:first-child,
+  .market-table td:first-child {
+    width: 30px;
+    padding-left: 2px;
+    padding-right: 2px;
   }
 
-  /* Signals panel adjustment */
-  .trading-signals-panel {
-    width: 100%;
-    overflow-x: auto;
+  /* Adjust column widths for remaining columns */
+  .market-table th:nth-child(2), /* Name */
+  .market-table td:nth-child(2) {
+    width: 80px;
   }
 
-  .signals-list {
-    min-width: 500px; /* ensures signals scroll horizontally if too many */
+  .market-table th:nth-child(3), /* Price */
+  .market-table td:nth-child(3) {
+    width: 70px;
+  }
+
+  .market-table th:nth-child(4), /* 24h Change */
+  .market-table td:nth-child(4) {
+    width: 60px;
+  }
+
+  .market-table th:nth-child(5), /* 24h Volume */
+  .market-table td:nth-child(5) {
+    width: 70px;
+  }
+
+  .market-table th:nth-child(6), /* Market Cap */
+  .market-table td:nth-child(6) {
+    width: 70px;
+  }
+
+  .market-table th:nth-child(7), /* Actions */
+  .market-table td:nth-child(7) {
+    width: 50px;
+  }
+
+  /* Optionally hide the crypto icon or make it smaller */
+  .crypto-info {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .crypto-icon {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+  }
+  .crypto-name {
+    line-height: 1.2;
+  }
+  .crypto-symbol {
+    font-size: 11px;
+  }
+  .crypto-fullname {
+    display: none; /* hide full name on mobile to save space */
+  }
+
+  /* Adjust watchlist and action buttons */
+  .watchlist-btn {
+    font-size: 16px;
+    padding: 0;
+  }
+  .trade-action-btn {
+    font-size: 10px;
+    padding: 3px 5px;
   }
 }
 /* End of CSS */
