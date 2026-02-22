@@ -6492,7 +6492,7 @@ html, body {
     -webkit-overflow-scrolling: touch;
   }
 
- /* Mobile Market Table – compact layout */
+/* Mobile Market Table – compact layout */
 @media (max-width: 768px) {
   .market-table-container {
     width: 100%;
