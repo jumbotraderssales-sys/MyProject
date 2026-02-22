@@ -177,16 +177,16 @@ SettingModel = mongoose.model('Setting', settingSchema);
 // ========== CORS CONFIGURATION ==========
 app.use(cors({
   origin: [
-  'https://paper2real.com',       // Root domain
-  'https://www.paper2real.com',   // WWW version (Browser often uses this)
-  'https://admin.paper2real.com', // Admin Panel
-  'https://https://myproject-frontend1.onrender.com' // Keep for safety
-   'http://localhost:3000',         // Keep for local testing
+    'https://paper2real.com',
+    'https://www.paper2real.com',
+    'https://admin.paper2real.com',
+    'http://localhost:3000',
     'http://localhost:3002'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type']
 }));
 
 // Handle preflight requests
