@@ -185,16 +185,15 @@ const allowedOrigins = [
 ];
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
+    // allow requests with no origin (like mobile apps)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       return callback(new Error('CORS block: Origin not allowed'), false);
     }
     return callback(null, true);
   },
-  credentials: true // Crucial for login sessions
+  credentials: true // Crucial for login sessions between domains
 }));
- 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   exposedHeaders: ['Content-Length', 'Content-Type']
