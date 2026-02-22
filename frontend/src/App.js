@@ -1137,14 +1137,14 @@ const syncUserWallet = async () => {
             // Generate dynamic QR using the same UPI details
             const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
             const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
-            const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
+            const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
             setUpiQrCode(generatedQrUrl);
           }
         } else {
           // No uploaded image, generate dynamic QR
           const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
           const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=Paper2Real Payment`;
-          const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
+          const generatedQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
           setUpiQrCode(generatedQrUrl);
         }
 
@@ -1160,7 +1160,7 @@ const syncUserWallet = async () => {
   const defaultUpiId = '7799191208-2@ybl';
   const amount = parseFloat(upiAmount.replace(/,/g, '')) || 0;
   const upiString = `upi://pay?pa=${encodeURIComponent(defaultUpiId)}&pn=Paper2Real Trading&am=${amount}&cu=INR&tn=Paper2Real Payment`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiString)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
   setUpiSettings({ upiId: defaultUpiId, merchantName: 'Paper2Real Trading' });
   setUpiQrCode(qrCodeUrl);
 };
