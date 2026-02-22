@@ -6583,5 +6583,54 @@ html, body {
     overflow-x: hidden;
   }
 }
+/* Mobile market table – compact layout */
+@media (max-width: 768px) {
+  .market-table-container {
+    width: 100%;
+    overflow-x: hidden; /* prevent horizontal scroll */
+  }
 
+  .market-table {
+    width: 100%;
+    table-layout: fixed; /* helps keep columns within width */
+    font-size: 12px;
+  }
+
+  .market-table th,
+  .market-table td {
+    padding: 6px 3px; /* reduce padding */
+    text-align: center;
+    word-break: break-word;
+  }
+
+  /* Optional: make the star column narrower */
+  .market-table th:first-child,
+  .market-table td:first-child {
+    width: 30px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  /* Adjust button sizes */
+  .trade-action-btn {
+    font-size: 10px;
+    padding: 4px 6px;
+    white-space: nowrap;
+  }
+
+  /* Hide full crypto name, show only symbol to save space */
+  .crypto-fullname {
+    display: none;
+  }
+  .crypto-symbol {
+    font-size: 11px;
+  }
+  .crypto-info {
+    gap: 4px;
+  }
+  .crypto-icon {
+    width: 16px;
+    height: 16px;
+  }
+}
 /* End of CSS */
