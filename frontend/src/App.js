@@ -4218,6 +4218,11 @@ const handleInstallClick = async () => {
                     {isFullScreen ? '↩ Exit Full' : '⛶ Full'}
                   </button>
                 </div>
+               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+  <span className={`pnl-indicator ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
+    PnL: {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
+  </span>
+</div>     
               </div>
 
               {showIndicatorsPanel && (
