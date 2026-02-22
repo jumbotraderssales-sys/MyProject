@@ -4281,7 +4281,8 @@ const handleInstallClick = async () => {
                   )}
                 </div>
                 
-                {chartHorizontalLines.length > 0 && (
+               {/* Position lines overlay removed as per user request */}
+{false && chartHorizontalLines.length > 0 && (
                   <div className="chart-horizontal-lines-overlay">
                     {chartHorizontalLines.map(line => (
                       <div key={line.id} className="chart-horizontal-line-container">
