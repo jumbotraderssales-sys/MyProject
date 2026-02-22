@@ -6584,10 +6584,10 @@ html, body {
   }
 }
 /* ============================================================================
-   COMPACT UPI DIALOG – reduces size, removes scroll
+   COMPACT UPI DIALOG – with larger QR code, no scroll
    ============================================================================ */
 .compact-upi-dialog {
-  max-width: 380px;
+  max-width: 400px;          /* wider enough for QR */
   padding: 1rem;
   font-size: 0.85rem;
 }
@@ -6618,13 +6618,28 @@ html, body {
   padding: 0.75rem;
 }
 
+/* QR wrapper centers the image */
 .compact-upi-dialog .upi-qr-wrapper {
+  display: flex;
+  justify-content: center;
   margin: 0.5rem 0;
 }
 
+/* Override fixed size from global .upi-qr-code */
+.compact-upi-dialog .upi-qr-code {
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Make the QR image fill its container nicely */
 .compact-upi-dialog .real-qr-image {
-  max-width: 140px;
+  max-width: 280px;          /* adjust as needed */
+  width: 100%;
   height: auto;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
 }
 
 .compact-upi-dialog .upi-details-below-qr {
