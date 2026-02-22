@@ -6425,4 +6425,54 @@ html, body {
 .pnl-indicator.negative {
   color: #f44336;
 }
+/* Mobile Profile Page Fixes */
+@media (max-width: 768px) {
+  /* Contain the whole profile page */
+  .profile-content {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding-left: 10px;
+    padding-right: 10px;
+    box-sizing: border-box;
+  }
+
+  /* Make the grid single column */
+  .profile-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+  }
+
+  /* Each card should take full width and not overflow */
+  .profile-card {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Fix tables to scroll horizontally if needed */
+  .payments-table,
+  .withdrawal-requests-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure modal content doesn't overflow */
+  .modal-content {
+    max-width: 95vw;
+    width: 95%;
+    box-sizing: border-box;
+  }
+
+  /* Adjust any absolute positioned elements that might cause overflow */
+  .nav-user-info-container {
+    flex-wrap: wrap;
+  }
+}
 /* End of CSS */
