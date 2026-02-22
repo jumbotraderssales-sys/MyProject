@@ -13,15 +13,23 @@ import img2 from './data/2.png';
 import img3 from './data/3.png';
 const carouselImages = [img7, img6, img1, img2, img3];
 
-const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
+const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'AVAXUSDT', 'MATICUSDT', 'BNBUSDT', 'DOGEUSDT', 'LTCUSDT', 'TRXUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
 
 // Crypto data with details
 const cryptoData = [
   { symbol: 'BTCUSDT', name: 'Bitcoin', price: 91391.5, change24h: 2.34, volume: '42.5B', marketCap: '1.8T', color: '#F7931A' },
   { symbol: 'ETHUSDT', name: 'Ethereum', price: 3850.25, change24h: 1.56, volume: '18.3B', marketCap: '462B', color: '#627EEA' },
-  { symbol: 'BNBUSDT', name: 'Binance Coin', price: 650.30, change24h: 0.78, volume: '1.2B', marketCap: '100B', color: '#F0B90B' },
   { symbol: 'SOLUSDT', name: 'Solana', price: 185.42, change24h: 5.23, volume: '3.2B', marketCap: '81B', color: '#00FFA3' },
+  { symbol: 'XRPUSDT', name: 'Ripple', price: 2.15, change24h: 0.89, volume: '1.8B', marketCap: '117B', color: '#23292F' },
+  { symbol: 'ADAUSDT', name: 'Cardano', price: 0.85, change24h: -0.45, volume: '850M', marketCap: '30B', color: '#0033AD' },
+  { symbol: 'DOTUSDT', name: 'Polkadot', price: 35.50, change24h: 1.23, volume: '650M', marketCap: '45B', color: '#E6007A' },
+  { symbol: 'AVAXUSDT', name: 'Avalanche', price: 45.20, change24h: 3.45, volume: '920M', marketCap: '16B', color: '#E84142' },
+  { symbol: 'MATICUSDT', name: 'Polygon', price: 1.25, change24h: -1.23, volume: '520M', marketCap: '12B', color: '#8247E5' },
+  { symbol: 'BNBUSDT', name: 'Binance Coin', price: 650.30, change24h: 0.78, volume: '1.2B', marketCap: '100B', color: '#F0B90B' },
+  { symbol: 'DOGEUSDT', name: 'Dogecoin', price: 0.18, change24h: 0.25, volume: '1.1B', marketCap: '26B', color: '#C2A633' },
+  { symbol: 'LTCUSDT', name: 'Litecoin', price: 85.60, change24h: 0.92, volume: '450M', marketCap: '6.3B', color: '#BFBBBB' },
+  { symbol: 'TRXUSDT', name: 'Tron', price: 0.12, change24h: 1.45, volume: '380M', marketCap: '11B', color: '#FF001B' },
 ];
 
 // Chart types for TradingView
@@ -853,15 +861,16 @@ useEffect(() => {
 }, [prices]);
 
   useEffect(() => {
-  let total = 0;
-  positions.forEach(pos => {
-    const currentPrice = prices[pos.symbol] || pos.entryPrice;
-    const pnl = (currentPrice - pos.entryPrice) * pos.size * pos.leverage * (pos.side === 'LONG' ? 1 : -1);
-    total += pnl;
-  });
-  setTotalPnl(total);
-  setEquity(balance + total);
-}, [positions, prices, balance]);
+    let total = 0;
+    positions.forEach(pos => {
+      const currentPrice = prices[pos.symbol] || pos.entryPrice;
+      const positionValue = pos.entryPrice * pos.size * (pos.leverage || 1);
+      const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
+      total += pnl;
+    });
+    setTotalPnl(total);
+    setEquity(balance + total);
+  }, [positions, prices, balance]);
   
  useEffect(() => {
   const price = prices[selectedSymbol];
@@ -3213,8 +3222,91 @@ const handleInstallClick = async () => {
                 </div>
               </div>
             </div>
-          ) : 
-Syntax error: Unexpected token, expected "," (3217:25) (3217:25)
+          ) : activeDashboard === 'Market' ? (
+            <div className="market-content">
+              <div className="market-header">
+                <h2>Cryptocurrency Market</h2>
+                <div className="market-search">
+                  <input 
+                    type="text"
+                    placeholder="Search cryptocurrencies..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="market-search-input"
+                  />
+                  <div className="market-filters">
+                    <button className="market-filter-btn active">All</button>
+                    <button className="market-filter-btn">Gainers</button>
+                    <button className="market-filter-btn">Losers</button>
+                    <button className="market-filter-btn">Volume</button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="market-table-container">
+                <table className="market-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Name</th>
+                      <th>Price</th>
+                      <th>24h Change</th>
+                      <th>24h Volume</th>
+                      <th>Market Cap</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCryptoData.map((crypto, index) => (
+                      <tr key={crypto.symbol} className="market-row">
+                        <td>
+                          <button 
+                            className="watchlist-btn"
+                            onClick={() => toggleWatchlist(crypto.symbol)}
+                          >
+                            {watchlist.includes(crypto.symbol) ? '★' : '☆'}
+                          </button>
+                        </td>
+                        <td>
+                          <div className="crypto-info">
+                            <div className="crypto-icon" style={{ backgroundColor: crypto.color }}></div>
+                            <div className="crypto-name">
+                              <div className="crypto-symbol">{crypto.symbol.replace('USDT', '')}</div>
+                              <div className="crypto-fullname">{crypto.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="crypto-price">
+                            ${prices[crypto.symbol] ? prices[crypto.symbol].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </div>
+                        </td>
+                        <td>
+                          <div className={`crypto-change ${crypto.change24h >= 0 ? 'positive' : 'negative'}`}>
+                            {crypto.change24h >= 0 ? '+' : ''}{crypto.change24h}%
+                          </div>
+                        </td>
+                        <td>
+                          <div className="crypto-volume">{crypto.volume}</div>
+                        </td>
+                        <td>
+                          <div className="crypto-marketcap">{crypto.marketCap}</div>
+                        </td>
+                        <td>
+                          <button 
+                            className="trade-action-btn"
+                            onClick={() => handleMarketTrade(crypto.symbol)}
+                            disabled={!canTrade}
+                          >
+                            {canTrade ? 'Trade' : 'Buy Challenge to Trade'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
               <div className="trading-signals-panel">
                 <div className="signals-header">
                   <h3>Trading Signals</h3>
@@ -4101,7 +4193,6 @@ Syntax error: Unexpected token, expected "," (3217:25) (3217:25)
             <>
               <div className="chart-header-simplified">
                 <div className="chart-controls-left">
-            
                   <div className="symbol-selector">
                     {SYMBOLS.slice(0, 8).map(symbol => (
                       <button
@@ -4136,11 +4227,6 @@ Syntax error: Unexpected token, expected "," (3217:25) (3217:25)
                     {isFullScreen ? '↩ Exit Full' : '⛶ Full'}
                   </button>
                 </div>
-                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
-  <span className={`pnl-indicator ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
-    PnL: {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
-  </span>
-</div>
               </div>
 
               {showIndicatorsPanel && (
@@ -4204,12 +4290,44 @@ Syntax error: Unexpected token, expected "," (3217:25) (3217:25)
                   )}
                 </div>
                 
-               {/* Position lines overlay removed as per user request */}
-{false && chartHorizontalLines.length > 0 && (
-  <div className="chart-horizontal-lines-overlay">
-    {/* ... old content ... */}
-  </div>
-)}
+                {chartHorizontalLines.length > 0 && (
+                  <div className="chart-horizontal-lines-overlay">
+                    {chartHorizontalLines.map(line => (
+                      <div key={line.id} className="chart-horizontal-line-container">
+                        <div 
+                          className={`chart-horizontal-line ${line.side === 'LONG' ? 'line-long' : 'line-short'}`}
+                          style={{ top: '50%' }}
+                        >
+                          <div className="line-info-box">
+                            <div className="line-header">
+                              <span className={`line-side ${line.side === 'LONG' ? 'side-long' : 'side-short'}`}>
+                                {line.side}
+                              </span>
+                              <button 
+                                className="close-line-btn"
+                                onClick={() => closePositionFromChart(line.id)}
+                                title="Close Position"
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <div className="line-details">
+                              <div>Entry: <strong>${line.entryPrice.toFixed(2)}</strong></div>
+                              <div>Size: <strong>{line.size}</strong></div>
+                              {line.stopLoss > 0 && (
+                                <div>SL: <strong>${line.stopLoss.toFixed(2)}</strong> (${line.stopLossAmount.toFixed(2)})</div>
+                              )}
+                              {line.takeProfit > 0 && (
+                                <div>TP: <strong>${line.takeProfit.toFixed(2)}</strong> (${line.takeProfitAmount.toFixed(2)})</div>
+                              )}
+                              <div>Value: <strong>${line.positionValue.toFixed(2)}</strong></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 
                 {!showChartLines && activeDashboard === 'Trading' && (
                   <button 
