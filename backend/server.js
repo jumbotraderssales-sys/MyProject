@@ -204,6 +204,21 @@ app.use(cors({
 
 // Handle preflight requests
 app.options('*', cors());
+// ========== SESSION & PROXY CONFIGURATION ==========
+app.set('trust proxy', 1); // Crucial for Render's proxy to allow cookies
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'paper2real_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  proxy: true,
+  cookie: {
+    sameSite: 'none', // Required for cross-domain (paper2real.com -> onrender.com)
+    secure: true,     // Required for sameSite: 'none' (HTTPS)
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // ========== MIDDLEWARE ==========
 app.use(express.json());
