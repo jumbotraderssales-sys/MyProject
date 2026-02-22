@@ -3330,7 +3330,7 @@ const handleInstallClick = async () => {
 
     </div>
   </div>
-) : null
+) :
               <div className="trading-signals-panel">
                 <div className="signals-header">
                   <h3>Trading Signals</h3>
