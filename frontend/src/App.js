@@ -430,12 +430,13 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
   }, []);
 
   // ========== FETCH REFERRAL INFO ==========
-  const fetchReferralInfo = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('https://myproject1-d097.onrender.com/api/user/referral', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+const fetchReferralInfo = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE_URL}/api/user/referral`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include' // <--- ADD THIS LINE
+    });
       const data = await res.json();
       if (data.success) {
         setReferralInfo(data);
@@ -606,17 +607,15 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
     // Update backend
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          status,
-          reason
-        })
-      }).catch(console.error);
+   fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  credentials: 'include', // <--- ADD THIS LINE
+  body: JSON.stringify({ status, reason })
+}).catch(console.error);
     }
   };
 
@@ -1389,15 +1388,14 @@ const syncUserWallet = async () => {
     e.preventDefault();
     
     try {
-        const response = await fetch('https://myproject1-d097.onrender.com/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(loginData)
-        });
-        
+      // Find your handleLogin or login fetch call:
+const res = await fetch(`${API_BASE_URL}/api/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include', // <--- ADD THIS LINE
+  body: JSON.stringify(loginData)
+});
+            
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
