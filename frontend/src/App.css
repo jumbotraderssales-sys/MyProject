@@ -6525,5 +6525,63 @@ html, body {
     min-width: 500px; /* ensures signals scroll horizontally if too many */
   }
 }
+/* =========================
+   MOBILE ONLY MARKET FIX
+   ========================= */
+@media (max-width: 768px) {
+
+  .market-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .market-content {
+    flex: 1;
+    overflow-y: auto;   /* vertical scroll only */
+    overflow-x: hidden; /* no horizontal scroll */
+    padding: 6px;
+  }
+
+  /* prevent any item from going outside screen */
+  .market-content * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* compact spacing */
+  .market-header {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .market-search {
+    gap: 5px;
+  }
+
+  .market-search-input {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .market-filter-btn {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+
+  /* table compact */
+  .market-table th,
+  .market-table td {
+    padding: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  /* stop sideways scroll */
+  body {
+    overflow-x: hidden;
+  }
+}
 
 /* End of CSS */
