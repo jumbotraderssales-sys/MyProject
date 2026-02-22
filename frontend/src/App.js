@@ -505,6 +505,45 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
     }, 5000);
     return () => clearInterval(interval);
   }, [carouselImages.length]);
+  // ========== FETCH PRICES FOR ALL SYMBOLS (FOR MARKET PAGE) ==========
+useEffect(() => {
+  const fetchAllPrices = async () => {
+    try {
+      // Fetch price for each symbol in parallel
+      const promises = cryptoData.map(async (crypto) => {
+        try {
+          const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${crypto.symbol}`);
+          const data = await response.json();
+          const price = parseFloat(data.price);
+          if (!isNaN(price) && price > 0) {
+            return { symbol: crypto.symbol, price };
+          }
+        } catch (err) {
+          console.warn(`Failed to fetch price for ${crypto.symbol}`);
+        }
+        return null;
+      });
+
+      const results = await Promise.all(promises);
+      const priceUpdates = {};
+      results.forEach(result => {
+        if (result) {
+          priceUpdates[result.symbol] = result.price;
+        }
+      });
+
+      if (Object.keys(priceUpdates).length > 0) {
+        setPrices(prev => ({ ...prev, ...priceUpdates }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch all prices:', error);
+    }
+  };
+
+  fetchAllPrices(); // initial fetch
+  const interval = setInterval(fetchAllPrices, 10000); // every 10 seconds
+  return () => clearInterval(interval);
+}, []); // runs once on mount
  
   // Calculate daily and total loss
   useEffect(() => {
