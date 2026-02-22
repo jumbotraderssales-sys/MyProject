@@ -6525,5 +6525,79 @@ html, body {
     min-width: 500px; /* ensures signals scroll horizontally if too many */
   }
 }
+/* =========================
+   MARKET PAGE LAYOUT FIX
+   ========================= */
 
+.market-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.market-content {
+  flex: 1;
+  overflow-y: auto;     /* only vertical scroll */
+  overflow-x: hidden;   /* no horizontal scroll */
+  padding: 8px 10px;
+}
+
+/* Make sure table never breaks width */
+.market-table-container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent any child from overflowing */
+.market-content * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Reduce spacing so everything fits */
+.market-header {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.market-search {
+  gap: 6px;
+}
+
+.market-search-input {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.market-filter-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* Table compact view */
+.market-table th,
+.market-table td {
+  padding: 8px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Mobile fix */
+@media (max-width: 768px) {
+  .market-content {
+    padding: 6px;
+  }
+
+  .market-table th,
+  .market-table td {
+    padding: 6px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Kill horizontal scroll globally */
+body {
+  overflow-x: hidden;
+}
 /* End of CSS */
