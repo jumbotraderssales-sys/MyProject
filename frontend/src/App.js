@@ -165,7 +165,7 @@ const boxStyle = {
   borderRadius: 4
 };
 
-
+const API_BASE_URL = "https://myproject1-d097.onrender.com";
 function App() {
   const [userAccount, setUserAccount] = useState({
     id: null,
@@ -607,7 +607,7 @@ const fetchReferralInfo = async () => {
     // Update backend
     const token = localStorage.getItem('token');
     if (token) {
-   fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
+fetch(`${API_BASE_URL}/api/challenge/status`, {
   method: 'PUT',
   headers: {
     'Authorization': `Bearer ${token}`,
