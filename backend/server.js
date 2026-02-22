@@ -183,12 +183,22 @@ const allowedOrigins = [
    'http://localhost:3000',         // Keep for local testing
     'http://localhost:3002'
 ];
-
-  credentials: true,
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS block: Origin not allowed'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true // Crucial for login sessions
+}));
+ 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   exposedHeaders: ['Content-Length', 'Content-Type']
-}));
+
 
 // Handle preflight requests
 app.options('*', cors());
