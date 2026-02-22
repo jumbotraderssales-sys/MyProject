@@ -1,8 +1,6 @@
 type: web
        env: node
     rootDirectory: backend
-NODE_ENV=production
-SESSION_SECRET=anything_very_long_and_random_12345
 mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0
     buildCommand: npm install
     startCommand: npm start
