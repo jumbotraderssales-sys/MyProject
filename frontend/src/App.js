@@ -853,16 +853,15 @@ useEffect(() => {
 }, [prices]);
 
   useEffect(() => {
-    let total = 0;
-    positions.forEach(pos => {
-      const currentPrice = prices[pos.symbol] || pos.entryPrice;
-      const positionValue = pos.entryPrice * pos.size * (pos.leverage || 1);
-      const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
-      total += pnl;
-    });
-    setTotalPnl(total);
-    setEquity(balance + total);
-  }, [positions, prices, balance]);
+  let total = 0;
+  positions.forEach(pos => {
+    const currentPrice = prices[pos.symbol] || pos.entryPrice;
+    const pnl = (currentPrice - pos.entryPrice) * pos.size * pos.leverage * (pos.side === 'LONG' ? 1 : -1);
+    total += pnl;
+  });
+  setTotalPnl(total);
+  setEquity(balance + total);
+}, [positions, prices, balance]);
   
  useEffect(() => {
   const price = prices[selectedSymbol];
@@ -4185,6 +4184,7 @@ const handleInstallClick = async () => {
             <>
               <div className="chart-header-simplified">
                 <div className="chart-controls-left">
+            
                   <div className="symbol-selector">
                     {SYMBOLS.slice(0, 8).map(symbol => (
                       <button
@@ -4219,6 +4219,11 @@ const handleInstallClick = async () => {
                     {isFullScreen ? '↩ Exit Full' : '⛶ Full'}
                   </button>
                 </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+  <span className={`pnl-indicator ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
+    PnL: {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
+  </span>
+</div>
               </div>
 
               {showIndicatorsPanel && (
@@ -4282,44 +4287,12 @@ const handleInstallClick = async () => {
                   )}
                 </div>
                 
-                {chartHorizontalLines.length > 0 && (
-                  <div className="chart-horizontal-lines-overlay">
-                    {chartHorizontalLines.map(line => (
-                      <div key={line.id} className="chart-horizontal-line-container">
-                        <div 
-                          className={`chart-horizontal-line ${line.side === 'LONG' ? 'line-long' : 'line-short'}`}
-                          style={{ top: '50%' }}
-                        >
-                          <div className="line-info-box">
-                            <div className="line-header">
-                              <span className={`line-side ${line.side === 'LONG' ? 'side-long' : 'side-short'}`}>
-                                {line.side}
-                              </span>
-                              <button 
-                                className="close-line-btn"
-                                onClick={() => closePositionFromChart(line.id)}
-                                title="Close Position"
-                              >
-                                ×
-                              </button>
-                            </div>
-                            <div className="line-details">
-                              <div>Entry: <strong>${line.entryPrice.toFixed(2)}</strong></div>
-                              <div>Size: <strong>{line.size}</strong></div>
-                              {line.stopLoss > 0 && (
-                                <div>SL: <strong>${line.stopLoss.toFixed(2)}</strong> (${line.stopLossAmount.toFixed(2)})</div>
-                              )}
-                              {line.takeProfit > 0 && (
-                                <div>TP: <strong>${line.takeProfit.toFixed(2)}</strong> (${line.takeProfitAmount.toFixed(2)})</div>
-                              )}
-                              <div>Value: <strong>${line.positionValue.toFixed(2)}</strong></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+               {/* Position lines overlay removed as per user request */}
+{false && chartHorizontalLines.length > 0 && (
+  <div className="chart-horizontal-lines-overlay">
+    {/* ... old content ... */}
+  </div>
+)}
                 
                 {!showChartLines && activeDashboard === 'Trading' && (
                   <button 
