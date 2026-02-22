@@ -6475,7 +6475,24 @@ html, body {
     flex-wrap: wrap;
   }
 }
-/* Mobile Market Table – compact layout */
+/* Mobile Market Page Fixes */
+@media (max-width: 768px) {
+  /* Hide Market Cap and 24h Volume columns */
+  .market-table th:nth-child(5),
+  .market-table td:nth-child(5),
+  .market-table th:nth-child(6),
+  .market-table td:nth-child(6) {
+    display: none;
+  }
+
+  /* Make table container scrollable only if needed */
+  .market-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+ /* Mobile Market Table – compact layout */
 @media (max-width: 768px) {
   .market-table-container {
     width: 100%;
