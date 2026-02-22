@@ -177,9 +177,10 @@ SettingModel = mongoose.model('Setting', settingSchema);
 // ========== CORS CONFIGURATION ==========
 app.use(cors({
   origin: [
-    'https://myproject-frontend1.onrender.com',
-    'https://myproject-admin1.onrender.com',
-    'http://localhost:3000',
+    'https://paper2real.com',       // Your new Frontend
+  'https://www.paper2real.com',   // Your new Frontend (www version)
+  'https://admin.paper2real.com', // Your new Admin Panel
+  'http://localhost:3000',         // Keep for local testing
     'http://localhost:3002'
   ],
   credentials: true,
