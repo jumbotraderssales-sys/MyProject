@@ -17,4 +17,4 @@ REACT_APP_ENABLE_ANALYTICS=true
 REACT_APP_DEBUG=false
 
 # Admin Panel URL
-REACT_APP_ADMIN_URL=https://myproject-admin1.onrender.com/
+REACT_APP_ADMIN_URL=https://admin.paper2real.com
