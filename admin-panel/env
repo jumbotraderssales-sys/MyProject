@@ -7,12 +7,13 @@ REACT_APP_API_URL=https://myproject1-d097.onrender.com
 VITE_API_URL=https://myproject1-d097.onrender.com/api
 
 # Frontend URL
-REACT_APP_FRONTEND_URL=https://myproject-frontend1.onrender.com
+REACT_APP_FRONTEND_URL=https://paper2real.com/,https://www.paper2real.com
 
 # Admin Security
 ADMIN_SECRET_KEY=your-admin-secret-key-12345
 SESSION_SECRET=your-session-secret-67890
 
 # CORS Configuration
-CORS_ORIGIN=https://myproject-frontend1.onrender.com,https://myproject-admin1.onrender.com
+CORS_ORIGIN=https://paper2real.com/,https://www.paper2real.com
+
 
