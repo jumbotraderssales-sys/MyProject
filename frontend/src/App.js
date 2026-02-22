@@ -3214,7 +3214,7 @@ const handleInstallClick = async () => {
               </div>
             </div>
           ) : 
-            activeDashboard === 'Market' ? (
+        {activeDashboard === 'Market' && (
   <div className="market-page">
     <div className="market-content">
 
@@ -3330,7 +3330,7 @@ const handleInstallClick = async () => {
 
     </div>
   </div>
-) :
+)}
               <div className="trading-signals-panel">
                 <div className="signals-header">
                   <h3>Trading Signals</h3>
