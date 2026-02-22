@@ -4939,7 +4939,7 @@ const handleInstallClick = async () => {
       {showUPIScanner && (
         <div className="dialog-overlay">
         <div className="dialog-box upi-dialog compact-upi-dialog">
-          <div className="dialog-box upi-dialog">
+         
             <h2 className="dialog-title">UPI Payment - {selectedChallenge?.name}</h2>
             
             <div className="payment-instructions">
