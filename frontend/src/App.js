@@ -3298,8 +3298,11 @@ const handleInstallClick = async () => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                  </table>
+      </div>
+
+    </div>
+  </div>
 
               <div className="trading-signals-panel">
                 <div className="signals-header">
