@@ -6475,4 +6475,54 @@ html, body {
     flex-wrap: wrap;
   }
 }
+/* Mobile Market Page Fixes */
+@media (max-width: 768px) {
+  /* Hide Market Cap and 24h Volume columns */
+  .market-table th:nth-child(5),
+  .market-table td:nth-child(5),
+  .market-table th:nth-child(6),
+  .market-table td:nth-child(6) {
+    display: none;
+  }
+
+  /* Make table container scrollable only if needed */
+  .market-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure the table itself does not exceed container width */
+  .market-table {
+    width: 100%;
+    min-width: 600px; /* adjust based on remaining columns */
+  }
+
+  /* Optional: reduce padding on remaining cells */
+  .market-table th,
+  .market-table td {
+    padding: 8px 6px;
+    white-space: nowrap;
+  }
+
+  /* Fix any other overflowing elements */
+  .market-content {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding-left: 10px;
+    padding-right: 10px;
+    box-sizing: border-box;
+  }
+
+  /* Signals panel adjustment */
+  .trading-signals-panel {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .signals-list {
+    min-width: 500px; /* ensures signals scroll horizontally if too many */
+  }
+}
 /* End of CSS */
