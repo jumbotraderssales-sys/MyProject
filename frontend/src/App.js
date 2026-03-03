@@ -1788,12 +1788,10 @@ const handleInstallClick = async () => {
           
           setPositions(prev => prev.filter(p => p.id !== positionId));
           
-          if (data.user) {
-            setUserAccount(prev => ({
-              ...prev,
-              paperBalance: data.user.paperBalance
-            }));
-          }
+         if (data.user && data.user.paperBalance !== undefined) {
+  setBalance(data.user.paperBalance);
+  setUserAccount(prev => ({ ...prev, paperBalance: data.user.paperBalance }));
+}
           
           setOrderHistory(prev => prev.map(order => 
             order.id === positionId ? {
