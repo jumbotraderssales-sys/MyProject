@@ -1780,31 +1780,20 @@ const handleInstallClick = async () => {
         
         const data = await response.json();
         
-       if (data.success) {
-  // 1. Get correct new paper balance (INR)
-  let updatedPaperBalance;
-  if (data.user && data.user.paperBalance !== undefined) {
-    // Use backend-provided balance (already in INR)
-    updatedPaperBalance = data.user.paperBalance;
-  } else {
-    // Fallback: convert USD PnL to INR using dollarRate
-    const pnlINR = pnl * dollarRate;
-    updatedPaperBalance = (userAccount.paperBalance || 0) + pnlINR;
-  }
-
-  // 2. Update all relevant states
-  setBalance(updatedPaperBalance);
-  setUserAccount(prev => ({ ...prev, paperBalance: updatedPaperBalance }));
-
-  // 3. Recalculate equity (paper USD + remaining unrealized PnL)
-  const paperUSD = updatedPaperBalance / dollarRate;
-  const newEquity = paperUSD + (totalPnl - pnl);
-  setEquity(newEquity);
-
-  // 4. Remove closed position
+      if (data.success) {
+  const newBalance = data.user?.paperBalance || (balance + pnl + position.positionValue);
+  setBalance(newBalance);
+  setEquity(newBalance + (totalPnl - pnl));
+  
   setPositions(prev => prev.filter(p => p.id !== positionId));
-
-  // 5. Update order history
+  
+  if (data.user) {
+    setUserAccount(prev => ({
+      ...prev,
+      paperBalance: data.user.paperBalance
+    }));
+  }
+  
   setOrderHistory(prev => prev.map(order => 
     order.id === positionId ? {
       ...order,
@@ -1816,7 +1805,6 @@ const handleInstallClick = async () => {
       updatedAt: new Date().toISOString()
     } : order
   ));
-
           
           // Update challenge stats
           if (userAccount.currentChallenge) {
