@@ -2841,17 +2841,14 @@ const calculateOrderPnL = (order) => {
                     {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
                   </span>
                 </div>
-                <div className="balance-display">
-  ₹{equity.toFixed(2)} (${(equity / dollarRate).toFixed(2)})
-</div>
-<div className="balance-details">
-  <div>
-    Available: ₹{balance.toFixed(2)} (${(balance / dollarRate).toFixed(2)})
-  </div>
-  <div>
-    Used: ₹{(equity - balance).toFixed(2)} (${((equity - balance) / dollarRate).toFixed(2)})
-  </div>
-</div>
+               <div className="balance-display">
+                  ${equity.toFixed(2)}
+                </div>
+                <div className="balance-details">
+                  <div>Available: ${balance.toFixed(2)}</div>
+                  <div>Used: ${(equity - balance).toFixed(2)}</div>
+                </div>
+              </div>
               
               {/* Challenge Progress Bar */}
               {userAccount.currentChallenge && (
