@@ -890,17 +890,18 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, [prices]);
 
-  useEffect(() => {
-    let total = 0;
-    positions.forEach(pos => {
-      const currentPrice = prices[pos.symbol] || pos.entryPrice;
-      const positionValue = pos.entryPrice * pos.size * (pos.leverage || 1);
-      const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
-      total += pnl;
-    });
-    setTotalPnl(total);
-    setEquity(balance + total);
-  }, [positions, prices, balance]);
+useEffect(() => {
+  let totalUSD = 0;
+  positions.forEach(pos => {
+    const currentPrice = prices[pos.symbol] || pos.entryPrice;
+    const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
+    totalUSD += pnl;
+  });
+  setTotalPnl(totalUSD);
+  // Convert paper balance (INR) to USD before adding USD PnL
+  const paperUSD = balance / dollarRate;
+  setEquity(paperUSD + totalUSD);
+}, [positions, prices, balance, dollarRate]);
   
  useEffect(() => {
   const price = prices[selectedSymbol];
