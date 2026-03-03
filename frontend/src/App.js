@@ -1659,7 +1659,7 @@ if (side === 'LONG') {
   };
 
   setOrderHistory(prev => [newOrder, ...prev]);
-
+setBalance(data.newBalance);
   setUserAccount(prev => ({
     ...prev,
      paperBalance: data.newBalance,
