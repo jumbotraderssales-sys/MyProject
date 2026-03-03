@@ -1781,9 +1781,10 @@ const handleInstallClick = async () => {
         const data = await response.json();
         
       if (data.success) {
-  const newBalance = data.user?.paperBalance || (balance + pnl + position.positionValue);
+ const pnlInRupees = pnl * dollarRate;
+const newBalance = data.user?.paperBalance || (balance + pnlInRupees + position.positionValue);
   setBalance(newBalance);
-  setEquity(newBalance + (totalPnl - pnl));
+ setEquity(newBalance + ((totalPnl - pnl) * dollarRate));
   
   setPositions(prev => prev.filter(p => p.id !== positionId));
   
