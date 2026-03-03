@@ -4497,6 +4497,7 @@ const handleInstallClick = async () => {
                               </span>
                               <span>
                                 <div className="order-actions">
+                                    {/* isCancellable && (
                                   {isCancellable && (
                                     <button 
                                       className="cancel-order-btn"
@@ -4516,6 +4517,7 @@ const handleInstallClick = async () => {
                                       Cancel
                                     </button>
                                   )}
+) */}
                                   {order.status === 'OPEN' && !isCancellable && (
                                     <button 
                                       className="close-position-btn"
@@ -4562,6 +4564,7 @@ const handleInstallClick = async () => {
                               <span className={`position-pnl ${positionPnl >= 0 ? 'positive' : 'negative'}`}>
                                 ${positionPnl.toFixed(2)}
                               </span>
+                                {/* isCancellable && (
                               <button 
                                 className="cancel-position-btn"
                                 onClick={() => handleCancelOrder(pos.id)}
@@ -4580,6 +4583,7 @@ const handleInstallClick = async () => {
                               >
                                 Cancel
                               </button>
+                              ) */}
                               <button 
                                 className="close-position-btn"
                                 onClick={() => closePosition(pos.id)}
