@@ -891,17 +891,16 @@ useEffect(() => {
 }, [prices]);
 
 useEffect(() => {
-  let totalUSD = 0;
+  let total = 0;
   positions.forEach(pos => {
     const currentPrice = prices[pos.symbol] || pos.entryPrice;
+    const positionValue = pos.entryPrice * pos.size * (pos.leverage || 1);
     const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
-    totalUSD += pnl;
+    total += pnl;
   });
-  setTotalPnl(totalUSD);
-  // Convert paper balance (INR) to USD before adding USD PnL
-  const paperUSD = balance / dollarRate;
-  setEquity(paperUSD + totalUSD);
-}, [positions, prices, balance, dollarRate]);
+  setTotalPnl(total);
+  setEquity(balance + total);
+}, [positions, prices, balance]);
   
  useEffect(() => {
   const price = prices[selectedSymbol];
