@@ -1829,7 +1829,7 @@ const handleInstallClick = async () => {
             
             // Check challenge rules after trade close
             setTimeout(() => checkChallengeRules(), 100);
-           await syncUserWallet();   // 👈 Add this line 
+           await syncUserWallet();   
           }
         }
       } catch (error) {
@@ -2745,7 +2745,7 @@ const calculateOrderPnL = (order) => {
                     <div className="nav-user-info">
                       <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
                       <div className="nav-user-balance">
-                        <span className="nav-balance-amount">₹{userAccount.paperBalance?.toLocaleString() || '0'}</span>
+                       <span className="nav-balance-amount">₹{equity.toFixed(2)}</span>
                         <span className="nav-balance-dollar">
                           (${calculateDollarBalance(userAccount.paperBalance || 0)})
                         </span>
