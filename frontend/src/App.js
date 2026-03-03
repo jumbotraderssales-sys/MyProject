@@ -1736,12 +1736,15 @@ const handleInstallClick = async () => {
         ));
         
         if (data.newBalance !== undefined) {
-          setBalance(data.newBalance);
-          setUserAccount(prev => ({
-            ...prev,
-            paperBalance: data.newBalance
-          }));
-        }
+        setBalance(data.newBalance);
+setUserAccount(prev => ({
+  ...prev,
+  paperBalance: data.newBalance,        // <-- add this line
+  challengeStats: {
+    ...prev.challengeStats,
+    tradesCount: prev.challengeStats.tradesCount + 1
+  }
+}));
         
         if (data.newBalance !== undefined) {
           setEquity(data.newBalance + totalPnl);
