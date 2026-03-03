@@ -1829,6 +1829,7 @@ const handleInstallClick = async () => {
             
             // Check challenge rules after trade close
             setTimeout(() => checkChallengeRules(), 100);
+           await syncUserWallet();   // 👈 Add this line 
           }
         }
       } catch (error) {
