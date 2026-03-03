@@ -2844,6 +2844,10 @@ const calculateOrderPnL = (order) => {
                <div className="balance-display">
   ₹{equity.toFixed(2)} (${(equity / dollarRate || 0).toFixed(2)})
 </div>
+<div className="balance-display">
+  ₹{equity.toFixed(2)} (${(equity / dollarRate || 0).toFixed(2)})
+</div>
+
 <div className="balance-details">
   <div>
     Available: ₹{balance.toFixed(2)} (${(balance / dollarRate || 0).toFixed(2)})
@@ -2851,6 +2855,7 @@ const calculateOrderPnL = (order) => {
   <div>
     Used: ₹{(equity - balance).toFixed(2)} (${((equity - balance) / dollarRate || 0).toFixed(2)})
   </div>
+</div>
 </div>
               
               {/* Challenge Progress Bar */}
