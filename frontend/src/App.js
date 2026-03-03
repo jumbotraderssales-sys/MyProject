@@ -894,13 +894,12 @@ useEffect(() => {
   let total = 0;
   positions.forEach(pos => {
     const currentPrice = prices[pos.symbol] || pos.entryPrice;
-    const positionValue = pos.entryPrice * pos.size * (pos.leverage || 1);
     const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
     total += pnl;
   });
   setTotalPnl(total);
-  setEquity(balance + total);
-}, [positions, prices, balance]);
+  setEquity(balance + total * dollarRate);   // ← convert USD PnL to INR
+}, [positions, prices, balance, dollarRate]); // ← add dollarRate dependency
   
  useEffect(() => {
   const price = prices[selectedSymbol];
@@ -2747,9 +2746,9 @@ const calculateOrderPnL = (order) => {
                       <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
                       <div className="nav-user-balance">
                        <span className="nav-balance-amount">₹{equity.toFixed(2)}</span>
-                        <span className="nav-balance-dollar">
-                          (${calculateDollarBalance(userAccount.paperBalance || 0)})
-                        </span>
+<span className="nav-balance-dollar">
+  (${calculateDollarBalance(equity)})   {/* ← use equity, not paperBalance */}
+</span>
                  {/* Refresh button added here */}
         <button 
           className="refresh-balance-btn" 
