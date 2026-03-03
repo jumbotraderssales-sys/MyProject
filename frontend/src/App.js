@@ -1662,6 +1662,7 @@ if (side === 'LONG') {
 
   setUserAccount(prev => ({
     ...prev,
+     paperBalance: data.newBalance,
     challengeStats: {
       ...prev.challengeStats,
       tradesCount: prev.challengeStats.tradesCount + 1
@@ -1737,14 +1738,14 @@ const handleInstallClick = async () => {
         
         if (data.newBalance !== undefined) {
         setBalance(data.newBalance);
-setUserAccount(prev => ({
-  ...prev,
-  paperBalance: data.newBalance,        // <-- add this line
-  challengeStats: {
-    ...prev.challengeStats,
-    tradesCount: prev.challengeStats.tradesCount + 1
-  }
-}));
+ setUserAccount(prev => ({
+    ...prev,
+    paperBalance: data.newBalance,
+    challengeStats: {
+      ...prev.challengeStats,
+      tradesCount: prev.challengeStats.tradesCount + 1
+    }
+  }));
         
         if (data.newBalance !== undefined) {
           setEquity(data.newBalance + totalPnl);
