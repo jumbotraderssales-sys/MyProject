@@ -2398,11 +2398,11 @@ const handleInstallClick = async () => {
     return pnl;
   };
 
- const calculateOrderPnL = (order) => {
+const calculateOrderPnL = (order) => {
   if (order.status?.toUpperCase() === 'CLOSED' || order.status?.toUpperCase() === 'CANCELLED') {
     return order.pnl || 0;
   } else {
-    const currentPrice = prices[order.symbol] || order.entryPrice;
+    const currentPrice = prices[order.symbol] || order.entryPrice;   // fallback added
     const pnl = (currentPrice - order.entryPrice) * order.size * order.leverage * 
                 (order.side === 'LONG' ? 1 : -1);
     return pnl;
