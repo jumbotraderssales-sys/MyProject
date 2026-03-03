@@ -1781,10 +1781,9 @@ const handleInstallClick = async () => {
         const data = await response.json();
         
       if (data.success) {
- const pnlInRupees = pnl * dollarRate;
-const newBalance = data.user?.paperBalance || (balance + pnlInRupees + position.positionValue);
+  const newBalance = data.user?.paperBalance || (balance + pnl + position.positionValue);
   setBalance(newBalance);
- setEquity(newBalance + ((totalPnl - pnl) * dollarRate));
+  setEquity(newBalance + (totalPnl - pnl));
   
   setPositions(prev => prev.filter(p => p.id !== positionId));
   
@@ -2842,22 +2841,14 @@ const calculateOrderPnL = (order) => {
                     {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
                   </span>
                 </div>
-               <div className="balance-display">
-  ₹{equity.toFixed(2)} (${(equity / dollarRate || 0).toFixed(2)})
-</div>
-<div className="balance-display">
-  ₹{equity.toFixed(2)} (${(equity / dollarRate || 0).toFixed(2)})
-</div>
-
-<div className="balance-details">
-  <div>
-    Available: ₹{balance.toFixed(2)} (${(balance / dollarRate || 0).toFixed(2)})
-  </div>
-  <div>
-    Used: ₹{(equity - balance).toFixed(2)} (${((equity - balance) / dollarRate || 0).toFixed(2)})
-  </div>
-</div>
-</div>
+                <div className="balance-display">
+                  ${equity.toFixed(2)}
+                </div>
+                <div className="balance-details">
+                  <div>Available: ${balance.toFixed(2)}</div>
+                  <div>Used: ${(equity - balance).toFixed(2)}</div>
+                </div>
+              </div>
               
               {/* Challenge Progress Bar */}
               {userAccount.currentChallenge && (
