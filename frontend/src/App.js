@@ -1043,8 +1043,7 @@ const syncUserWallet = async () => {
           calculatePaymentStats(data.payments);
           setLoadingPayments(false);
           
-          await syncUserWallet();
-          
+         
           return;
         }
       }
@@ -1841,7 +1840,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
       }
 
       // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
-      await syncUserWallet();
+   
 
     } else {
       alert(data.error || 'Failed to close position');
