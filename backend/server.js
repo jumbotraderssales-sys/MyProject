@@ -2116,14 +2116,6 @@ app.put('/api/payments/:id/status', async (req, res) => {
 
 // ========== UPI QR CODE MANAGEMENT ==========
 // GET all challenges (admin)
-app.get('/api/admin/challenges', requireAdmin, async (req, res) => {
-  try {
-    const challenges = await readChallenges();
-    res.json({ success: true, challenges });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 // GET single challenge by id (admin)
 app.get('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
@@ -2177,6 +2169,7 @@ app.put('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 
 // DELETE challenge (admin)
 app.delete('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
@@ -2518,6 +2511,17 @@ app.get('/api/withdrawals/history', async (req, res) => {
 });
 
 // ========== ADMIN ENDPOINTS ==========
+// ========== NEW CHALLENGE ADMIN ENDPOINTS ==========
+// GET all challenges (admin)
+app.get('/api/admin/challenges', requireAdmin, async (req, res) => { ... });
+// GET single challenge
+app.get('/api/admin/challenges/:id', requireAdmin, async (req, res) => { ... });
+// POST create challenge
+app.post('/api/admin/challenges', requireAdmin, async (req, res) => { ... });
+// PUT update challenge
+app.put('/api/admin/challenges/:id', requireAdmin, async (req, res) => { ... });
+// DELETE challenge
+app.delete('/api/admin/challenges/:id', requireAdmin, async (req, res) => { ... });
 
 // Simple admin check middleware
 const requireAdmin = async (req, res, next) => {
@@ -2542,6 +2546,14 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
+app.get('/api/admin/challenges', requireAdmin, async (req, res) => {
+  try {
+    const challenges = await readChallenges();
+    res.json({ success: true, challenges });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 // Get all users (for admin panel)
 app.get('/api/admin/users', async (req, res) => {
   try {
