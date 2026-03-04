@@ -1540,8 +1540,9 @@ app.post('/api/trades/:id/close', async (req, res) => {
                 (trade.side === 'long' ? 1 : -1);
     
     // Return margin and add PnL to paper balance
-    user.paperBalance += trade.marginUsed;
-    user.paperBalance += pnl;
+  const marginINR = trade.marginUsed * DOLLAR_RATE;
+const pnlINR = pnl * DOLLAR_RATE;
+user.paperBalance += marginINR + pnlINR;
     
     // Update challenge stats
     if (pnl > 0) {
