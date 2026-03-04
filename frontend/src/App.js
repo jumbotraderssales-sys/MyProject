@@ -1811,7 +1811,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
       });
 
       // 3. Update all balance-related states
-      setBalance(newBalanceINR);
+    
       setTotalPnl(newTotalPnl);
       setEquity(newBalanceINR + newTotalPnl * dollarRate);
 
