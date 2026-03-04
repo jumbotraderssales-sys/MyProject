@@ -1773,38 +1773,38 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
     const data = await response.json();
 
     if (data.success) {
-      // 1. Determine new balance (INR) – prefer backend, else calculate correctly
+      // Log the response to see what's coming from backend
+      console.log('Close position response:', data);
+
+      // Determine new balance: prefer backend value, fallback to calculation
       let newBalance;
+
       if (data.user?.paperBalance !== undefined) {
         newBalance = data.user.paperBalance;
+      } else if (data.newBalance !== undefined) {
+        newBalance = data.newBalance;
       } else {
-        // Fallback: convert USD values to INR using current dollarRate
+        // Correct fallback: current balance + PnL (in INR)
         const pnlINR = pnl * dollarRate;
-        // Margin used in USD = (entryPrice * size) / leverage
-        const marginUsedUSD = (position.entryPrice * position.size) / position.leverage;
-        const marginUsedINR = marginUsedUSD * dollarRate;
-        // Current balance (INR) already has margin deducted; add back margin + PnL
-        newBalance = balance + pnlINR + marginUsedINR;
+        newBalance = balance + pnlINR;
+        console.log('Using fallback calculation:', { balance, pnlINR, newBalance });
       }
 
-      // 2. Update balance and remove position
+      // Update balance state
       setBalance(newBalance);
       setPositions(prev => prev.filter(p => p.id !== positionId));
 
-      // 3. Update user account if backend returned it, otherwise use our calculation
-      if (data.user) {
-        setUserAccount(prev => ({
-          ...prev,
-          paperBalance: data.user.paperBalance
-        }));
-      } else {
-        setUserAccount(prev => ({
+      // Update user account and persist to localStorage
+      setUserAccount(prev => {
+        const updated = {
           ...prev,
           paperBalance: newBalance
-        }));
-      }
+        };
+        localStorage.setItem('userData', JSON.stringify(updated));
+        return updated;
+      });
 
-      // 4. Update order history
+      // Update order history
       setOrderHistory(prev => prev.map(order =>
         order.id === positionId ? {
           ...order,
@@ -1817,7 +1817,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
         } : order
       ));
 
-      // 5. Update challenge stats
+      // Update challenge stats
       if (userAccount.currentChallenge) {
         const updatedStats = { ...userAccount.challengeStats };
         if (pnl > 0) {
@@ -1831,17 +1831,19 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
         const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
         updatedStats.winRate = (winningTrades / closedTrades) * 100;
 
-        setUserAccount(prev => ({
-          ...prev,
-          challengeStats: updatedStats
-        }));
+        setUserAccount(prev => {
+          const updated = {
+            ...prev,
+            challengeStats: updatedStats
+          };
+          localStorage.setItem('userData', JSON.stringify(updated));
+          return updated;
+        });
 
         setTimeout(() => checkChallengeRules(), 100);
       }
 
-      // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
-   
-
+      alert(`Position closed. PnL: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
     } else {
       alert(data.error || 'Failed to close position');
     }
