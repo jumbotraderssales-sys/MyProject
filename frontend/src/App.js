@@ -1753,100 +1753,97 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   if (!position) return;
 
   const currentPrice = prices[position.symbol] || position.entryPrice;
-  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
-              (position.side === 'LONG' ? 1 : -1);
+
+  const pnlUSD =
+    (currentPrice - position.entryPrice) *
+    position.size *
+    (position.leverage || 1) *
+    (position.side === 'LONG' ? 1 : -1);
+
+  const pnlINR = pnlUSD * dollarRate;
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        exitPrice: currentPrice,
-        closeReason: reason
-      })
-    });
+
+    const response = await fetch(
+      `https://myproject1-d097.onrender.com/api/trades/${positionId}/close`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          exitPrice: currentPrice,
+          closeReason: reason
+        })
+      }
+    );
 
     const data = await response.json();
 
-    if (data.success) {
-      // Log the response to see what's coming from backend
-      console.log('Close position response:', data);
-
-      // Determine new balance: prefer backend value, fallback to calculation
-      let newBalance;
-
-      if (data.user?.paperBalance !== undefined) {
-        newBalance = data.user.paperBalance;
-      } else if (data.newBalance !== undefined) {
-        newBalance = data.newBalance;
-      } else {
-        // Correct fallback: current balance + PnL (in INR)
-        const pnlINR = pnl * dollarRate;
-        newBalance = balance + pnlINR;
-        console.log('Using fallback calculation:', { balance, pnlINR, newBalance });
-      }
-
-      // Update balance state
-      setBalance(newBalance);
-      setPositions(prev => prev.filter(p => p.id !== positionId));
-
-      // Update user account and persist to localStorage
-      setUserAccount(prev => {
-        const updated = {
-          ...prev,
-          paperBalance: newBalance
-        };
-        localStorage.setItem('userData', JSON.stringify(updated));
-        return updated;
-      });
-
-      // Update order history
-      setOrderHistory(prev => prev.map(order =>
-        order.id === positionId ? {
-          ...order,
-          status: 'CLOSED',
-          exitPrice: currentPrice,
-          exitTime: new Date().toLocaleString(),
-          pnl: pnl,
-          closeReason: reason,
-          updatedAt: new Date().toISOString()
-        } : order
-      ));
-
-      // Update challenge stats
-      if (userAccount.currentChallenge) {
-        const updatedStats = { ...userAccount.challengeStats };
-        if (pnl > 0) {
-          updatedStats.totalProfit += pnl;
-          updatedStats.currentProfit += pnl;
-        } else {
-          updatedStats.totalLoss += Math.abs(pnl);
-        }
-
-        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
-        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
-        updatedStats.winRate = (winningTrades / closedTrades) * 100;
-
-        setUserAccount(prev => {
-          const updated = {
-            ...prev,
-            challengeStats: updatedStats
-          };
-          localStorage.setItem('userData', JSON.stringify(updated));
-          return updated;
-        });
-
-        setTimeout(() => checkChallengeRules(), 100);
-      }
-
-      alert(`Position closed. PnL: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
-    } else {
+    if (!data.success) {
       alert(data.error || 'Failed to close position');
+      return;
     }
+
+    // ✅ UPDATE WALLET (INR)
+    setBalance(prev => prev + pnlINR);
+
+    setUserAccount(prev => ({
+      ...prev,
+      paperBalance: (prev.paperBalance || 0) + pnlINR
+    }));
+
+    // ✅ REMOVE POSITION
+    setPositions(prev => prev.filter(p => p.id !== positionId));
+
+    // ✅ UPDATE ORDER HISTORY
+    setOrderHistory(prev =>
+      prev.map(order =>
+        order.id === positionId
+          ? {
+              ...order,
+              status: 'CLOSED',
+              exitPrice: currentPrice,
+              exitTime: new Date().toLocaleString(),
+              pnl: pnlINR,
+              closeReason: reason,
+              updatedAt: new Date().toISOString()
+            }
+          : order
+      )
+    );
+
+    // ✅ UPDATE CHALLENGE STATS
+    if (userAccount.currentChallenge) {
+      const updatedStats = { ...userAccount.challengeStats };
+
+      if (pnlUSD > 0) {
+        updatedStats.totalProfit += pnlUSD;
+        updatedStats.currentProfit += pnlUSD;
+      } else {
+        updatedStats.totalLoss += Math.abs(pnlUSD);
+      }
+
+      const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+      const winningTrades =
+        orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length +
+        (pnlUSD > 0 ? 1 : 0);
+
+      updatedStats.winRate = (winningTrades / closedTrades) * 100;
+
+      setUserAccount(prev => ({
+        ...prev,
+        challengeStats: updatedStats
+      }));
+
+      setTimeout(() => checkChallengeRules(), 100);
+    }
+
+    // optional backend sync
+    await syncUserWallet();
+
   } catch (error) {
     console.error('Error closing position:', error);
     alert('Failed to close position. Please try again.');
