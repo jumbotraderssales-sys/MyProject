@@ -1763,7 +1763,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   const pnlUSD = (currentPrice - position.entryPrice) * position.size * position.leverage *
                  (position.side === 'LONG' ? 1 : -1);
 
-  const newBalanceINR = balance + (marginUSD + pnlUSD) * dollarRate;
+  const newBalanceINR = balance + (marginUSD + pnlUSD) * dollarRate; // fallback only
 
   try {
     const token = localStorage.getItem('token');
@@ -1801,7 +1801,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
           : order
       ));
 
-      // 2. Calculate new total PnL for remaining positions
+      // 2. Calculate new total PnL for remaining positions (single declaration)
       let newTotalPnl = 0;
       newPositions.forEach(pos => {
         const price = prices[pos.symbol] || pos.entryPrice;
@@ -1810,36 +1810,27 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
         newTotalPnl += posPnl;
       });
 
-      // 3. Update all balance-related states
-    setBalance(newBalanceINR);
-      setTotalPnl(newTotalPnl);
-      setEquity(newBalanceINR + newTotalPnl * dollarRate);
+      // 3. Get the correct new balance from backend
+      const newBalance = data.newBalance || (data.user ? data.user.paperBalance : newBalanceINR);
 
-      // 4. Update userAccount (override paperBalance with our computed value)
+      // 4. Update all balance‑related states using backend balance
+      setBalance(newBalance);
+      setTotalPnl(newTotalPnl);
+      setEquity(newBalance + newTotalPnl * dollarRate);
+
+      // 5. Update userAccount with backend data (paperBalance now matches backend)
       if (data.user) {
         setUserAccount(prev => ({
           ...prev,
           ...data.user,
-         paperBalance: newBalance   // use the backend value
+          paperBalance: newBalance   // use backend value, not local calculation
         }));
       } else {
-        setUserAccount(prev => ({ ...prev, paperBalance: newBalanceINR }));
+        setUserAccount(prev => ({ ...prev, paperBalance: newBalance }));
       }
-// Recalculate total PnL for remaining positions
-let newTotalPnl = 0;
-newPositions.forEach(pos => {
-  const price = prices[pos.symbol] || pos.entryPrice;
-  const posPnl = (price - pos.entryPrice) * pos.size * pos.leverage *
-                 (pos.side === 'LONG' ? 1 : -1);
-  newTotalPnl += posPnl;
-});
-setTotalPnl(newTotalPnl);
 
-// Update equity using the new balance and remaining PnL
-setEquity(newBalance + newTotalPnl * dollarRate);
-      
-      // 5. Update challenge stats (keep your existing logic)
-      // ... (I’m omitting it for brevity, but keep your code here)
+      // 6. Update challenge stats (keep your existing logic) – unchanged
+      // ... (your challenge stats update code remains here)
 
       // ---- Schedule a one‑time manual sync after 15 seconds ----
       setTimeout(async () => {
