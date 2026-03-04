@@ -1350,7 +1350,8 @@ app.post('/api/trades', async (req, res) => {
     }
     
     // Deduct margin from paper balance
-    user.paperBalance -= marginRequired;
+   const marginINR = marginRequired * DOLLAR_RATE;
+user.paperBalance -= marginINR;
     
     // Update challenge stats
     user.challengeStats.tradesCount += 1;
