@@ -7,6 +7,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const mongoose = require('mongoose');          // <-- ADDED
+const DOLLAR_RATE = 90; // 1 USD = 90 INR – match frontend's dollarRate
 const app = express();
 
 // Load environment variables
