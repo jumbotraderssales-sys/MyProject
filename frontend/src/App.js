@@ -1557,123 +1557,119 @@ const validateTrade = () => {
   return { valid: true, message: '' };
 };
 
-  const handleTrade = async (side) => {
-    const validation = validateTrade();
-    if (!validation.valid) {
-      alert(validation.message);
-      return;
-    }
+const handleTrade = async (side) => {
+  const validation = validateTrade();
+  if (!validation.valid) {
+    alert(validation.message);
+    return;
+  }
+  
+  // Get the latest real price from Binance
+  let currentPrice = await fetchRealPrice(selectedSymbol);
+  
+  // Fallback if API fails
+  if (!currentPrice) {
+    currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+    console.warn('Using fallback price for order');
+  }
+
+  // Update local price for consistency
+  setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
+
+  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+  
+  // Auto SL = 30% of margin, Auto TP = 60% of margin
+  let sl = null;
+  let tp = null;
+
+  const slAmount = marginRequired * 0.30;
+  const tpAmount = marginRequired * 0.60;
+
+  const priceMoveForSL = slAmount / (orderSize * leverage);
+  const priceMoveForTP = tpAmount / (orderSize * leverage);
+
+  if (side === 'LONG') {
+    sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
+    tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
+  } else if (side === 'SHORT') {
+    sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
+    tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const tradeData = {
+      symbol: selectedSymbol,
+      side: side,
+      size: parseFloat(orderSize),
+      leverage: leverage,
+      entryPrice: currentPrice,
+      stopLoss: sl,
+      takeProfit: tp,
+      margin: marginRequired
+    };
     
-    // Get the latest real price from Binance
-    let currentPrice = await fetchRealPrice(selectedSymbol);
+    const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(tradeData)
+    });
     
-    // Fallback if API fails
-    if (!currentPrice) {
-      currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-      console.warn('Using fallback price for order');
-    }
-
-    // Update local price for consistency
-    setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
-
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-    
-    // Auto SL/TP removed – user must manually enter or leave blank.
-    // Parse SL and TP, treat empty strings as null
-  // Auto SL = 10%, Auto TP = 20%
-// Auto SL = 10% of margin, Auto TP = 20% of margin
-let sl = null;
-let tp = null;
-
-// money risked and reward based on margin used
-const slAmount = marginRequired * 0.30; // 30% loss of margin
-const tpAmount = marginRequired * 0.60; // 60% profit of margin
-
-// price movement needed for that PnL
-const priceMoveForSL = slAmount / (orderSize * leverage);
-const priceMoveForTP = tpAmount / (orderSize * leverage);
-
-if (side === 'LONG') {
-  sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
-  tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
-} else if (side === 'SHORT') {
-  sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
-  tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
-}
-
-    
-    try {
-      const token = localStorage.getItem('token');
-      const tradeData = {
-        symbol: selectedSymbol,
-        side: side,
-        size: parseFloat(orderSize),
-        leverage: leverage,
-        entryPrice: currentPrice,
-        stopLoss: sl,
-        takeProfit: tp,
-        margin: marginRequired
+    const data = await response.json();
+    if (data.success) {
+      const newPosition = {
+        id: data.trade.id,
+        ...tradeData,
+        status: 'OPEN',
+        timestamp: new Date().toLocaleTimeString(),
+        pnl: 0,
+        positionValue: data.trade.positionValue
       };
-      
-      const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(tradeData)
+
+      setPositions(prev => {
+        const updated = [newPosition, ...prev];
+        drawTradeLines(newPosition);
+        return updated;
       });
-      
-      const data = await response.json();
-          if (data.success) {
-  const newPosition = {
-    id: data.trade.id,
-    ...tradeData,
-    status: 'OPEN',
-    timestamp: new Date().toLocaleTimeString(),
-    pnl: 0,
-    positionValue: data.trade.positionValue
-  };
+     
+      setBalance(data.newBalance);
 
-  setPositions(prev => {
-    const updated = [newPosition, ...prev];
-    drawTradeLines(newPosition);
-    return updated;
-  });
- 
-  setBalance(data.newBalance);
+      // ✅ FIX: Update userAccount.paperBalance to keep it in sync
+      setUserAccount(prev => ({
+        ...prev,
+        paperBalance: data.newBalance,
+        challengeStats: {
+          ...prev.challengeStats,
+          tradesCount: prev.challengeStats.tradesCount + 1
+        }
+      }));
 
-  const newOrder = {
-    id: data.trade.id,
-    ...tradeData,
-    status: 'OPEN',
-    timestamp: new Date().toLocaleString(),
-    pnl: 0,
-    currentPrice: currentPrice,
-    positionValue: data.trade.positionValue,
-    marginUsed: (currentPrice * orderSize) / leverage
-  };
+      const newOrder = {
+        id: data.trade.id,
+        ...tradeData,
+        status: 'OPEN',
+        timestamp: new Date().toLocaleString(),
+        pnl: 0,
+        currentPrice: currentPrice,
+        positionValue: data.trade.positionValue,
+        marginUsed: (currentPrice * orderSize) / leverage
+      };
 
-  setOrderHistory(prev => [newOrder, ...prev]);
+      setOrderHistory(prev => [newOrder, ...prev]);
 
-  setUserAccount(prev => ({
-    ...prev,
-    challengeStats: {
-      ...prev.challengeStats,
-      tradesCount: prev.challengeStats.tradesCount + 1
+      setStopLoss('');
+      setTakeProfit('');
+    } else {
+      alert(data.error || 'Trade failed');
     }
-  }));
-
-  setStopLoss('');
-  setTakeProfit('');
-      } else {
-        alert(data.error || 'Trade failed');
-      }
-    } catch (error) {
-      console.error('Trade error:', error);
-      alert('Trade failed. Please try again.');
-    }
-  };
+  } catch (error) {
+    console.error('Trade error:', error);
+    alert('Trade failed. Please try again.');
+  }
+};
     
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
