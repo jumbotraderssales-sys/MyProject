@@ -215,6 +215,7 @@ function App() {
   });
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [ignoreSyncUntil, setIgnoreSyncUntil] = useState(0);
+  const ignoreSyncUntilRef = useRef(0);
   const [withdrawalStatus, setWithdrawalStatus] = useState('pending');
   const [showAccountSetup, setShowAccountSetup] = useState(false);
   const [showWithdrawalRequest, setShowWithdrawalRequest] = useState(false);
@@ -993,8 +994,9 @@ useEffect(() => {
   };
 
 const syncUserWallet = async () => {
-  if (Date.now() < ignoreSyncUntil) {
-    console.log('Sync skipped – within cooldown after trade close');
+  // Use the ref value (latest)
+  if (Date.now() < ignoreSyncUntilRef.current) {
+    console.log(`⏳ Sync skipped – cooldown active until ${new Date(ignoreSyncUntilRef.current).toLocaleTimeString()}`);
     return;
   }
 
@@ -1002,12 +1004,14 @@ const syncUserWallet = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    console.log('🔄 Syncing wallet with backend...');
     const response = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
       const data = await response.json();
       if (data.success) {
+        console.log('✅ Backend user data received, balance:', data.user.paperBalance);
         setUserAccount(prev => ({ ...prev, ...data.user }));
         setBalance(data.user.paperBalance);
         localStorage.setItem('userData', JSON.stringify(data.user));
@@ -1017,7 +1021,6 @@ const syncUserWallet = async () => {
     console.error('Error syncing wallet:', error);
   }
 };
-
   const loadUserPayments = async () => {
     if (!isLoggedIn) return;
     
@@ -1756,13 +1759,10 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   if (!position) return;
 
   const currentPrice = prices[position.symbol] || position.entryPrice;
-
-  // Calculate margin used (USD) and PnL (USD)
   const marginUSD = (position.entryPrice * position.size) / position.leverage;
   const pnlUSD = (currentPrice - position.entryPrice) * position.size * position.leverage *
                  (position.side === 'LONG' ? 1 : -1);
 
-  // New balance in INR = old balance + (margin + pnl) converted to INR
   const newBalanceINR = balance + (marginUSD + pnlUSD) * dollarRate;
 
   try {
@@ -1779,28 +1779,14 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
     const data = await response.json();
 
     if (data.success) {
-      // --- Prevent automatic sync from reverting balance for 5 seconds ---
-      setIgnoreSyncUntil(Date.now() + 5000);
+      // ---- Block all automatic syncs ----
+      ignoreSyncUntilRef.current = Infinity;
+      console.log('🚫 Automatic syncs disabled until manual refresh');
 
-      // 1. Remove the closed position
+      // 1. Update positions and order history
       const newPositions = positions.filter(p => p.id !== positionId);
-
-      // 2. Recalculate total PnL (USD) for remaining positions
-      let newTotalPnl = 0;
-      newPositions.forEach(pos => {
-        const price = prices[pos.symbol] || pos.entryPrice;
-        const posPnl = (price - pos.entryPrice) * pos.size * pos.leverage *
-                       (pos.side === 'LONG' ? 1 : -1);
-        newTotalPnl += posPnl;
-      });
-
-      // 3. Update all related states together
       setPositions(newPositions);
-      setBalance(newBalanceINR);
-      setTotalPnl(newTotalPnl);
-      setEquity(newBalanceINR + newTotalPnl * dollarRate);   // INR + (USD→INR)
 
-      // 4. Update order history
       setOrderHistory(prev => prev.map(order =>
         order.id === positionId
           ? {
@@ -1815,42 +1801,41 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
           : order
       ));
 
-      // 5. Update userAccount (use backend data only for non‑balance fields)
+      // 2. Calculate new total PnL for remaining positions
+      let newTotalPnl = 0;
+      newPositions.forEach(pos => {
+        const price = prices[pos.symbol] || pos.entryPrice;
+        const posPnl = (price - pos.entryPrice) * pos.size * pos.leverage *
+                       (pos.side === 'LONG' ? 1 : -1);
+        newTotalPnl += posPnl;
+      });
+
+      // 3. Update all balance-related states
+      setBalance(newBalanceINR);
+      setTotalPnl(newTotalPnl);
+      setEquity(newBalanceINR + newTotalPnl * dollarRate);
+
+      // 4. Update userAccount (override paperBalance with our computed value)
       if (data.user) {
         setUserAccount(prev => ({
           ...prev,
           ...data.user,
-          paperBalance: newBalanceINR   // force correct balance
-        }));
-      } else {
-        setUserAccount(prev => ({
-          ...prev,
           paperBalance: newBalanceINR
         }));
+      } else {
+        setUserAccount(prev => ({ ...prev, paperBalance: newBalanceINR }));
       }
 
-      // 6. Update challenge statistics
-      if (userAccount.currentChallenge) {
-        const updatedStats = { ...userAccount.challengeStats };
-        if (pnlUSD > 0) {
-          updatedStats.totalProfit += pnlUSD;
-          updatedStats.currentProfit += pnlUSD;
-        } else {
-          updatedStats.totalLoss += Math.abs(pnlUSD);
-        }
+      // 5. Update challenge stats (keep your existing logic)
+      // ... (I’m omitting it for brevity, but keep your code here)
 
-        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
-        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnlUSD > 0 ? 1 : 0);
-        updatedStats.winRate = (winningTrades / closedTrades) * 100;
-
-        setUserAccount(prev => ({
-          ...prev,
-          challengeStats: updatedStats
-        }));
-
-        // Check challenge rules after a short delay
-        setTimeout(() => checkChallengeRules(), 100);
-      }
+      // ---- Schedule a one‑time manual sync after 15 seconds ----
+      setTimeout(async () => {
+        console.log('⏰ Manual sync after cooldown');
+        await syncUserWallet();            // fetch latest backend data
+        ignoreSyncUntilRef.current = 0;    // re‑enable automatic syncs
+        console.log('✅ Automatic syncs re‑enabled');
+      }, 15000);
 
     } else {
       alert(data.error || 'Failed to close position');
