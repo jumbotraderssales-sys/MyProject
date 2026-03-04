@@ -1779,10 +1779,35 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
     const data = await response.json();
 
     if (data.success) {
-      // 1. Remove the closed position
-      setPositions(prev => prev.filter(p => p.id !== positionId));
+      // 1. Determine new positions list (without this one)
+      const newPositions = positions.filter(p => p.id !== positionId);
 
-      // 2. Update order history with closed status
+      // 2. Determine new balance
+      let newBalance;
+      if (data.user) {
+        newBalance = data.user.paperBalance;
+      } else {
+        // Fallback calculation (rare)
+        const margin = (position.entryPrice * position.size) / position.leverage;
+        newBalance = balance + margin + pnl;
+      }
+
+      // 3. Recalculate total PnL for remaining positions
+      let newTotalPnl = 0;
+      newPositions.forEach(pos => {
+        const price = prices[pos.symbol] || pos.entryPrice;
+        const posPnl = (price - pos.entryPrice) * pos.size * pos.leverage *
+                       (pos.side === 'LONG' ? 1 : -1);
+        newTotalPnl += posPnl;
+      });
+
+      // 4. Update all related states together
+      setPositions(newPositions);
+      setBalance(newBalance);
+      setTotalPnl(newTotalPnl);
+      setEquity(newBalance + newTotalPnl * dollarRate); // immediate correct equity
+
+      // 5. Update order history
       setOrderHistory(prev => prev.map(order =>
         order.id === positionId
           ? {
@@ -1797,31 +1822,22 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
           : order
       ));
 
-      // 3. Update balance and user account
+      // 6. Update userAccount (use backend data if available)
       if (data.user) {
-        // Use fresh data from backend (recommended)
         setUserAccount(prev => ({
           ...prev,
-          ...data.user,                 // includes paperBalance, challengeStats, etc.
+          ...data.user,
         }));
-        setBalance(data.user.paperBalance);
       } else {
-        // Fallback manual calculation (should rarely happen)
-        const margin = (position.entryPrice * position.size) / position.leverage;
-        const newBalance = balance + margin + pnl;   // correct fallback
-        setBalance(newBalance);
         setUserAccount(prev => ({
           ...prev,
           paperBalance: newBalance
         }));
       }
 
-      // 4. Update challenge stats (using current userAccount before state updates)
+      // 7. Update challenge statistics
       if (userAccount.currentChallenge) {
-        // Clone current stats
         const updatedStats = { ...userAccount.challengeStats };
-
-        // Adjust profit/loss
         if (pnl > 0) {
           updatedStats.totalProfit += pnl;
           updatedStats.currentProfit += pnl;
@@ -1829,23 +1845,18 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
           updatedStats.totalLoss += Math.abs(pnl);
         }
 
-        // Recalculate win rate based on all closed trades (including this one)
         const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
         const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
         updatedStats.winRate = (winningTrades / closedTrades) * 100;
 
-        // Update userAccount with new stats
         setUserAccount(prev => ({
           ...prev,
           challengeStats: updatedStats
         }));
 
-        // Check challenge rules after trade close (delayed to let state settle)
+        // Check challenge rules after a short delay
         setTimeout(() => checkChallengeRules(), 100);
       }
-
-      // Optional: sync with backend (if needed, but avoid if data.user already provided)
-      // await syncUserWallet();
 
     } else {
       alert(data.error || 'Failed to close position');
@@ -1855,7 +1866,6 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
     alert('Failed to close position. Please try again.');
   }
 };
-
   const closePositionFromChart = async (positionId) => {
     const position = positions.find(p => p.id === positionId);
     if (position) {
