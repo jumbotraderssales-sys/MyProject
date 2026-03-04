@@ -1756,12 +1756,12 @@ const handleInstallClick = async () => {
     }
   };
 
-  const closePosition = async (positionId, reason = 'MANUAL') => {
+const closePosition = async (positionId, reason = 'MANUAL') => {
   const position = positions.find(p => p.id === positionId);
   if (!position) return;
 
   const currentPrice = prices[position.symbol] || position.entryPrice;
-  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
+  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
               (position.side === 'LONG' ? 1 : -1);
 
   try {
@@ -1778,10 +1778,9 @@ const handleInstallClick = async () => {
     const data = await response.json();
 
     if (data.success) {
-      // Update positions
+      // 1. Update positions and order history
       setPositions(prev => prev.filter(p => p.id !== positionId));
 
-      // Update order history with closed status
       setOrderHistory(prev => prev.map(order =>
         order.id === positionId
           ? {
@@ -1796,26 +1795,60 @@ const handleInstallClick = async () => {
           : order
       ));
 
-      // Use backend-provided user data if available
+      // 2. Update balance and user account
       if (data.user) {
-        // Update userAccount with fresh data
+        // Use fresh data from backend
         setUserAccount(prev => ({
           ...prev,
-          ...data.user,                 // includes paperBalance, challengeStats, etc.
+          ...data.user,
         }));
-        // Keep the separate balance state in sync
         setBalance(data.user.paperBalance);
       } else {
-        // Fallback: manually adjust balance (this should rarely happen)
+        // Fallback manual calculation (rare)
         const margin = (position.entryPrice * position.size) / position.leverage;
         const newBalance = balance + margin + pnl;   // correct fallback
         setBalance(newBalance);
-        // Also update userAccount's paperBalance to keep them consistent
         setUserAccount(prev => ({
           ...prev,
           paperBalance: newBalance
         }));
       }
+
+      // 3. Update challenge stats (based on current userAccount before any changes)
+      if (userAccount.currentChallenge) {
+        const updatedStats = { ...userAccount.challengeStats };
+        if (pnl > 0) {
+          updatedStats.totalProfit += pnl;
+          updatedStats.currentProfit += pnl;
+        } else {
+          updatedStats.totalLoss += Math.abs(pnl);
+        }
+
+        // Calculate win rate based on updated trade count
+        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
+        updatedStats.winRate = (winningTrades / closedTrades) * 100;
+
+        // Update userAccount with new stats
+        setUserAccount(prev => ({
+          ...prev,
+          challengeStats: updatedStats
+        }));
+
+        // Check challenge rules after the trade is closed
+        setTimeout(() => checkChallengeRules(), 100);
+      }
+
+      // Optionally sync wallet once after all updates (but avoid if backend already returned data.user)
+      // await syncUserWallet(); // optional – you may remove if data.user was used
+    } else {
+      alert(data.error || 'Failed to close position');
+    }
+  } catch (error) {
+    console.error('Error closing position:', error);
+    alert('Failed to close position. Please try again.');
+  }
+};
 
           
           // Update challenge stats
