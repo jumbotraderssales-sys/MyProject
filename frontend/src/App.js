@@ -1820,7 +1820,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
         setUserAccount(prev => ({
           ...prev,
           ...data.user,
-          paperBalance: newBalanceINR   // ❌ overwrites with local value
+         paperBalance: newBalance   // use the backend value
         }));
       } else {
         setUserAccount(prev => ({ ...prev, paperBalance: newBalanceINR }));
