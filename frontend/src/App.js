@@ -1755,84 +1755,102 @@ const handleInstallClick = async () => {
 
 
 const closePosition = async (positionId, reason = 'MANUAL') => {
-    const position = positions.find(p => p.id === positionId);
-    if (position) {
-      const currentPrice = prices[position.symbol] || position.entryPrice;
-      const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
-                  (position.side === 'LONG' ? 1 : -1);
+  const position = positions.find(p => p.id === positionId);
+  if (position) {
+    const currentPrice = prices[position.symbol] || position.entryPrice;
+    const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
+                (position.side === 'LONG' ? 1 : -1);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          exitPrice: currentPrice,
+          closeReason: reason 
+        })
+      });
       
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            exitPrice: currentPrice,
-            closeReason: reason 
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          const newBalance = data.user?.paperBalance || (balance + pnl + position.positionValue);
-          setBalance(newBalance);
-          setEquity(newBalance + (totalPnl - pnl));
-          
-          setPositions(prev => prev.filter(p => p.id !== positionId));
-          
-          if (data.user) {
-            setUserAccount(prev => ({
-              ...prev,
-              paperBalance: data.user.paperBalance
-            }));
-          }
-          
-          setOrderHistory(prev => prev.map(order => 
-            order.id === positionId ? {
-              ...order,
-              status: 'CLOSED',
-              exitPrice: currentPrice,
-              exitTime: new Date().toLocaleString(),
-              pnl: pnl,
-              closeReason: reason,
-              updatedAt: new Date().toISOString()
-            } : order
-          ));
-          
-          // Update challenge stats
-          if (userAccount.currentChallenge) {
-            const updatedStats = { ...userAccount.challengeStats };
-            if (pnl > 0) {
-              updatedStats.totalProfit += pnl;
-              updatedStats.currentProfit += pnl;
-            } else {
-              updatedStats.totalLoss += Math.abs(pnl);
-            }
-            
-            // Calculate win rate
-            const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
-            const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
-            updatedStats.winRate = (winningTrades / closedTrades) * 100;
-            
-            setUserAccount(prev => ({
-              ...prev,
-              challengeStats: updatedStats
-            }));
-            
-            // Check challenge rules after trade close
-            setTimeout(() => checkChallengeRules(), 100);
-          }
+      const data = await response.json();
+      
+      if (data.success) {
+        // Use backend returned balance (INR) if available
+        let newBalance;
+        if (data.user?.paperBalance !== undefined) {
+          newBalance = data.user.paperBalance;
+        } else {
+          // Fallback: correctly convert USD to INR
+          const pnlINR = pnl * dollarRate;
+          const marginUsedUSD = (position.entryPrice * position.size) / position.leverage;
+          const marginUsedINR = marginUsedUSD * dollarRate;
+          newBalance = balance + pnlINR + marginUsedINR;
         }
-      } catch (error) {
-        console.error('Error closing position:', error);
-        alert('Failed to close position. Please try again.');
+        
+        setBalance(newBalance);
+        setEquity(newBalance + (totalPnl - pnl) * dollarRate); // also adjust equity
+
+        setPositions(prev => prev.filter(p => p.id !== positionId));
+        
+        if (data.user) {
+          setUserAccount(prev => ({
+            ...prev,
+            paperBalance: data.user.paperBalance
+          }));
+        } else {
+          setUserAccount(prev => ({
+            ...prev,
+            paperBalance: newBalance
+          }));
+        }
+        
+        // Update order history
+        setOrderHistory(prev => prev.map(order => 
+          order.id === positionId ? {
+            ...order,
+            status: 'CLOSED',
+            exitPrice: currentPrice,
+            exitTime: new Date().toLocaleString(),
+            pnl: pnl,
+            closeReason: reason,
+            updatedAt: new Date().toISOString()
+          } : order
+        ));
+        
+        // Update challenge stats and check rules
+        if (userAccount.currentChallenge) {
+          const updatedStats = { ...userAccount.challengeStats };
+          if (pnl > 0) {
+            updatedStats.totalProfit += pnl;
+            updatedStats.currentProfit += pnl;
+          } else {
+            updatedStats.totalLoss += Math.abs(pnl);
+          }
+          
+          const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+          const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
+          updatedStats.winRate = (winningTrades / closedTrades) * 100;
+          
+          setUserAccount(prev => ({
+            ...prev,
+            challengeStats: updatedStats
+          }));
+          
+          setTimeout(() => checkChallengeRules(), 100);
+        }
+        
+        // Optionally sync with backend to ensure consistency
+        await syncUserWallet();
       }
+    } catch (error) {
+      console.error('Error closing position:', error);
+      alert('Failed to close position. Please try again.');
     }
-  };  const closePositionFromChart = async (positionId) => {
+  }
+}; const closePositionFromChart = async (positionId) => {
     const position = positions.find(p => p.id === positionId);
     if (position) {
       const confirmClose = window.confirm(`Close ${position.side} position for ${position.symbol}?`);
