@@ -1757,53 +1757,66 @@ const handleInstallClick = async () => {
   };
 
   const closePosition = async (positionId, reason = 'MANUAL') => {
-    const position = positions.find(p => p.id === positionId);
-    if (position) {
-      const currentPrice = prices[position.symbol] || position.entryPrice;
-      const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
-                  (position.side === 'LONG' ? 1 : -1);
-      
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            exitPrice: currentPrice,
-            closeReason: reason 
-          })
-        });
-        
-        const data = await response.json();
-        
-      if (data.success) {
-  const newBalance = data.user?.paperBalance || (balance + pnl + position.positionValue);
-  setBalance(newBalance);
-  setEquity(newBalance + (totalPnl - pnl));
-  
-  setPositions(prev => prev.filter(p => p.id !== positionId));
-  
-  if (data.user) {
-    setUserAccount(prev => ({
-      ...prev,
-      paperBalance: data.user.paperBalance
-    }));
-  }
-  
-  setOrderHistory(prev => prev.map(order => 
-    order.id === positionId ? {
-      ...order,
-      status: 'CLOSED',
-      exitPrice: currentPrice,
-      exitTime: new Date().toLocaleString(),
-      pnl: pnl,
-      closeReason: reason,
-      updatedAt: new Date().toISOString()
-    } : order
-  ));
+  const position = positions.find(p => p.id === positionId);
+  if (!position) return;
+
+  const currentPrice = prices[position.symbol] || position.entryPrice;
+  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
+              (position.side === 'LONG' ? 1 : -1);
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ exitPrice: currentPrice, closeReason: reason })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Update positions
+      setPositions(prev => prev.filter(p => p.id !== positionId));
+
+      // Update order history with closed status
+      setOrderHistory(prev => prev.map(order =>
+        order.id === positionId
+          ? {
+              ...order,
+              status: 'CLOSED',
+              exitPrice: currentPrice,
+              exitTime: new Date().toLocaleString(),
+              pnl: pnl,
+              closeReason: reason,
+              updatedAt: new Date().toISOString()
+            }
+          : order
+      ));
+
+      // Use backend-provided user data if available
+      if (data.user) {
+        // Update userAccount with fresh data
+        setUserAccount(prev => ({
+          ...prev,
+          ...data.user,                 // includes paperBalance, challengeStats, etc.
+        }));
+        // Keep the separate balance state in sync
+        setBalance(data.user.paperBalance);
+      } else {
+        // Fallback: manually adjust balance (this should rarely happen)
+        const margin = (position.entryPrice * position.size) / position.leverage;
+        const newBalance = balance + margin + pnl;   // correct fallback
+        setBalance(newBalance);
+        // Also update userAccount's paperBalance to keep them consistent
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: newBalance
+        }));
+      }
+
           
           // Update challenge stats
           if (userAccount.currentChallenge) {
