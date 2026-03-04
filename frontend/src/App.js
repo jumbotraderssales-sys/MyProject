@@ -1756,8 +1756,14 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   if (!position) return;
 
   const currentPrice = prices[position.symbol] || position.entryPrice;
-  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
-              (position.side === 'LONG' ? 1 : -1);
+
+  // Calculate margin used (USD) and PnL (USD)
+  const marginUSD = (position.entryPrice * position.size) / position.leverage;
+  const pnlUSD = (currentPrice - position.entryPrice) * position.size * position.leverage *
+                 (position.side === 'LONG' ? 1 : -1);
+
+  // New balance in INR = old balance + (margin + pnl) converted to INR
+  const newBalanceINR = balance + (marginUSD + pnlUSD) * dollarRate;
 
   try {
     const token = localStorage.getItem('token');
@@ -1773,22 +1779,13 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
     const data = await response.json();
 
     if (data.success) {
-      // --- Ignore automatic sync for 5 seconds ---
+      // --- Prevent automatic sync from reverting balance for 5 seconds ---
       setIgnoreSyncUntil(Date.now() + 5000);
 
-      // Remove the closed position
+      // 1. Remove the closed position
       const newPositions = positions.filter(p => p.id !== positionId);
 
-      // Determine new balance
-      let newBalance;
-      if (data.user) {
-        newBalance = data.user.paperBalance;
-      } else {
-        const margin = (position.entryPrice * position.size) / position.leverage;
-        newBalance = balance + margin + pnl;   // correct fallback
-      }
-
-      // Recalculate total PnL for remaining positions
+      // 2. Recalculate total PnL (USD) for remaining positions
       let newTotalPnl = 0;
       newPositions.forEach(pos => {
         const price = prices[pos.symbol] || pos.entryPrice;
@@ -1797,13 +1794,13 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
         newTotalPnl += posPnl;
       });
 
-      // Update all related states together
+      // 3. Update all related states together
       setPositions(newPositions);
-      setBalance(newBalance);
+      setBalance(newBalanceINR);
       setTotalPnl(newTotalPnl);
-      setEquity(newBalance + newTotalPnl * dollarRate);
+      setEquity(newBalanceINR + newTotalPnl * dollarRate);   // INR + (USD→INR)
 
-      // Update order history
+      // 4. Update order history
       setOrderHistory(prev => prev.map(order =>
         order.id === positionId
           ? {
@@ -1811,22 +1808,50 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
               status: 'CLOSED',
               exitPrice: currentPrice,
               exitTime: new Date().toLocaleString(),
-              pnl: pnl,
+              pnl: pnlUSD,
               closeReason: reason,
               updatedAt: new Date().toISOString()
             }
           : order
       ));
 
-      // Update userAccount
+      // 5. Update userAccount (use backend data only for non‑balance fields)
       if (data.user) {
-        setUserAccount(prev => ({ ...prev, ...data.user }));
+        setUserAccount(prev => ({
+          ...prev,
+          ...data.user,
+          paperBalance: newBalanceINR   // force correct balance
+        }));
       } else {
-        setUserAccount(prev => ({ ...prev, paperBalance: newBalance }));
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: newBalanceINR
+        }));
       }
 
-      // Update challenge stats (omitted for brevity, keep your existing logic)
-      // ...
+      // 6. Update challenge statistics
+      if (userAccount.currentChallenge) {
+        const updatedStats = { ...userAccount.challengeStats };
+        if (pnlUSD > 0) {
+          updatedStats.totalProfit += pnlUSD;
+          updatedStats.currentProfit += pnlUSD;
+        } else {
+          updatedStats.totalLoss += Math.abs(pnlUSD);
+        }
+
+        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnlUSD > 0 ? 1 : 0);
+        updatedStats.winRate = (winningTrades / closedTrades) * 100;
+
+        setUserAccount(prev => ({
+          ...prev,
+          challengeStats: updatedStats
+        }));
+
+        // Check challenge rules after a short delay
+        setTimeout(() => checkChallengeRules(), 100);
+      }
+
     } else {
       alert(data.error || 'Failed to close position');
     }
