@@ -723,7 +723,7 @@ useEffect(() => {
     }
 
     loadUserData(token);
-    syncUserWallet();  // 👈 add this line to refresh profile from backend
+   
   }
 }, []);
 
