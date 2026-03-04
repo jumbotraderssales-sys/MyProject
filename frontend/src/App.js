@@ -1043,7 +1043,8 @@ const syncUserWallet = async () => {
           calculatePaymentStats(data.payments);
           setLoadingPayments(false);
           
-         
+          await syncUserWallet();
+          
           return;
         }
       }
@@ -1556,119 +1557,125 @@ const validateTrade = () => {
   return { valid: true, message: '' };
 };
 
-const handleTrade = async (side) => {
-  const validation = validateTrade();
-  if (!validation.valid) {
-    alert(validation.message);
-    return;
-  }
-  
-  // Get the latest real price from Binance
-  let currentPrice = await fetchRealPrice(selectedSymbol);
-  
-  // Fallback if API fails
-  if (!currentPrice) {
-    currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-    console.warn('Using fallback price for order');
-  }
-
-  // Update local price for consistency
-  setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
-
-  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-  
-  // Auto SL = 30% of margin, Auto TP = 60% of margin
-  let sl = null;
-  let tp = null;
-
-  const slAmount = marginRequired * 0.30;
-  const tpAmount = marginRequired * 0.60;
-
-  const priceMoveForSL = slAmount / (orderSize * leverage);
-  const priceMoveForTP = tpAmount / (orderSize * leverage);
-
-  if (side === 'LONG') {
-    sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
-    tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
-  } else if (side === 'SHORT') {
-    sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
-    tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-    const tradeData = {
-      symbol: selectedSymbol,
-      side: side,
-      size: parseFloat(orderSize),
-      leverage: leverage,
-      entryPrice: currentPrice,
-      stopLoss: sl,
-      takeProfit: tp,
-      margin: marginRequired
-    };
-    
-    const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(tradeData)
-    });
-    
-    const data = await response.json();
-    if (data.success) {
-      const newPosition = {
-        id: data.trade.id,
-        ...tradeData,
-        status: 'OPEN',
-        timestamp: new Date().toLocaleTimeString(),
-        pnl: 0,
-        positionValue: data.trade.positionValue
-      };
-
-      setPositions(prev => {
-        const updated = [newPosition, ...prev];
-        drawTradeLines(newPosition);
-        return updated;
-      });
-     
-      setBalance(data.newBalance);
-
-      // ✅ FIX: Update userAccount.paperBalance to keep it in sync
-      setUserAccount(prev => ({
-        ...prev,
-        paperBalance: data.newBalance,
-        challengeStats: {
-          ...prev.challengeStats,
-          tradesCount: prev.challengeStats.tradesCount + 1
-        }
-      }));
-
-      const newOrder = {
-        id: data.trade.id,
-        ...tradeData,
-        status: 'OPEN',
-        timestamp: new Date().toLocaleString(),
-        pnl: 0,
-        currentPrice: currentPrice,
-        positionValue: data.trade.positionValue,
-        marginUsed: (currentPrice * orderSize) / leverage
-      };
-
-      setOrderHistory(prev => [newOrder, ...prev]);
-
-      setStopLoss('');
-      setTakeProfit('');
-    } else {
-      alert(data.error || 'Trade failed');
+  const handleTrade = async (side) => {
+    const validation = validateTrade();
+    if (!validation.valid) {
+      alert(validation.message);
+      return;
     }
-  } catch (error) {
-    console.error('Trade error:', error);
-    alert('Trade failed. Please try again.');
-  }
-};
+    
+    // Get the latest real price from Binance
+    let currentPrice = await fetchRealPrice(selectedSymbol);
+    
+    // Fallback if API fails
+    if (!currentPrice) {
+      currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      console.warn('Using fallback price for order');
+    }
+
+    // Update local price for consistency
+    setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
+
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    
+    // Auto SL/TP removed – user must manually enter or leave blank.
+    // Parse SL and TP, treat empty strings as null
+  // Auto SL = 10%, Auto TP = 20%
+// Auto SL = 10% of margin, Auto TP = 20% of margin
+let sl = null;
+let tp = null;
+
+// money risked and reward based on margin used
+const slAmount = marginRequired * 0.30; // 30% loss of margin
+const tpAmount = marginRequired * 0.60; // 60% profit of margin
+
+// price movement needed for that PnL
+const priceMoveForSL = slAmount / (orderSize * leverage);
+const priceMoveForTP = tpAmount / (orderSize * leverage);
+
+if (side === 'LONG') {
+  sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
+} else if (side === 'SHORT') {
+  sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
+}
+
+    
+    try {
+      const token = localStorage.getItem('token');
+      const tradeData = {
+        symbol: selectedSymbol,
+        side: side,
+        size: parseFloat(orderSize),
+        leverage: leverage,
+        entryPrice: currentPrice,
+        stopLoss: sl,
+        takeProfit: tp,
+        margin: marginRequired
+      };
+      
+      const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(tradeData)
+      });
+      
+      const data = await response.json();
+          if (data.success) {
+  const newPosition = {
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleTimeString(),
+    pnl: 0,
+    positionValue: data.trade.positionValue
+  };
+
+  setPositions(prev => {
+    const updated = [newPosition, ...prev];
+    drawTradeLines(newPosition);
+    return updated;
+  });
+ 
+  setBalance(data.newBalance);
+  // 👇 Update userAccount.paperBalance immediately so the wallet reflects the new balance
+  setUserAccount(prev => ({ ...prev, paperBalance: data.newBalance }));
+
+  const newOrder = {
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleString(),
+    pnl: 0,
+    currentPrice: currentPrice,
+    positionValue: data.trade.positionValue,
+    marginUsed: (currentPrice * orderSize) / leverage
+  };
+
+  setOrderHistory(prev => [newOrder, ...prev]);
+
+  setUserAccount(prev => ({
+    ...prev,
+    challengeStats: {
+      ...prev.challengeStats,
+      tradesCount: prev.challengeStats.tradesCount + 1
+    }
+  }));
+
+  setStopLoss('');
+  setTakeProfit('');
+      } else {
+        alert(data.error || 'Trade failed');
+      }
+    } catch (error) {
+      console.error('Trade error:', error);
+      alert('Trade failed. Please try again.');
+    }
+  };
     
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
@@ -1753,97 +1760,98 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   if (!position) return;
 
   const currentPrice = prices[position.symbol] || position.entryPrice;
-
-  const pnlUSD =
-    (currentPrice - position.entryPrice) *
-    position.size *
-    (position.leverage || 1) *
-    (position.side === 'LONG' ? 1 : -1);
-
-  const pnlINR = pnlUSD * dollarRate;
+  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
+              (position.side === 'LONG' ? 1 : -1);
 
   try {
     const token = localStorage.getItem('token');
-
-    const response = await fetch(
-      `https://myproject1-d097.onrender.com/api/trades/${positionId}/close`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          exitPrice: currentPrice,
-          closeReason: reason
-        })
-      }
-    );
+    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        exitPrice: currentPrice,
+        closeReason: reason
+      })
+    });
 
     const data = await response.json();
 
-    if (!data.success) {
-      alert(data.error || 'Failed to close position');
-      return;
-    }
-
-    // ✅ UPDATE WALLET (INR)
-    setBalance(prev => prev + pnlINR);
-
-    setUserAccount(prev => ({
-      ...prev,
-      paperBalance: (prev.paperBalance || 0) + pnlINR
-    }));
-
-    // ✅ REMOVE POSITION
-    setPositions(prev => prev.filter(p => p.id !== positionId));
-
-    // ✅ UPDATE ORDER HISTORY
-    setOrderHistory(prev =>
-      prev.map(order =>
-        order.id === positionId
-          ? {
-              ...order,
-              status: 'CLOSED',
-              exitPrice: currentPrice,
-              exitTime: new Date().toLocaleString(),
-              pnl: pnlINR,
-              closeReason: reason,
-              updatedAt: new Date().toISOString()
-            }
-          : order
-      )
-    );
-
-    // ✅ UPDATE CHALLENGE STATS
-    if (userAccount.currentChallenge) {
-      const updatedStats = { ...userAccount.challengeStats };
-
-      if (pnlUSD > 0) {
-        updatedStats.totalProfit += pnlUSD;
-        updatedStats.currentProfit += pnlUSD;
+    if (data.success) {
+      // 1. Determine new balance (INR) – prefer backend, else calculate correctly
+      let newBalance;
+      if (data.user?.paperBalance !== undefined) {
+        newBalance = data.user.paperBalance;
       } else {
-        updatedStats.totalLoss += Math.abs(pnlUSD);
+        // Fallback: convert USD values to INR using current dollarRate
+        const pnlINR = pnl * dollarRate;
+        // Margin used in USD = (entryPrice * size) / leverage
+        const marginUsedUSD = (position.entryPrice * position.size) / position.leverage;
+        const marginUsedINR = marginUsedUSD * dollarRate;
+        // Current balance (INR) already has margin deducted; add back margin + PnL
+        newBalance = balance + pnlINR + marginUsedINR;
       }
 
-      const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
-      const winningTrades =
-        orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length +
-        (pnlUSD > 0 ? 1 : 0);
+      // 2. Update balance and remove position
+      setBalance(newBalance);
+      setPositions(prev => prev.filter(p => p.id !== positionId));
 
-      updatedStats.winRate = (winningTrades / closedTrades) * 100;
+      // 3. Update user account if backend returned it, otherwise use our calculation
+      if (data.user) {
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: data.user.paperBalance
+        }));
+      } else {
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: newBalance
+        }));
+      }
 
-      setUserAccount(prev => ({
-        ...prev,
-        challengeStats: updatedStats
-      }));
+      // 4. Update order history
+      setOrderHistory(prev => prev.map(order =>
+        order.id === positionId ? {
+          ...order,
+          status: 'CLOSED',
+          exitPrice: currentPrice,
+          exitTime: new Date().toLocaleString(),
+          pnl: pnl,
+          closeReason: reason,
+          updatedAt: new Date().toISOString()
+        } : order
+      ));
 
-      setTimeout(() => checkChallengeRules(), 100);
+      // 5. Update challenge stats
+      if (userAccount.currentChallenge) {
+        const updatedStats = { ...userAccount.challengeStats };
+        if (pnl > 0) {
+          updatedStats.totalProfit += pnl;
+          updatedStats.currentProfit += pnl;
+        } else {
+          updatedStats.totalLoss += Math.abs(pnl);
+        }
+
+        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
+        updatedStats.winRate = (winningTrades / closedTrades) * 100;
+
+        setUserAccount(prev => ({
+          ...prev,
+          challengeStats: updatedStats
+        }));
+
+        setTimeout(() => checkChallengeRules(), 100);
+      }
+
+      // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
+      await syncUserWallet();
+
+    } else {
+      alert(data.error || 'Failed to close position');
     }
-
-    // optional backend sync
-    await syncUserWallet();
-
   } catch (error) {
     console.error('Error closing position:', error);
     alert('Failed to close position. Please try again.');
