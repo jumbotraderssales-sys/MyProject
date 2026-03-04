@@ -1811,7 +1811,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
       });
 
       // 3. Update all balance-related states
-    
+    setBalance(newBalanceINR);
       setTotalPnl(newTotalPnl);
       setEquity(newBalanceINR + newTotalPnl * dollarRate);
 
@@ -1825,7 +1825,19 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
       } else {
         setUserAccount(prev => ({ ...prev, paperBalance: newBalanceINR }));
       }
+// Recalculate total PnL for remaining positions
+let newTotalPnl = 0;
+newPositions.forEach(pos => {
+  const price = prices[pos.symbol] || pos.entryPrice;
+  const posPnl = (price - pos.entryPrice) * pos.size * pos.leverage *
+                 (pos.side === 'LONG' ? 1 : -1);
+  newTotalPnl += posPnl;
+});
+setTotalPnl(newTotalPnl);
 
+// Update equity using the new balance and remaining PnL
+setEquity(newBalance + newTotalPnl * dollarRate);
+      
       // 5. Update challenge stats (keep your existing logic)
       // ... (I’m omitting it for brevity, but keep your code here)
 
