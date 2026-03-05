@@ -2512,7 +2512,6 @@ app.get('/api/withdrawals/history', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
-
 // Simple admin check middleware
 const requireAdmin = async (req, res, next) => {
   try {
@@ -2536,14 +2535,6 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
-app.get('/api/admin/challenges', requireAdmin, async (req, res) => {
-  try {
-    const challenges = await readChallenges();
-    res.json({ success: true, challenges });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 // Get all users (for admin panel)
 app.get('/api/admin/users', async (req, res) => {
   try {
