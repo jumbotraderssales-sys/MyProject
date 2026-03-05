@@ -202,8 +202,6 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
-  const [challenges, setChallenges] = useState([]);
-const [loadingChallenges, setLoadingChallenges] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [mode, setMode] = useState('DEMO');
   const [activeDashboard, setActiveDashboard] = useState('Challenges');
@@ -453,26 +451,6 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
       console.error('Failed to fetch referral info:', error);
     }
   };
-
-  const fetchChallenges = async () => {
-  setLoadingChallenges(true);
-  try {
-    const response = await fetch('https://myproject1-d097.onrender.com/api/challenges');
-    const data = await response.json();
-    if (data.success) {
-      setChallenges(data.challenges);
-    }
-  } catch (error) {
-    console.error('Error fetching challenges:', error);
-  } finally {
-    setLoadingChallenges(false);
-  }
-};
-  useEffect(() => {
-  if (activeDashboard === 'Challenges') {
-    fetchChallenges();
-  }
-}, [activeDashboard]);
 
   // Calculate margin and available funds
   useEffect(() => {
@@ -1231,8 +1209,9 @@ const syncUserWallet = async () => {
     if (newStatus === 'approved' || newStatus === 'completed') {
       const approvedPayment = updatedPayments.find(p => p.id === paymentId);
       if (approvedPayment) {
-       const challenge = challenges.find(c => c.name === approvedPayment.challengeName);
-const paperMoneyAmount = challenge ? challenge.paperBalance : 20000; // fallback if not found
+        const paperMoneyAmount = approvedPayment.challengeName.includes('Beginner') ? 20000 :
+                                approvedPayment.challengeName.includes('Intermediate') ? 50000 :
+                                approvedPayment.challengeName.includes('PRO') ? 100000 : 20000;
         
         setUserAccount(prev => ({
           ...prev,
@@ -1273,8 +1252,9 @@ const paperMoneyAmount = challenge ? challenge.paperBalance : 20000; // fallback
       if (isApproved) {
         updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
         
-        const challenge = challenges.find(c => c.name === payment.challengeName);
-const paperMoneyAmount = challenge ? challenge.paperBalance : 20000;
+        const paperMoneyAmount = payment.challengeName.includes('Beginner') ? 20000 :
+                                payment.challengeName.includes('Intermediate') ? 50000 :
+                                payment.challengeName.includes('PRO') ? 100000 : 20000;
         
         const token = localStorage.getItem('token');
         if (token) {
@@ -1500,7 +1480,7 @@ const validateTrade = () => {
     return { valid: false, message: 'Please purchase a challenge to start trading' };
   }
 
- const challenge = challenges.find(c => c.name === approvedPayment.challengeName);
+  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
   if (!challenge) {
     return { valid: false, message: 'Invalid challenge configuration' };
   }
@@ -3599,7 +3579,7 @@ const calculateOrderPnL = (order) => {
                         <span className="progress-label">Profit Target:</span>
                         <span className="progress-value">
                           {challengeProgress.profit.toFixed(2)}% / 
-                         {userAccount.challengeStats?.rules?.profitTarget || 10}
+                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.profitTarget || 10}%
                         </span>
                       </div>
                       <div className="challenge-progress-item">
