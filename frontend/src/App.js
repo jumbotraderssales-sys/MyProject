@@ -547,52 +547,54 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, []); // runs once on mount
  
-  // Calculate daily and total loss
   useEffect(() => {
-    if (userAccount.currentChallenge && userAccount.challengeStats) {
-      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (!challenge) return;
+  if (userAccount.currentChallenge && userAccount.challengeStats) {
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    if (!challenge) return;
 
-      // Calculate daily loss from today's trades
-      const today = new Date().toDateString();
-      const todayTrades = orderHistory.filter(order => {
-        const orderDate = new Date(order.timestamp).toDateString();
-        return orderDate === today && order.status === 'CLOSED';
-      });
-      
-      const dailyLossAmount = Math.abs(todayTrades
-        .filter(order => order.pnl < 0)
-        .reduce((sum, order) => sum + order.pnl, 0));
-      
-      const dailyLossPercentage = (dailyLossAmount / userAccount.paperBalance) * 100;
-      setDailyLoss(dailyLossPercentage);
-      
-      // Calculate total loss from all trades
-      const allLosses = orderHistory
-        .filter(order => order.status === 'CLOSED' && order.pnl < 0)
-        .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
-      
-      const totalLossPercentage = (allLosses / userAccount.paperBalance) * 100;
-      setTotalLoss(totalLossPercentage);
-      
-      // Update challenge progress
-      const totalProfit = orderHistory
-        .filter(order => order.status === 'CLOSED' && order.pnl > 0)
-        .reduce((sum, order) => sum + order.pnl, 0);
-      
-      const profitPercentage = (totalProfit / userAccount.paperBalance) * 100;
-      
-      setChallengeProgress({
-        profit: profitPercentage,
-        dailyLoss: dailyLossPercentage,
-        totalLoss: totalLossPercentage,
-        status: userAccount.challengeStats.status
-      });
-      
-      // Check challenge rules
-      checkChallengeRules();
-    }
-  }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats]);
+    const today = new Date().toDateString();
+    const todayTrades = orderHistory.filter(order => {
+      const orderDate = new Date(order.timestamp).toDateString();
+      return orderDate === today && order.status === 'CLOSED';
+    });
+    
+    // Daily loss - convert from USD to INR
+    const dailyLossAmountUSD = Math.abs(todayTrades
+      .filter(order => order.pnl < 0)
+      .reduce((sum, order) => sum + order.pnl, 0));
+    
+    const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
+    const dailyLossPercentage = (dailyLossAmountINR / userAccount.paperBalance) * 100;
+    setDailyLoss(dailyLossPercentage);
+    
+    // Total loss - convert from USD to INR
+    const allLossesUSD = orderHistory
+      .filter(order => order.status === 'CLOSED' && order.pnl < 0)
+      .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
+    
+    const allLossesINR = allLossesUSD * dollarRate;
+    const totalLossPercentage = (allLossesINR / userAccount.paperBalance) * 100;
+    setTotalLoss(totalLossPercentage);
+    
+    // Total profit - convert from USD to INR
+    const totalProfitUSD = orderHistory
+      .filter(order => order.status === 'CLOSED' && order.pnl > 0)
+      .reduce((sum, order) => sum + order.pnl, 0);
+    
+    const totalProfitINR = totalProfitUSD * dollarRate;
+    const profitPercentage = (totalProfitINR / userAccount.paperBalance) * 100;
+    
+    setChallengeProgress({
+      profit: profitPercentage,
+      dailyLoss: dailyLossPercentage,
+      totalLoss: totalLossPercentage,
+      status: userAccount.challengeStats.status
+    });
+    
+    // Check challenge rules with the correct percentages
+    checkChallengeRules(profitPercentage, dailyLossPercentage, totalLossPercentage);
+  }
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
 
   // Check challenge rules
  const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
