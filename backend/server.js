@@ -2513,15 +2513,80 @@ app.get('/api/withdrawals/history', async (req, res) => {
 // ========== ADMIN ENDPOINTS ==========
 // ========== NEW CHALLENGE ADMIN ENDPOINTS ==========
 // GET all challenges (admin)
-app.get('/api/admin/challenges', requireAdmin, async (req, res) => { ... });
-// GET single challenge
-app.get('/api/admin/challenges/:id', requireAdmin, async (req, res) => { ... });
-// POST create challenge
-app.post('/api/admin/challenges', requireAdmin, async (req, res) => { ... });
-// PUT update challenge
-app.put('/api/admin/challenges/:id', requireAdmin, async (req, res) => { ... });
-// DELETE challenge
-app.delete('/api/admin/challenges/:id', requireAdmin, async (req, res) => { ... });
+app.get('/api/admin/challenges', requireAdmin, async (req, res) => {
+  try {
+    const challenges = await readChallenges();
+    res.json({ success: true, challenges });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET single challenge by id (admin)
+app.get('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
+  try {
+    const challenges = await readChallenges();
+    const challenge = challenges.find(c => c._id == req.params.id || c.id == req.params.id);
+    if (!challenge) {
+      return res.status(404).json({ success: false, error: 'Challenge not found' });
+    }
+    res.json({ success: true, challenge });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// POST create new challenge (admin)
+app.post('/api/admin/challenges', requireAdmin, async (req, res) => {
+  try {
+    const challenges = await readChallenges();
+    const newChallenge = {
+      ...req.body,
+      _id: new mongoose.Types.ObjectId(), // if using MongoDB
+      id: Date.now().toString(),           // fallback for file
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    challenges.push(newChallenge);
+    await writeChallenges(challenges);
+    res.json({ success: true, challenge: newChallenge });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// PUT update challenge (admin)
+app.put('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
+  try {
+    const challenges = await readChallenges();
+    const index = challenges.findIndex(c => c._id == req.params.id || c.id == req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Challenge not found' });
+    }
+    challenges[index] = {
+      ...challenges[index],
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+    await writeChallenges(challenges);
+    res.json({ success: true, challenge: challenges[index] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE challenge (admin)
+app.delete('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
+  try {
+    const challenges = await readChallenges();
+    const filtered = challenges.filter(c => c._id != req.params.id && c.id != req.params.id);
+    if (filtered.length === challenges.length) {
+      return res.status(404).json({ success: false, error: 'Challenge not found' });
+    }
+    await writeChallenges(filtered);
+    res.json({ success: true, message: 'Challenge deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Simple admin check middleware
 const requireAdmin = async (req, res, next) => {
