@@ -58,27 +58,6 @@ const userSchema = new mongoose.Schema({
   referredUsers: [String],
   referralReward: mongoose.Schema.Types.Mixed
 });
-const challengeSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true }, // e.g., "🚀 Beginner Challenge"
-  fee: { type: String, required: true },                // e.g., "₹1,000"
-  paperBalance: { type: Number, required: true },
-  profitTarget: { type: Number, required: true },
-  dailyLossLimit: { type: Number, required: true },
-  maxLossLimit: { type: Number, required: true },
-  maxOrderSize: { type: Number, required: true },       // percentage of capital
-  maxLeverage: { type: Number, required: true },
-  autoStopLossTarget: { type: Number, required: true }, // percentage of order value
-  oneTradeAtTime: { type: Boolean, default: true },
-  reward: { type: String, required: true },
-  color: { type: String, default: "#22c55e" },
-  icon: { type: String, default: "🟢" },
-  description: { type: String, default: "" },
-  order: { type: Number, default: 0 },                  // for sorting
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-const ChallengeModel = mongoose.model('Challenge', challengeSchema);
 
 const tradeSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
@@ -273,50 +252,6 @@ const CHALLENGES = {
     oneTradeAtTime: true,
     reward: "Fee Refund + Skill Reward (20% of paper profit)",
     color: "#ef4444"
-  }
-};
-const readChallenges = async () => {
-  if (isMongoConnected) {
-    try {
-      const challenges = await ChallengeModel.find().lean();
-      return challenges;
-    } catch (error) {
-      console.error('Error reading challenges from MongoDB, falling back to file', error.message);
-    }
-  }
-  const CHALLENGES_FILE = path.join(__dirname, 'data', 'challenges.json');
-  try {
-    const data = await fs.readFile(CHALLENGES_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    // Seed with default challenges if file doesn't exist
-    const defaultChallenges = [
-      { name: "🚀 Beginner Challenge", fee: "₹1,000", paperBalance: 20000, profitTarget: 10, dailyLossLimit: 4, maxLossLimit: 10, maxOrderSize: 20, maxLeverage: 10, autoStopLossTarget: 10, oneTradeAtTime: true, reward: "Fee Refund + Skill Reward (20% of paper profit)", color: "#22c55e", icon: "🟢", description: "Perfect for beginners to learn trading with minimal risk", order: 1 },
-      { name: "🟡 Intermediate Challenge", fee: "₹2,500", paperBalance: 50000, profitTarget: 10, dailyLossLimit: 4, maxLossLimit: 10, maxOrderSize: 20, maxLeverage: 10, autoStopLossTarget: 10, oneTradeAtTime: true, reward: "Fee Refund + Skill Reward (20% of paper profit)", color: "#eab308", icon: "🟡", description: "For traders with some experience looking to grow", order: 2 },
-      { name: "🔴 PRO Challenge", fee: "₹5,000", paperBalance: 100000, profitTarget: 10, dailyLossLimit: 4, maxLossLimit: 10, maxOrderSize: 20, maxLeverage: 10, autoStopLossTarget: 10, oneTradeAtTime: true, reward: "Fee Refund + Skill Reward (20% of paper profit)", color: "#ef4444", icon: "🔴", description: "For advanced traders ready for maximum rewards", order: 3 }
-    ];
-    await writeChallenges(defaultChallenges);
-    return defaultChallenges;
-  }
-};
-
-const writeChallenges = async (challenges) => {
-  if (isMongoConnected) {
-    try {
-      await ChallengeModel.deleteMany({});
-      await ChallengeModel.insertMany(challenges);
-      return true;
-    } catch (error) {
-      console.error('Error writing challenges to MongoDB, falling back to file', error.message);
-    }
-  }
-  const CHALLENGES_FILE = path.join(__dirname, 'data', 'challenges.json');
-  try {
-    await fs.writeFile(CHALLENGES_FILE, JSON.stringify(challenges, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing challenges:', error.message);
-    return false;
   }
 };
 
@@ -1182,14 +1117,11 @@ app.get('/api/user/referral', async (req, res) => {
 // ========== CHALLENGE MANAGEMENT ROUTES ==========
 
 // Get available challenges
-app.get('/api/challenges', async (req, res) => {
+app.get('/api/challenges', (req, res) => {
   try {
-    const challenges = await readChallenges();
-    // Sort by order field
-    challenges.sort((a, b) => (a.order || 0) - (b.order || 0));
     res.json({
       success: true,
-      challenges
+      challenges: Object.values(CHALLENGES)
     });
   } catch (error) {
     res.status(500).json({ 
@@ -1198,6 +1130,7 @@ app.get('/api/challenges', async (req, res) => {
     });
   }
 });
+
 // Update challenge status
 app.put('/api/challenge/status', async (req, res) => {
   try {
@@ -2058,43 +1991,32 @@ app.put('/api/payments/:id/status', async (req, res) => {
     
     // If approved, add paper money to user and set challenge
     if (status === 'approved') {
-  const userIndex = users.findIndex(u => u.id === payment.userId);
-  if (userIndex !== -1) {
-    // Fetch the challenge by name
-    const challenges = await readChallenges();
-    const challenge = challenges.find(c => c.name === payment.challengeName);
-    if (!challenge) {
-      return res.status(400).json({ success: false, error: 'Challenge not found' });
+      const userIndex = users.findIndex(u => u.id === payment.userId);
+      if (userIndex !== -1) {
+        const challenge = CHALLENGES[payment.challengeName];
+        
+        // Update user challenge and paper balance
+        users[userIndex].currentChallenge = payment.challengeName;
+        users[userIndex].paperBalance = challenge.paperBalance;
+        
+        // Initialize challenge stats
+        users[userIndex].challengeStats = {
+          startDate: new Date().toISOString(),
+          dailyLoss: 0,
+          totalLoss: 0,
+          totalProfit: 0,
+          currentProfit: 0,
+          maxDrawdown: 0,
+          tradesCount: 0,
+          winRate: 0,
+          status: 'active',
+          dailyResetTime: new Date().toISOString()
+        };
+        
+        users[userIndex].updatedAt = new Date().toISOString();
+      }
     }
-
-    // Store challenge rules in challengeStats
-    users[userIndex].currentChallenge = payment.challengeName;
-    users[userIndex].paperBalance = challenge.paperBalance;
-    users[userIndex].challengeStats = {
-      startDate: new Date().toISOString(),
-      initialPaperBalance: challenge.paperBalance,
-      // Snapshot of rules
-      rules: {
-        profitTarget: challenge.profitTarget,
-        dailyLossLimit: challenge.dailyLossLimit,
-        maxLossLimit: challenge.maxLossLimit,
-        maxOrderSize: challenge.maxOrderSize,
-        maxLeverage: challenge.maxLeverage,
-        autoStopLossTarget: challenge.autoStopLossTarget,
-        oneTradeAtTime: challenge.oneTradeAtTime
-      },
-      dailyLoss: 0,
-      totalLoss: 0,
-      totalProfit: 0,
-      currentProfit: 0,
-      maxDrawdown: 0,
-      tradesCount: 0,
-      winRate: 0,
-      status: 'active',
-      dailyResetTime: new Date().toISOString()
-    };
-  }
-}
+    
     // Save all data
     await writePayments(payments);
     await writeUsers(users);
@@ -2115,76 +2037,6 @@ app.put('/api/payments/:id/status', async (req, res) => {
 });
 
 // ========== UPI QR CODE MANAGEMENT ==========
-// GET all challenges (admin)
-
-// GET single challenge by id (admin)
-app.get('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
-  try {
-    const challenges = await readChallenges();
-    const challenge = challenges.find(c => c._id == req.params.id || c.id == req.params.id);
-    if (!challenge) {
-      return res.status(404).json({ success: false, error: 'Challenge not found' });
-    }
-    res.json({ success: true, challenge });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST create new challenge (admin)
-app.post('/api/admin/challenges', requireAdmin, async (req, res) => {
-  try {
-    const challenges = await readChallenges();
-    const newChallenge = {
-      ...req.body,
-      _id: new mongoose.Types.ObjectId(), // if using MongoDB
-      id: Date.now().toString(),           // fallback for file
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    challenges.push(newChallenge);
-    await writeChallenges(challenges);
-    res.json({ success: true, challenge: newChallenge });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// PUT update challenge (admin)
-app.put('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
-  try {
-    const challenges = await readChallenges();
-    const index = challenges.findIndex(c => c._id == req.params.id || c.id == req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ success: false, error: 'Challenge not found' });
-    }
-    challenges[index] = {
-      ...challenges[index],
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    };
-    await writeChallenges(challenges);
-    res.json({ success: true, challenge: challenges[index] });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-
-// DELETE challenge (admin)
-app.delete('/api/admin/challenges/:id', requireAdmin, async (req, res) => {
-  try {
-    const challenges = await readChallenges();
-    const filtered = challenges.filter(c => c._id != req.params.id && c.id != req.params.id);
-    if (filtered.length === challenges.length) {
-      return res.status(404).json({ success: false, error: 'Challenge not found' });
-    }
-    await writeChallenges(filtered);
-    res.json({ success: true, message: 'Challenge deleted' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 // Get UPI settings
 app.get('/api/admin/upi-settings', async (req, res) => {
