@@ -6716,4 +6716,24 @@ html, body {
 .compact-upi-dialog .process-step .step-text {
   font-size: 0.6rem;
 }
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.withdrawal-card {
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.withdrawal-card:hover {
+  transform: translateY(-2px);
+}
 /* End of CSS */
