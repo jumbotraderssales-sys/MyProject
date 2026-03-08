@@ -1135,36 +1135,7 @@ const syncUserWallet = async () => {
 
    const loadUserData = async (token) => {
     try {
-      // Load user profile first
-      const profileResponse = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        if (profileData.success) {
-          const userData = profileData.user;
-          setUserAccount(userData);
-          setBalance(userData.paperBalance || 0);
-          setEquity(userData.paperBalance || 0);
-          
-          // Set challenge stats from backend data
-          if (userData.challengeStats) {
-            setDailyLoss(userData.challengeStats.dailyLoss || 0);
-            setTotalLoss(userData.challengeStats.totalLoss || 0);
-            setChallengeProgress({
-              profit: userData.challengeStats.currentProfit || 0,
-              dailyLoss: userData.challengeStats.dailyLoss || 0,
-              totalLoss: userData.challengeStats.totalLoss || 0,
-              status: userData.challengeStats.status || 'not_started'
-            });
-          }
-          
-          localStorage.setItem('userData', JSON.stringify(userData));
-        }
-      }
-      
-      // Load positions
+      // Load positions first
       const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -1188,12 +1159,65 @@ const syncUserWallet = async () => {
         }
       }
       
+      // Load user profile from localStorage first, then update from backend if available
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        setUserAccount(userData);
+        setBalance(userData.paperBalance || 0);
+        setEquity(userData.paperBalance || 0);
+        
+        // Load challenge progress from userData
+        if (userData.challengeStats) {
+          setDailyLoss(userData.challengeStats.dailyLoss || 0);
+          setTotalLoss(userData.challengeStats.totalLoss || 0);
+          setChallengeProgress({
+            profit: userData.challengeStats.currentProfit || 0,
+            dailyLoss: userData.challengeStats.dailyLoss || 0,
+            totalLoss: userData.challengeStats.totalLoss || 0,
+            status: userData.challengeStats.status || 'not_started'
+          });
+        }
+      }
+      
+      // Try to get updated profile from backend (don't wait for it)
+      try {
+        const profileResponse = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.success) {
+            const userData = profileData.user;
+            setUserAccount(userData);
+            setBalance(userData.paperBalance || 0);
+            setEquity(userData.paperBalance || 0);
+            
+            if (userData.challengeStats) {
+              setDailyLoss(userData.challengeStats.dailyLoss || 0);
+              setTotalLoss(userData.challengeStats.totalLoss || 0);
+              setChallengeProgress({
+                profit: userData.challengeStats.currentProfit || 0,
+                dailyLoss: userData.challengeStats.dailyLoss || 0,
+                totalLoss: userData.challengeStats.totalLoss || 0,
+                status: userData.challengeStats.status || 'not_started'
+              });
+            }
+            
+            localStorage.setItem('userData', JSON.stringify(userData));
+          }
+        }
+      } catch (profileError) {
+        console.error('Error loading profile from backend:', profileError);
+        // Continue with localStorage data
+      }
+      
       // Load payments
       await loadUserPayments();
       
     } catch (error) {
       console.error('Error loading user data:', error);
-      throw error; // Re-throw to trigger fallback
     }
   };
  const loadUpiQrCode = async () => {
