@@ -844,7 +844,8 @@ useEffect(() => {
   
   loadInitialData();
 }, []);
-
+  
+// ===== ADD THE NEW useEffect HERE =====
 // Check challenge status on load and set balance to 0 if failed
 useEffect(() => {
   if (userAccount.currentChallenge && userAccount.challengeStats) {
@@ -879,13 +880,13 @@ useEffect(() => {
   }
 }, [userAccount.currentChallenge, userAccount.challengeStats?.status]);
 
-  useEffect(() => {
-    const initialPrices = {};
-    cryptoData.forEach(crypto => {
-      initialPrices[crypto.symbol] = crypto.price;
-    });
-    setPrices(initialPrices);
-  }, []);
+useEffect(() => {
+  const initialPrices = {};
+  cryptoData.forEach(crypto => {
+    initialPrices[crypto.symbol] = crypto.price;
+  });
+  setPrices(initialPrices);
+}, []);
 
   useEffect(() => {
     const script = document.createElement('script');
