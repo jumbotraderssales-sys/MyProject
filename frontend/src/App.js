@@ -883,7 +883,8 @@ useEffect(() => {
       setEquity(0);
       setUserAccount(prev => ({
         ...prev,
-        paperBalance: 0
+        paperBalance: 0,
+        realBalance: 0
       }));
     } else if (userAccount.challengeStats.status === 'passed') {
       // For passed challenges, show reward message if not already shown
@@ -891,7 +892,6 @@ useEffect(() => {
       if (challenge && !userAccount.challengeStats.totalReward) {
         const totalReward = challenge.feeRefund + challenge.skillReward;
         
-        // Update real balance with reward if not already added
         setUserAccount(prev => ({
           ...prev,
           realBalance: (prev.realBalance || 0) + totalReward,
@@ -899,14 +899,17 @@ useEffect(() => {
             ...prev.challengeStats,
             feeRefund: challenge.feeRefund,
             skillReward: challenge.skillReward,
-            totalReward: totalReward
+            totalReward: totalReward,
+            withdrawalAvailable: totalReward,
+            withdrawalCompleted: false
           }
         }));
-        
-        // Optional: Show a welcome back message
-        setTimeout(() => {
-          alert(`🎉 Welcome back!\n\nYour challenge reward of ₹${totalReward.toLocaleString()} is available for withdrawal.\n\nFee Refund: ₹${challenge.feeRefund.toLocaleString()}\nSkill Reward: ₹${challenge.skillReward.toLocaleString()}`);
-        }, 1000);
+      }
+      
+      // If withdrawal was completed, show that balance is 0
+      if (userAccount.challengeStats.withdrawalCompleted) {
+        // Just a visual indicator, don't change anything
+        console.log('Reward already withdrawn');
       }
     }
   }
@@ -3996,7 +3999,7 @@ const calculateOrderPnL = (order) => {
                 <div className="profile-card withdraw-card">
   <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
 
-  {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.totalReward > 0 && (
+ {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
   <div style={{
     background: 'linear-gradient(135deg, #10b981, #059669)',
     padding: '15px',
@@ -4007,7 +4010,7 @@ const calculateOrderPnL = (order) => {
   }}>
     <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>🎉 Reward Available!</h3>
     <p style={{color: 'white', fontSize: '28px', fontWeight: 'bold', marginBottom: '5px'}}>
-      ₹{userAccount.challengeStats.totalReward.toLocaleString()}
+      ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
     </p>
     <div style={{
       color: 'white',
@@ -4049,63 +4052,82 @@ const calculateOrderPnL = (order) => {
         width: '100%'
       }}
     >
-      Withdraw ₹{userAccount.challengeStats.totalReward.toLocaleString()} Now
+      Withdraw ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()} Now
     </button>
   </div>
 )}
-  
-  <div className="withdrawal-options-grid">
-    <div className="withdrawal-card" onClick={() => {
-      setShowAccountSetup(true);
-      setShowWithdrawalRequest(false);
-    }}>
-      <div className="card-icon">🏦</div>
-      <h3>Bank Account Setup</h3>
-      <p>Add your bank details for withdrawals</p>
-    </div>
-    
-    <div className="withdrawal-card" onClick={() => {
-      if (!userBankAccount.accountNumber) {
-        alert('Please set up your bank account first');
-        setShowAccountSetup(true);
-      } else {
-        setShowWithdrawalRequest(true);
-        setShowAccountSetup(false);
-      }
-    }}>
-      <div className="card-icon">💰</div>
-      <h3>Request Withdrawal</h3>
-      <p>Withdraw your real balance</p>
-      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.rewardAmount > 0 && (
-        <span style={{
-          position: 'absolute',
-          top: '-5px',
-          right: '-5px',
-          background: '#ef4444',
-          color: 'white',
-          borderRadius: '50%',
-          width: '20px',
-          height: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 'bold'
-        }}>
-          1
-        </span>
-      )}
-    </div>
-    
-    <div className="withdrawal-card" onClick={() => {
-      alert('Withdrawal history will be shown here');
-    }}>
-      <div className="card-icon">📜</div>
-      <h3>Withdrawal History</h3>
-      <p>View past withdrawal requests</p>
-    </div>
+
+{userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalCompleted && (
+  <div style={{
+    background: '#4b5563',
+    padding: '15px',
+    borderRadius: '10px',
+    marginBottom: '20px',
+    textAlign: 'center'
+  }}>
+    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>✅ Reward Withdrawn</h3>
+    <p style={{color: '#d1d5db', fontSize: '14px'}}>
+      You've successfully withdrawn your reward of ₹{userAccount.challengeStats.totalReward?.toLocaleString()}
+    </p>
+    <p style={{color: '#9ca3af', fontSize: '12px', marginTop: '5px'}}>
+      Complete another challenge to earn more rewards!
+    </p>
   </div>
-  {showWithdrawalRequest && (
+)}
+
+<div className="withdrawal-options-grid">
+  <div className="withdrawal-card" onClick={() => {
+    setShowAccountSetup(true);
+    setShowWithdrawalRequest(false);
+  }}>
+    <div className="card-icon">🏦</div>
+    <h3>Bank Account Setup</h3>
+    <p>Add your bank details for withdrawals</p>
+  </div>
+  
+  <div className="withdrawal-card" onClick={() => {
+    if (!userBankAccount.accountNumber) {
+      alert('Please set up your bank account first');
+      setShowAccountSetup(true);
+    } else {
+      setShowWithdrawalRequest(true);
+      setShowAccountSetup(false);
+    }
+  }}>
+    <div className="card-icon">💰</div>
+    <h3>Request Withdrawal</h3>
+    <p>Withdraw your real balance</p>
+    {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+      <span style={{
+        position: 'absolute',
+        top: '-5px',
+        right: '-5px',
+        background: '#ef4444',
+        color: 'white',
+        borderRadius: '50%',
+        width: '20px',
+        height: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 'bold'
+      }}>
+        1
+      </span>
+    )}
+  </div>
+  
+  <div className="withdrawal-card" onClick={() => {
+    alert('Withdrawal history will be shown here');
+  }}>
+    <div className="card-icon">📜</div>
+    <h3>Withdrawal History</h3>
+    <p>View past withdrawal requests</p>
+  </div>
+</div>
+
+{showWithdrawalRequest && (
   <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
     <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
