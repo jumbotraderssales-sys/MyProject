@@ -2991,6 +2991,7 @@ const calculateOrderPnL = (order) => {
   };
 
 
+// ========== MAIN RETURN STARTS HERE ==========
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
