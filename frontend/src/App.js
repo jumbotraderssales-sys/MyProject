@@ -4271,6 +4271,50 @@ const calculateOrderPnL = (order) => {
     </div>
   </div>
 )}
+ <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
+    <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
+    
+    {withdrawalRequests.length > 0 ? (
+      <div style={{overflowX: 'auto'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+          <thead>
+            <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
+              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
+              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
+              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {withdrawalRequests.slice(0, 5).map(request => (
+              <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
+                <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
+                <td style={{padding: '10px'}}>
+                  <span style={{
+                    padding: '5px 10px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    background: request.status === 'pending' ? '#f59e0b' : 
+                               request.status === 'approved' ? '#10b981' : 
+                               request.status === 'rejected' ? '#ef4444' : '#6b7280',
+                    color: 'white'
+                  }}>
+                    {request.status}
+                  </span>
+                </td>
+                <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
+    )}
+  </div>
+</div>
 These complete blocks will:
 
 Show proper messages when challenge passes/fails
