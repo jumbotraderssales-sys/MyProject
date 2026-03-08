@@ -632,42 +632,38 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
 
   const today = new Date().toDateString();
 
-// ⛔ DAILY LOSS → BLOCK ONLY FOR TODAY
-if (dailyLossPct >= challenge.dailyLossLimit) {
-  if (userAccount.challengeStats.dailyBlockDate !== today) {
-    // Show alert with encouraging message
-    alert(`⛔ Daily Trading Limit Reached\n\n` +
-          `You've hit the ${challenge.dailyLossLimit}% daily loss limit.\n\n` +
-          `🛑 Trading is paused until tomorrow.\n\n` +
-          `💡 What successful traders do:\n` +
-          `✓ Review your losing trades\n` +
-          `✓ Identify what went wrong\n` +
-          `✓ Adjust your strategy\n` +
-          `✓ Come back stronger tomorrow\n\n` +
-          `🌟 This is not a failure, it's a learning opportunity!\n` +
-          `The best traders learn more from losses than wins.`);
+  // ⛔ DAILY LOSS → BLOCK ONLY FOR TODAY
+  if (dailyLossPct >= challenge.dailyLossLimit) {
+    if (userAccount.challengeStats.dailyBlockDate !== today) {
+      alert(`⛔ Daily Trading Limit Reached\n\n` +
+            `You've hit the ${challenge.dailyLossLimit}% daily loss limit.\n\n` +
+            `🛑 Trading is paused until tomorrow.\n\n` +
+            `💡 What successful traders do:\n` +
+            `✓ Review your losing trades\n` +
+            `✓ Identify what went wrong\n` +
+            `✓ Adjust your strategy\n` +
+            `✓ Come back stronger tomorrow\n\n` +
+            `🌟 This is not a failure, it's a learning opportunity!`);
 
-    setUserAccount(prev => ({
-      ...prev,
-      challengeStats: {
-        ...prev.challengeStats,
-        dailyBlockDate: today
-      }
-    }));
+      setUserAccount(prev => ({
+        ...prev,
+        challengeStats: {
+          ...prev.challengeStats,
+          dailyBlockDate: today
+        }
+      }));
+    }
+    return;
   }
-  return;
-}
 
   // ❌ MAX LOSS → CHALLENGE FAIL
   if (totalLossPct >= challenge.maxLossLimit) {
-    // Close all open positions first
     if (positions.length > 0) {
       positions.forEach(pos => {
         closePosition(pos.id, 'CHALLENGE_FAILED');
       });
     }
     
-    // Show encouraging failure message
     alert(`❌ Challenge Not This Time\n\n` +
           `You've reached the maximum loss limit of ${challenge.maxLossLimit}%.\n\n` +
           `🌟 EVERY MASTER WAS ONCE A BEGINNER 🌟\n\n` +
@@ -676,24 +672,24 @@ if (dailyLossPct >= challenge.dailyLossLimit) {
           `✓ Understanding of market dynamics\n` +
           `✓ Knowledge of risk management\n` +
           `✓ Valuable lessons for next time\n\n` +
-          `🚀 Your next attempt will be stronger!\n` +
-          `🎯 Learn, adapt, and come back stronger.\n\n` +
+          `🚀 Your next attempt will be stronger!\n\n` +
           `💰 Your paper balance has been reset to ₹0.\n` +
           `✨ You can purchase a new challenge anytime!\n\n` +
           `Remember: The only real failure is giving up! 💪`);
     
-    // Reset paper balance to 0 and update challenge status
     setUserAccount(prev => ({
       ...prev,
       paperBalance: 0,
+      realBalance: 0, // Reset real balance as well
       challengeStats: {
         ...prev.challengeStats,
         status: 'failed',
-        endReason: 'Maximum loss limit exceeded'
+        endReason: 'Maximum loss limit exceeded',
+        withdrawalAvailable: 0,
+        withdrawalCompleted: false
       }
     }));
     
-    // Update balance state
     setBalance(0);
     setEquity(0);
     
@@ -707,28 +703,30 @@ if (dailyLossPct >= challenge.dailyLossLimit) {
     // Calculate total reward (fee refund + skill reward)
     const totalReward = challenge.feeRefund + challenge.skillReward;
     
-    // Close all open positions first
     if (positions.length > 0) {
       positions.forEach(pos => {
         closePosition(pos.id, 'CHALLENGE_PASSED');
       });
     }
     
-    // Show success message with reward info
+    // Show success message with withdrawal info
     alert(`🎉🎉🎉 CHALLENGE CONQUERED! 🎉🎉🎉\n\n` +
           `🏆 You've achieved the ${challenge.profitTarget}% profit target!\n\n` +
-          `💰 YOUR REWARD: ₹${totalReward.toLocaleString()}\n` +
+          `💰 WITHDRAWAL AVAILABLE: ₹${totalReward.toLocaleString()}\n` +
           `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
           `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
           `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
-          `⭐ What's next:\n` +
-          `1. Withdraw your reward from Profile section\n` +
-          `2. Try a higher challenge level\n` +
-          `3. Share your success with friends\n\n` +
+          `✨ NEXT STEPS:\n` +
+          `1️⃣ Go to Profile section\n` +
+          `2️⃣ Click "Request Withdrawal"\n` +
+          `3️⃣ Enter amount: ₹${totalReward.toLocaleString()}\n` +
+          `4️⃣ Complete withdrawal\n\n` +
+          `⚠️ Note: After withdrawal, your real balance will become ₹0\n` +
+          `until you complete more challenges.\n\n` +
           `🎯 You're proving that disciplined trading pays off!\n` +
           `Keep up the amazing work! 🌟`);
     
-    // Update real balance with total reward
+    // Update real balance with total reward (this is the available withdrawal amount)
     setUserAccount(prev => ({
       ...prev,
       realBalance: (prev.realBalance || 0) + totalReward,
@@ -739,7 +737,9 @@ if (dailyLossPct >= challenge.dailyLossLimit) {
         endReason: 'Profit target achieved',
         feeRefund: challenge.feeRefund,
         skillReward: challenge.skillReward,
-        totalReward: totalReward
+        totalReward: totalReward,
+        withdrawalAvailable: totalReward,
+        withdrawalCompleted: false
       }
     }));
     
@@ -4187,133 +4187,172 @@ const calculateOrderPnL = (order) => {
     </div>
   )}
   
-  {showWithdrawalRequest && (
-    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-          <h3 style={{color: 'white'}}>Request Withdrawal</h3>
-          <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-        </div>
-        
-        <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
-          <p style={{color: '#a0aec0', marginBottom: '5px'}}>Available Balance:</p>
-          <h3 style={{color: 'white'}}>₹{userAccount.realBalance?.toLocaleString() || '0'}</h3>
-          {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.rewardAmount > 0 && (
-            <p style={{color: '#10b981', marginTop: '5px'}}>
-              Includes reward: ₹{userAccount.challengeStats.rewardAmount.toFixed(2)}
-            </p>
-          )}
-        </div>
-        
-        <div style={{marginBottom: '20px'}}>
-          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Amount to Withdraw (₹)</label>
-          <input
-            type="number"
-            value={withdrawalAmount}
-            onChange={(e) => setWithdrawalAmount(e.target.value)}
-            placeholder="Enter amount"
-            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-          />
-        </div>
-        
-        <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
-          <h4 style={{color: 'white', marginBottom: '10px'}}>Bank Account Details:</h4>
-          <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.accountHolderName}</p>
-          <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.bankName}</p>
-          <p style={{color: '#a0aec0'}}>Account: XXXX{userBankAccount.accountNumber.slice(-4) || 'XXXX'}</p>
-        </div>
-        
-        <button
-          onClick={() => {
-            const amount = parseFloat(withdrawalAmount);
-            const balance = userAccount.realBalance || 0;
-            
-            if (!amount || amount <= 0) {
-              alert('Please enter a valid amount');
-              return;
-            }
-            
-            if (amount < 100) {
-              alert('Minimum withdrawal amount is ₹100');
-              return;
-            }
-            
-            if (amount > balance) {
-              alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
-              return;
-            }
-            
-            const newRequest = {
-              id: `WD${Date.now()}`,
-              amount: amount,
-              status: 'pending',
-              date: new Date().toLocaleString(),
-              bankDetails: userBankAccount
-            };
-            
-            setWithdrawalRequests([newRequest, ...withdrawalRequests]);
-            
-            setUserAccount({
-              ...userAccount,
-              realBalance: balance - amount
-            });
-            
-            alert(`Withdrawal request submitted for ₹${amount.toLocaleString()}! It will be processed by admin within 24-48 hours.`);
-            setWithdrawalAmount('');
-            setShowWithdrawalRequest(false);
-          }}
-          style={{width: '100%', padding: '12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'}}
-        >
-          Submit Withdrawal Request
-        </button>
+{showWithdrawalRequest && (
+  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+    <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+        <h3 style={{color: 'white'}}>Request Withdrawal</h3>
+        <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
       </div>
+      
+      {/* Show challenge reward info if available */}
+      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+        <div style={{
+          background: 'linear-gradient(135deg, #10b981, #059669)',
+          padding: '15px',
+          borderRadius: '8px',
+          marginBottom: '20px'
+        }}>
+          <h4 style={{color: 'white', marginBottom: '10px'}}>🎉 Challenge Reward Available!</h4>
+          <p style={{color: 'white', fontSize: '24px', fontWeight: 'bold', marginBottom: '5px'}}>
+            ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
+          </p>
+          <div style={{color: 'white', opacity: 0.9, fontSize: '14px'}}>
+            <div>Fee Refund: ₹{userAccount.challengeStats.feeRefund?.toLocaleString()}</div>
+            <div>Skill Reward: ₹{userAccount.challengeStats.skillReward?.toLocaleString()}</div>
+          </div>
+        </div>
+      )}
+      
+      <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
+        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Available Real Balance:</p>
+        <h3 style={{color: 'white'}}>₹{userAccount.realBalance?.toLocaleString() || '0'}</h3>
+        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+          <p style={{color: '#10b981', marginTop: '5px', fontSize: '14px'}}>
+            ⚡ This includes your challenge reward!
+          </p>
+        )}
+      </div>
+      
+      <div style={{marginBottom: '20px'}}>
+        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Amount to Withdraw (₹)</label>
+        <input
+          type="number"
+          value={withdrawalAmount}
+          onChange={(e) => setWithdrawalAmount(e.target.value)}
+          placeholder="Enter amount"
+          max={userAccount.realBalance}
+          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+        />
+        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+          <button
+            onClick={() => setWithdrawalAmount(userAccount.challengeStats.withdrawalAvailable)}
+            style={{
+              marginTop: '5px',
+              padding: '5px 10px',
+              background: '#4f46e5',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            Set to Reward Amount (₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()})
+          </button>
+        )}
+      </div>
+      
+      <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
+        <h4 style={{color: 'white', marginBottom: '10px'}}>Bank Account Details:</h4>
+        <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.accountHolderName || 'Not set'}</p>
+        <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.bankName || 'Not set'}</p>
+        <p style={{color: '#a0aec0'}}>Account: {userBankAccount.accountNumber ? `XXXX${userBankAccount.accountNumber.slice(-4)}` : 'Not set'}</p>
+      </div>
+      
+      <button
+        onClick={() => {
+          const amount = parseFloat(withdrawalAmount);
+          const balance = userAccount.realBalance || 0;
+          
+          if (!amount || amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+          }
+          
+          if (amount < 100) {
+            alert('Minimum withdrawal amount is ₹100');
+            return;
+          }
+          
+          if (amount > balance) {
+            alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
+            return;
+          }
+          
+          const newRequest = {
+            id: `WD${Date.now()}`,
+            amount: amount,
+            status: 'pending',
+            date: new Date().toLocaleString(),
+            bankDetails: userBankAccount,
+            isReward: userAccount.challengeStats?.status === 'passed' && amount === userAccount.challengeStats?.withdrawalAvailable
+          };
+          
+          setWithdrawalRequests([newRequest, ...withdrawalRequests]);
+          
+          // Update user account - subtract withdrawn amount
+          const newRealBalance = balance - amount;
+          
+          // Check if this was the full reward withdrawal
+          const isFullRewardWithdrawal = 
+            userAccount.challengeStats?.status === 'passed' && 
+            amount === userAccount.challengeStats?.withdrawalAvailable;
+          
+          setUserAccount(prev => ({
+            ...prev,
+            realBalance: newRealBalance,
+            challengeStats: isFullRewardWithdrawal ? {
+              ...prev.challengeStats,
+              withdrawalCompleted: true,
+              withdrawalDate: new Date().toISOString()
+            } : prev.challengeStats
+          }));
+          
+          // Show different messages based on withdrawal type
+          if (isFullRewardWithdrawal) {
+            alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
+                  `Your challenge reward withdrawal has been requested.\n` +
+                  `After processing, your real balance will become ₹0.\n\n` +
+                  `Complete more challenges to earn more rewards! 🎯`);
+          } else {
+            alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
+                  `It will be processed by admin within 24-48 hours.\n\n` +
+                  `Remaining balance: ₹${newRealBalance.toLocaleString()}`);
+          }
+          
+          setWithdrawalAmount('');
+          setShowWithdrawalRequest(false);
+        }}
+        style={{
+          width: '100%',
+          padding: '12px',
+          background: userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 ? '#10b981' : '#4f46e5',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+      >
+        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 
+          ? '💰 Withdraw Your Reward' 
+          : 'Submit Withdrawal Request'}
+      </button>
+      
+      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && (
+        <p style={{
+          color: '#94a3b8',
+          fontSize: '12px',
+          marginTop: '10px',
+          textAlign: 'center'
+        }}>
+          ⚡ After withdrawal, your real balance will show ₹0 until you complete more challenges.
+        </p>
+      )}
     </div>
-  )}
-  
-  <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
-    <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
-    
-    {withdrawalRequests.length > 0 ? (
-      <div style={{overflowX: 'auto'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse'}}>
-          <thead>
-            <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {withdrawalRequests.slice(0, 5).map(request => (
-              <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
-                <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
-                <td style={{padding: '10px'}}>
-                  <span style={{
-                    padding: '5px 10px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    background: request.status === 'pending' ? '#f59e0b' : 
-                               request.status === 'approved' ? '#10b981' : 
-                               request.status === 'rejected' ? '#ef4444' : '#6b7280',
-                    color: 'white'
-                  }}>
-                    {request.status}
-                  </span>
-                </td>
-                <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
-    )}
   </div>
-</div>
+)}
 These complete blocks will:
 
 Show proper messages when challenge passes/fails
