@@ -44,7 +44,6 @@ const INDICATOR_PRESETS = [
   { name: 'All Oscillators', indicators: ['RSI', 'MACD', 'Stochastic'] },
 ];
 
-// Challenges Data
 const CHALLENGES = [
   {
     id: 1,
@@ -54,11 +53,13 @@ const CHALLENGES = [
     profitTarget: 1,
     dailyLossLimit: 4,
     maxLossLimit: 1,
-    maxOrderSize: 20, // percentage of capital
+    maxOrderSize: 20,
     maxLeverage: 10,
-    autoStopLossTarget: 1, // kept for reference but no longer auto-applied
+    autoStopLossTarget: 1,
     oneTradeAtTime: true,
-    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    feeRefund: 1000,        // Fee refund amount in rupees
+    skillReward: 1000,       // Skill reward amount in rupees
+    reward: "Fee Refund ₹1000 + Skill Reward ₹1000",
     color: "#22c55e",
     icon: "🟢",
     description: "Perfect for beginners to learn trading with minimal risk"
@@ -75,7 +76,9 @@ const CHALLENGES = [
     maxLeverage: 10,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    feeRefund: 2500,        // Fee refund amount in rupees
+    skillReward: 2500,       // Skill reward amount in rupees
+    reward: "Fee Refund ₹2500 + Skill Reward ₹2500",
     color: "#eab308",
     icon: "🟡",
     description: "For traders with some experience looking to grow"
@@ -92,7 +95,9 @@ const CHALLENGES = [
     maxLeverage: 10,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    feeRefund: 5000,        // Fee refund amount in rupees
+    skillReward: 5000,       // Skill reward amount in rupees
+    reward: "Fee Refund ₹5000 + Skill Reward ₹5000",
     color: "#ef4444",
     icon: "🔴",
     description: "For advanced traders ready for maximum rewards"
@@ -678,9 +683,8 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
 
   // 🎉 PROFIT TARGET → CHALLENGE PASS
   if (profitPct >= challenge.profitTarget) {
-    // Calculate reward (20% of paper profit)
-    const paperProfit = userAccount.paperBalance - challenge.paperBalance;
-    const rewardAmount = Math.max(0, paperProfit * 0.2); // 20% of profit
+    // Calculate total reward (fee refund + skill reward)
+    const totalReward = challenge.feeRefund + challenge.skillReward;
     
     // Close all open positions first
     if (positions.length > 0) {
@@ -692,25 +696,25 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
     // Show success message with reward info
     alert(`🎉🎉🎉 CONGRATULATIONS! CHALLENGE PASSED! 🎉🎉🎉\n\n` +
           `You have successfully achieved the ${challenge.profitTarget}% profit target!\n\n` +
-          `💰 Your Reward: ₹${rewardAmount.toFixed(2)} will be added to your real balance.\n` +
-          `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n` +
-          `📈 Total Profit: ₹${paperProfit.toFixed(2)}\n\n` +
-          `✨ You can now:\n` +
-          `1. Withdraw your reward from the Profile section\n` +
-          `2. Purchase a new challenge to continue trading\n` +
-          `3. View your trading statistics\n\n` +
+          `💰 TOTAL WITHDRAWAL AMOUNT: ₹${totalReward.toLocaleString()}\n` +
+          `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
+          `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
+          `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
+          `✨ You can now withdraw your reward from the Profile section!\n\n` +
           `🏆 Great job! Keep up the excellent trading!`);
     
-    // Update real balance with reward
+    // Update real balance with total reward
     setUserAccount(prev => ({
       ...prev,
-      realBalance: (prev.realBalance || 0) + rewardAmount,
+      realBalance: (prev.realBalance || 0) + totalReward,
       paperBalance: prev.paperBalance, // Keep paper balance for reference
       challengeStats: {
         ...prev.challengeStats,
         status: 'passed',
         endReason: 'Profit target achieved',
-        rewardAmount: rewardAmount
+        feeRefund: challenge.feeRefund,
+        skillReward: challenge.skillReward,
+        totalReward: totalReward
       }
     }));
     
@@ -858,23 +862,27 @@ useEffect(() => {
         paperBalance: 0
       }));
     } else if (userAccount.challengeStats.status === 'passed') {
-      // For passed challenges, keep the paper balance but show reward message
+      // For passed challenges, show reward message if not already shown
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (challenge && userAccount.paperBalance > challenge.paperBalance) {
-        const paperProfit = userAccount.paperBalance - challenge.paperBalance;
-        const rewardAmount = Math.max(0, paperProfit * 0.2);
+      if (challenge && !userAccount.challengeStats.totalReward) {
+        const totalReward = challenge.feeRefund + challenge.skillReward;
         
         // Update real balance with reward if not already added
-        if (!userAccount.challengeStats.rewardAmount) {
-          setUserAccount(prev => ({
-            ...prev,
-            realBalance: (prev.realBalance || 0) + rewardAmount,
-            challengeStats: {
-              ...prev.challengeStats,
-              rewardAmount: rewardAmount
-            }
-          }));
-        }
+        setUserAccount(prev => ({
+          ...prev,
+          realBalance: (prev.realBalance || 0) + totalReward,
+          challengeStats: {
+            ...prev.challengeStats,
+            feeRefund: challenge.feeRefund,
+            skillReward: challenge.skillReward,
+            totalReward: totalReward
+          }
+        }));
+        
+        // Optional: Show a welcome back message
+        setTimeout(() => {
+          alert(`🎉 Welcome back!\n\nYour challenge reward of ₹${totalReward.toLocaleString()} is available for withdrawal.\n\nFee Refund: ₹${challenge.feeRefund.toLocaleString()}\nSkill Reward: ₹${challenge.skillReward.toLocaleString()}`);
+        }, 1000);
       }
     }
   }
@@ -3960,47 +3968,64 @@ const calculateOrderPnL = (order) => {
                 
                 <div className="profile-card withdraw-card">
   <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
-  
-  {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.rewardAmount > 0 && (
+
+  {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.totalReward > 0 && (
+  <div style={{
+    background: 'linear-gradient(135deg, #10b981, #059669)',
+    padding: '15px',
+    borderRadius: '10px',
+    marginBottom: '20px',
+    textAlign: 'center',
+    animation: 'pulse 2s infinite'
+  }}>
+    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>🎉 Reward Available!</h3>
+    <p style={{color: 'white', fontSize: '28px', fontWeight: 'bold', marginBottom: '5px'}}>
+      ₹{userAccount.challengeStats.totalReward.toLocaleString()}
+    </p>
     <div style={{
-      background: 'linear-gradient(135deg, #10b981, #059669)',
-      padding: '15px',
-      borderRadius: '10px',
-      marginBottom: '20px',
-      textAlign: 'center',
-      animation: 'pulse 2s infinite'
+      color: 'white',
+      opacity: 0.9,
+      fontSize: '14px',
+      marginBottom: '10px',
+      textAlign: 'left',
+      background: 'rgba(255,255,255,0.1)',
+      padding: '10px',
+      borderRadius: '5px'
     }}>
-      <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>🎉 Reward Available!</h3>
-      <p style={{color: 'white', fontSize: '28px', fontWeight: 'bold', marginBottom: '5px'}}>
-        ₹{userAccount.challengeStats.rewardAmount.toFixed(2)}
-      </p>
-      <p style={{color: 'white', opacity: 0.9, fontSize: '14px'}}>
-        You can withdraw your reward now!
-      </p>
-      <button
-        onClick={() => {
-          if (!userBankAccount.accountNumber) {
-            alert('Please set up your bank account first');
-            setShowAccountSetup(true);
-          } else {
-            setShowWithdrawalRequest(true);
-          }
-        }}
-        style={{
-          marginTop: '10px',
-          padding: '8px 16px',
-          background: 'white',
-          color: '#059669',
-          border: 'none',
-          borderRadius: '5px',
-          fontWeight: 'bold',
-          cursor: 'pointer'
-        }}
-      >
-        Withdraw Now
-      </button>
+      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '5px'}}>
+        <span>Fee Refund:</span>
+        <span>₹{userAccount.challengeStats.feeRefund?.toLocaleString() || '0'}</span>
+      </div>
+      <div style={{display: 'flex', justifyContent: 'space-between'}}>
+        <span>Skill Reward:</span>
+        <span>₹{userAccount.challengeStats.skillReward?.toLocaleString() || '0'}</span>
+      </div>
     </div>
-  )}
+    <button
+      onClick={() => {
+        if (!userBankAccount.accountNumber) {
+          alert('Please set up your bank account first');
+          setShowAccountSetup(true);
+        } else {
+          setShowWithdrawalRequest(true);
+        }
+      }}
+      style={{
+        marginTop: '10px',
+        padding: '8px 16px',
+        background: 'white',
+        color: '#059669',
+        border: 'none',
+        borderRadius: '5px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        width: '100%'
+      }}
+    >
+      Withdraw ₹{userAccount.challengeStats.totalReward.toLocaleString()} Now
+    </button>
+  </div>
+)}
   
   <div className="withdrawal-options-grid">
     <div className="withdrawal-card" onClick={() => {
