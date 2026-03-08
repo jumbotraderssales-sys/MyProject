@@ -680,7 +680,7 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
     setUserAccount(prev => ({
       ...prev,
       paperBalance: 0,
-      realBalance: 0, // Reset real balance as well
+      realBalance: 0,
       challengeStats: {
         ...prev.challengeStats,
         status: 'failed',
@@ -718,21 +718,20 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
           `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
           `✨ NEXT STEPS:\n` +
           `1️⃣ Go to Profile section\n` +
-          `2️⃣ Click "Request Withdrawal"\n` +
-          `3️⃣ Enter amount: ₹${totalReward.toLocaleString()}\n` +
-          `4️⃣ Complete withdrawal\n\n` +
-          `⚠️ Note: After withdrawal, your real balance will become ₹0\n` +
-          `until you complete more challenges.\n\n` +
+          `2️⃣ You'll see your available funds for withdrawal\n` +
+          `3️⃣ Click "Request Withdrawal"\n` +
+          `4️⃣ Enter amount or click "Set to Reward Amount"\n` +
+          `5️⃣ Complete withdrawal\n\n` +
           `🎯 You're proving that disciplined trading pays off!\n` +
           `Keep up the amazing work! 🌟`);
     
-    // Update real balance with total reward (this is the available withdrawal amount)
-    setUserAccount(prev => ({
-      ...prev,
-      realBalance: (prev.realBalance || 0) + totalReward,
-      paperBalance: prev.paperBalance, // Keep paper balance for reference
+    // Update user account with the reward
+    const updatedUserAccount = {
+      ...userAccount,
+      realBalance: totalReward, // Set realBalance to the reward amount
+      paperBalance: userAccount.paperBalance, // Keep paper balance for reference
       challengeStats: {
-        ...prev.challengeStats,
+        ...userAccount.challengeStats,
         status: 'passed',
         endReason: 'Profit target achieved',
         feeRefund: challenge.feeRefund,
@@ -741,28 +740,22 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
         withdrawalAvailable: totalReward,
         withdrawalCompleted: false
       }
-    }));
+    };
+    
+    setUserAccount(updatedUserAccount);
+    
+    // Also update the balance state
+    setBalance(userAccount.paperBalance);
+    setEquity(userAccount.paperBalance);
+    
+    // Save to localStorage
+    localStorage.setItem('userData', JSON.stringify(updatedUserAccount));
     
     updateChallengeStatus('passed', 'Profit target achieved');
     
     return;
   }
 };
- const updateChallengeStatus = (status, reason) => {
-  setUserAccount(prev => {
-    const updated = {
-      ...prev,
-      challengeStats: {
-        ...prev.challengeStats,
-        status,
-        endReason: reason
-      }
-    };
-    
-    // Update localStorage
-    localStorage.setItem('userData', JSON.stringify(updated));
-    return updated;
-  });
   
   // Update backend
   const token = localStorage.getItem('token');
@@ -887,29 +880,31 @@ useEffect(() => {
         realBalance: 0
       }));
     } else if (userAccount.challengeStats.status === 'passed') {
-      // For passed challenges, show reward message if not already shown
+      // For passed challenges, ensure realBalance is set to the reward amount
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (challenge && !userAccount.challengeStats.totalReward) {
+      if (challenge) {
         const totalReward = challenge.feeRefund + challenge.skillReward;
         
-        setUserAccount(prev => ({
-          ...prev,
-          realBalance: (prev.realBalance || 0) + totalReward,
-          challengeStats: {
-            ...prev.challengeStats,
-            feeRefund: challenge.feeRefund,
-            skillReward: challenge.skillReward,
-            totalReward: totalReward,
-            withdrawalAvailable: totalReward,
-            withdrawalCompleted: false
+        setUserAccount(prev => {
+          // Only update if withdrawal not completed and realBalance is not already set
+          if (!prev.challengeStats?.withdrawalCompleted && prev.realBalance === 0) {
+            const updated = {
+              ...prev,
+              realBalance: totalReward,
+              challengeStats: {
+                ...prev.challengeStats,
+                feeRefund: challenge.feeRefund,
+                skillReward: challenge.skillReward,
+                totalReward: totalReward,
+                withdrawalAvailable: totalReward,
+                withdrawalCompleted: false
+              }
+            };
+            localStorage.setItem('userData', JSON.stringify(updated));
+            return updated;
           }
-        }));
-      }
-      
-      // If withdrawal was completed, show that balance is 0
-      if (userAccount.challengeStats.withdrawalCompleted) {
-        // Just a visual indicator, don't change anything
-        console.log('Reward already withdrawn');
+          return prev;
+        });
       }
     }
   }
