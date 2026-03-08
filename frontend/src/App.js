@@ -547,55 +547,92 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, []); // runs once on mount
  
-  useEffect(() => {
-  if (userAccount.currentChallenge && userAccount.challengeStats) {
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-    if (!challenge) return;
+ useEffect(() => {
+  // Don't calculate until we have actual data
+  if (!userAccount.currentChallenge || !userAccount.challengeStats) {
+    return;
+  }
 
-    const today = new Date().toDateString();
-    const todayTrades = orderHistory.filter(order => {
-      const orderDate = new Date(order.timestamp).toDateString();
-      return orderDate === today && order.status === 'CLOSED';
-    });
-    
-    // Daily loss - convert from USD to INR
-    const dailyLossAmountUSD = Math.abs(todayTrades
-      .filter(order => order.pnl < 0)
-      .reduce((sum, order) => sum + order.pnl, 0));
-    
-    const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
-    const dailyLossPercentage = (dailyLossAmountINR / userAccount.paperBalance) * 100;
-    setDailyLoss(dailyLossPercentage);
-    
-    // Total loss - convert from USD to INR
-    const allLossesUSD = orderHistory
-      .filter(order => order.status === 'CLOSED' && order.pnl < 0)
-      .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
-    
-    const allLossesINR = allLossesUSD * dollarRate;
-    const totalLossPercentage = (allLossesINR / userAccount.paperBalance) * 100;
-    setTotalLoss(totalLossPercentage);
-    
-    // Total profit - convert from USD to INR
-    const totalProfitUSD = orderHistory
-      .filter(order => order.status === 'CLOSED' && order.pnl > 0)
-      .reduce((sum, order) => sum + order.pnl, 0);
-    
-    const totalProfitINR = totalProfitUSD * dollarRate;
-    const profitPercentage = (totalProfitINR / userAccount.paperBalance) * 100;
-    
+  // If we have saved stats but no order history, use saved stats
+  if (orderHistory.length === 0 && userAccount.challengeStats.dailyLoss !== undefined) {
+    setDailyLoss(userAccount.challengeStats.dailyLoss);
+    setTotalLoss(userAccount.challengeStats.totalLoss);
     setChallengeProgress({
-      profit: profitPercentage,
-      dailyLoss: dailyLossPercentage,
-      totalLoss: totalLossPercentage,
+      profit: userAccount.challengeStats.currentProfit || 0,
+      dailyLoss: userAccount.challengeStats.dailyLoss || 0,
+      totalLoss: userAccount.challengeStats.totalLoss || 0,
       status: userAccount.challengeStats.status
     });
-    
-    // Check challenge rules with the correct percentages
-    checkChallengeRules(profitPercentage, dailyLossPercentage, totalLossPercentage);
+    return;
   }
-}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
 
+  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+  if (!challenge) return;
+
+  const today = new Date().toDateString();
+  const todayTrades = orderHistory.filter(order => {
+    const orderDate = new Date(order.timestamp).toDateString();
+    return orderDate === today && order.status === 'CLOSED';
+  });
+  
+  // Daily loss - convert from USD to INR
+  const dailyLossAmountUSD = Math.abs(todayTrades
+    .filter(order => order.pnl < 0)
+    .reduce((sum, order) => sum + order.pnl, 0));
+  
+  const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
+  const dailyLossPercentage = (dailyLossAmountINR / userAccount.paperBalance) * 100;
+  
+  // Total loss - convert from USD to INR
+  const allLossesUSD = orderHistory
+    .filter(order => order.status === 'CLOSED' && order.pnl < 0)
+    .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
+  
+  const allLossesINR = allLossesUSD * dollarRate;
+  const totalLossPercentage = (allLossesINR / userAccount.paperBalance) * 100;
+  
+  // Total profit - convert from USD to INR
+  const totalProfitUSD = orderHistory
+    .filter(order => order.status === 'CLOSED' && order.pnl > 0)
+    .reduce((sum, order) => sum + order.pnl, 0);
+  
+  const totalProfitINR = totalProfitUSD * dollarRate;
+  const profitPercentage = (totalProfitINR / userAccount.paperBalance) * 100;
+  
+  // Update state with calculated values
+  const newDailyLoss = isNaN(dailyLossPercentage) ? 0 : dailyLossPercentage;
+  const newTotalLoss = isNaN(totalLossPercentage) ? 0 : totalLossPercentage;
+  const newProfit = isNaN(profitPercentage) ? 0 : profitPercentage;
+  
+  setDailyLoss(newDailyLoss);
+  setTotalLoss(newTotalLoss);
+  setChallengeProgress({
+    profit: newProfit,
+    dailyLoss: newDailyLoss,
+    totalLoss: newTotalLoss,
+    status: userAccount.challengeStats.status
+  });
+  
+  // Update userAccount in state and localStorage
+  setUserAccount(prev => {
+    const updated = {
+      ...prev,
+      challengeStats: {
+        ...prev.challengeStats,
+        dailyLoss: newDailyLoss,
+        totalLoss: newTotalLoss,
+        currentProfit: newProfit
+      }
+    };
+    // Update localStorage
+    localStorage.setItem('userData', JSON.stringify(updated));
+    return updated;
+  });
+  
+  // Check challenge rules with the correct percentages
+  checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
+  
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
   // Check challenge rules
  const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
   if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
@@ -703,33 +740,59 @@ useEffect(() => {
     setChartHorizontalLines(lines);
   }, [positions, selectedSymbol]);
 
- useEffect(() => {
-  const loggedIn = localStorage.getItem('isLoggedIn');
-  const token = localStorage.getItem('token');
-  const userDataStr = localStorage.getItem('userData');
-  const paymentsStr = localStorage.getItem('userPayments');
-
-  if (loggedIn === 'true' && token && userDataStr) {
-    const userData = JSON.parse(userDataStr);
-    setIsLoggedIn(true);
-    setUserAccount(userData);
-    setBalance(userData.paperBalance || 0);
-    setEquity(userData.paperBalance || 0);
-
-    if (paymentsStr) {
+useEffect(() => {
+  const loadInitialData = async () => {
+    const loggedIn = localStorage.getItem('isLoggedIn');
+    const token = localStorage.getItem('token');
+    
+    if (loggedIn === 'true' && token) {
+      setIsLoggedIn(true);
+      
       try {
-        const savedPayments = JSON.parse(paymentsStr);
-        setPayments(savedPayments);
-        calculatePaymentStats(savedPayments);
-      } catch (e) {
-        console.error('Error parsing saved payments:', e);
+        // First try to load from backend
+        await loadUserData(token);
+      } catch (error) {
+        console.error('Error loading from backend, falling back to localStorage:', error);
+        
+        // Fallback to localStorage if backend fails
+        const userDataStr = localStorage.getItem('userData');
+        const paymentsStr = localStorage.getItem('userPayments');
+        
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          setUserAccount(userData);
+          setBalance(userData.paperBalance || 0);
+          setEquity(userData.paperBalance || 0);
+          
+          // Load challenge progress from userData
+          if (userData.challengeStats) {
+            setDailyLoss(userData.challengeStats.dailyLoss || 0);
+            setTotalLoss(userData.challengeStats.totalLoss || 0);
+            setChallengeProgress({
+              profit: userData.challengeStats.currentProfit || 0,
+              dailyLoss: userData.challengeStats.dailyLoss || 0,
+              totalLoss: userData.challengeStats.totalLoss || 0,
+              status: userData.challengeStats.status || 'not_started'
+            });
+          }
+        }
+        
+        if (paymentsStr) {
+          try {
+            const savedPayments = JSON.parse(paymentsStr);
+            setPayments(savedPayments);
+            calculatePaymentStats(savedPayments);
+          } catch (e) {
+            console.error('Error parsing saved payments:', e);
+          }
+        }
       }
     }
-
-    loadUserData(token);
-   
-  }
+  };
+  
+  loadInitialData();
 }, []);
+
 
   useEffect(() => {
     const initialPrices = {};
@@ -1070,12 +1133,40 @@ const syncUserWallet = async () => {
     }
   };
 
-  const loadUserData = async (token) => {
+   const loadUserData = async (token) => {
     try {
-      const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      // Load user profile first
+      const profileResponse = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        if (profileData.success) {
+          const userData = profileData.user;
+          setUserAccount(userData);
+          setBalance(userData.paperBalance || 0);
+          setEquity(userData.paperBalance || 0);
+          
+          // Set challenge stats from backend data
+          if (userData.challengeStats) {
+            setDailyLoss(userData.challengeStats.dailyLoss || 0);
+            setTotalLoss(userData.challengeStats.totalLoss || 0);
+            setChallengeProgress({
+              profit: userData.challengeStats.currentProfit || 0,
+              dailyLoss: userData.challengeStats.dailyLoss || 0,
+              totalLoss: userData.challengeStats.totalLoss || 0,
+              status: userData.challengeStats.status || 'not_started'
+            });
+          }
+          
+          localStorage.setItem('userData', JSON.stringify(userData));
         }
+      }
+      
+      // Load positions
+      const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (positionsResponse.ok) {
@@ -1085,10 +1176,9 @@ const syncUserWallet = async () => {
         }
       }
       
+      // Load order history
       const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (ordersResponse.ok) {
@@ -1098,13 +1188,14 @@ const syncUserWallet = async () => {
         }
       }
       
-      loadUserPayments();
+      // Load payments
+      await loadUserPayments();
       
     } catch (error) {
       console.error('Error loading user data:', error);
+      throw error; // Re-throw to trigger fallback
     }
   };
-
  const loadUpiQrCode = async () => {
   try {
     // Add timestamp to avoid caching
@@ -2481,7 +2572,23 @@ const calculateOrderPnL = (order) => {
     setSelectedPayment(payment);
     setShowPaymentDetails(true);
   };
-
+// ========== ADD THIS NEW FUNCTION HERE ==========
+  const updateChallengeStatsInBackend = async (stats) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('https://myproject1-d097.onrender.com/api/challenge/stats', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(stats)
+      });
+    } catch (error) {
+      console.error('Error updating challenge stats:', error);
+    }
+  };
+  
   // ========== FETCH REFERRAL INFO WHEN PROFILE ACTIVE ==========
   useEffect(() => {
     if (isLoggedIn && activeDashboard === 'Profile') {
