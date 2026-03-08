@@ -845,6 +845,39 @@ useEffect(() => {
   loadInitialData();
 }, []);
 
+// Check challenge status on load and set balance to 0 if failed
+useEffect(() => {
+  if (userAccount.currentChallenge && userAccount.challengeStats) {
+    if (userAccount.challengeStats.status === 'failed') {
+      // Force balance to 0 for failed challenges
+      setBalance(0);
+      setEquity(0);
+      setUserAccount(prev => ({
+        ...prev,
+        paperBalance: 0
+      }));
+    } else if (userAccount.challengeStats.status === 'passed') {
+      // For passed challenges, keep the paper balance but show reward message
+      const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+      if (challenge && userAccount.paperBalance > challenge.paperBalance) {
+        const paperProfit = userAccount.paperBalance - challenge.paperBalance;
+        const rewardAmount = Math.max(0, paperProfit * 0.2);
+        
+        // Update real balance with reward if not already added
+        if (!userAccount.challengeStats.rewardAmount) {
+          setUserAccount(prev => ({
+            ...prev,
+            realBalance: (prev.realBalance || 0) + rewardAmount,
+            challengeStats: {
+              ...prev.challengeStats,
+              rewardAmount: rewardAmount
+            }
+          }));
+        }
+      }
+    }
+  }
+}, [userAccount.currentChallenge, userAccount.challengeStats?.status]);
 
   useEffect(() => {
     const initialPrices = {};
@@ -1185,90 +1218,23 @@ const syncUserWallet = async () => {
     }
   };
 
-  const loadUserData = async (token) => {
-    try {
-      // First, try to get user profile from backend
-      const profileResponse = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        if (profileData.success) {
-          const userData = profileData.user;
-          setUserAccount(userData);
-          setBalance(userData.paperBalance || 0);
-          setEquity(userData.paperBalance || 0);
-          
-          if (userData.challengeStats) {
-            setDailyLoss(userData.challengeStats.dailyLoss || 0);
-            setTotalLoss(userData.challengeStats.totalLoss || 0);
-            setChallengeProgress({
-              profit: userData.challengeStats.currentProfit || 0,
-              dailyLoss: userData.challengeStats.dailyLoss || 0,
-              totalLoss: userData.challengeStats.totalLoss || 0,
-              status: userData.challengeStats.status || 'not_started'
-            });
-          }
-          
-          localStorage.setItem('userData', JSON.stringify(userData));
+ const loadUserData = async (token) => {
+  try {
+    // First, try to get user profile from backend
+    const profileResponse = await fetch('https://myproject1-d097.onrender.com/api/user/profile', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (profileResponse.ok) {
+      const profileData = await profileResponse.json();
+      if (profileData.success) {
+        const userData = profileData.user;
+        
+        // IMPORTANT: If challenge status is failed, set paper balance to 0
+        if (userData.challengeStats?.status === 'failed') {
+          userData.paperBalance = 0;
         }
-      } else {
-        // If backend fails, use localStorage
-        const userDataStr = localStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          setUserAccount(userData);
-          setBalance(userData.paperBalance || 0);
-          setEquity(userData.paperBalance || 0);
-          
-          if (userData.challengeStats) {
-            setDailyLoss(userData.challengeStats.dailyLoss || 0);
-            setTotalLoss(userData.challengeStats.totalLoss || 0);
-            setChallengeProgress({
-              profit: userData.challengeStats.currentProfit || 0,
-              dailyLoss: userData.challengeStats.dailyLoss || 0,
-              totalLoss: userData.challengeStats.totalLoss || 0,
-              status: userData.challengeStats.status || 'not_started'
-            });
-          }
-        }
-      }
-      
-      // Load positions
-      const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (positionsResponse.ok) {
-        const positionsData = await positionsResponse.json();
-        if (positionsData.success) {
-          setPositions(positionsData.positions);
-        }
-      }
-      
-      // Load order history
-      const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (ordersResponse.ok) {
-        const ordersData = await ordersResponse.json();
-        if (ordersData.success) {
-          setOrderHistory(ordersData.orders);
-        }
-      }
-      
-      // Load payments
-      await loadUserPayments();
-      
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      
-      // Fallback to localStorage
-      const userDataStr = localStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
+        
         setUserAccount(userData);
         setBalance(userData.paperBalance || 0);
         setEquity(userData.paperBalance || 0);
@@ -1283,9 +1249,94 @@ const syncUserWallet = async () => {
             status: userData.challengeStats.status || 'not_started'
           });
         }
+        
+        localStorage.setItem('userData', JSON.stringify(userData));
+      }
+    } else {
+      // If backend fails, use localStorage
+      const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+  let userData = JSON.parse(userDataStr);
+  
+  // IMPORTANT: If challenge status is failed, set paper balance to 0
+  if (userData.challengeStats?.status === 'failed') {
+    userData.paperBalance = 0;
+  }
+  
+  setUserAccount(userData);
+  setBalance(userData.paperBalance || 0);
+  setEquity(userData.paperBalance || 0);
+  
+  // Load challenge progress from userData
+  if (userData.challengeStats) {
+    setDailyLoss(userData.challengeStats.dailyLoss || 0);
+    setTotalLoss(userData.challengeStats.totalLoss || 0);
+    setChallengeProgress({
+      profit: userData.challengeStats.currentProfit || 0,
+      dailyLoss: userData.challengeStats.dailyLoss || 0,
+      totalLoss: userData.challengeStats.totalLoss || 0,
+      status: userData.challengeStats.status || 'not_started'
+    });
+  }
+}
+    
+    // Load positions
+    const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (positionsResponse.ok) {
+      const positionsData = await positionsResponse.json();
+      if (positionsData.success) {
+        setPositions(positionsData.positions);
       }
     }
-  };
+    
+    // Load order history
+    const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (ordersResponse.ok) {
+      const ordersData = await ordersResponse.json();
+      if (ordersData.success) {
+        setOrderHistory(ordersData.orders);
+      }
+    }
+    
+    // Load payments
+    await loadUserPayments();
+    
+  } catch (error) {
+    console.error('Error loading user data:', error);
+    
+    // Fallback to localStorage
+    const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+      let userData = JSON.parse(userDataStr);
+      
+      // IMPORTANT: If challenge status is failed, set paper balance to 0
+      if (userData.challengeStats?.status === 'failed') {
+        userData.paperBalance = 0;
+      }
+      
+      setUserAccount(userData);
+      setBalance(userData.paperBalance || 0);
+      setEquity(userData.paperBalance || 0);
+      
+      if (userData.challengeStats) {
+        setDailyLoss(userData.challengeStats.dailyLoss || 0);
+        setTotalLoss(userData.challengeStats.totalLoss || 0);
+        setChallengeProgress({
+          profit: userData.challengeStats.currentProfit || 0,
+          dailyLoss: userData.challengeStats.dailyLoss || 0,
+          totalLoss: userData.challengeStats.totalLoss || 0,
+          status: userData.challengeStats.status || 'not_started'
+        });
+      }
+    }
+  }
+};
  const loadUpiQrCode = async () => {
   try {
     // Add timestamp to avoid caching
