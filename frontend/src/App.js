@@ -50,7 +50,7 @@ const CHALLENGES = [
     name: "🚀 Beginner Challenge",
     fee: "₹1,000",
     paperBalance: 20000,
-    profitTarget: 1,
+    profitTarget: 10,
     dailyLossLimit: 1,
     maxLossLimit: 10,
     maxOrderSize: 20,
