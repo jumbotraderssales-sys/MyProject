@@ -2963,7 +2963,7 @@ const calculateOrderPnL = (order) => {
 </div>
 
 
-        {/* Challenge Limits */}
+         {/* Challenge Limits */}
         {challenge && (
           <div className="challenge-limits">
             <div className="limit-item">
@@ -2989,6 +2989,7 @@ const calculateOrderPnL = (order) => {
       </div>
     );
   };
+
 
   return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
