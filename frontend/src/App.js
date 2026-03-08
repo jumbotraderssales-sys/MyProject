@@ -546,10 +546,10 @@ useEffect(() => {
   const interval = setInterval(fetchAllPrices, 10000); // every 10 seconds
   return () => clearInterval(interval);
 }, []); // runs once on mount
- 
- useEffect(() => {
-  // Don't calculate until we have actual data
-  if (!userAccount.currentChallenge || !userAccount.challengeStats) {
+  
+useEffect(() => {
+  // Don't calculate until we have actual user data
+  if (!userAccount.currentChallenge || !userAccount.challengeStats || !userAccount.paperBalance) {
     return;
   }
 
@@ -581,7 +581,7 @@ useEffect(() => {
     .reduce((sum, order) => sum + order.pnl, 0));
   
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
-  const dailyLossPercentage = (dailyLossAmountINR / userAccount.paperBalance) * 100;
+  const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
   // Total loss - convert from USD to INR
   const allLossesUSD = orderHistory
@@ -589,7 +589,7 @@ useEffect(() => {
     .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
   
   const allLossesINR = allLossesUSD * dollarRate;
-  const totalLossPercentage = (allLossesINR / userAccount.paperBalance) * 100;
+  const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
   
   // Total profit - convert from USD to INR
   const totalProfitUSD = orderHistory
@@ -597,12 +597,12 @@ useEffect(() => {
     .reduce((sum, order) => sum + order.pnl, 0);
   
   const totalProfitINR = totalProfitUSD * dollarRate;
-  const profitPercentage = (totalProfitINR / userAccount.paperBalance) * 100;
+  const profitPercentage = userAccount.paperBalance > 0 ? (totalProfitINR / userAccount.paperBalance) * 100 : 0;
   
   // Update state with calculated values
-  const newDailyLoss = isNaN(dailyLossPercentage) ? 0 : dailyLossPercentage;
-  const newTotalLoss = isNaN(totalLossPercentage) ? 0 : totalLossPercentage;
-  const newProfit = isNaN(profitPercentage) ? 0 : profitPercentage;
+  const newDailyLoss = isNaN(dailyLossPercentage) || !isFinite(dailyLossPercentage) ? 0 : dailyLossPercentage;
+  const newTotalLoss = isNaN(totalLossPercentage) || !isFinite(totalLossPercentage) ? 0 : totalLossPercentage;
+  const newProfit = isNaN(profitPercentage) || !isFinite(profitPercentage) ? 0 : profitPercentage;
   
   setDailyLoss(newDailyLoss);
   setTotalLoss(newTotalLoss);
@@ -613,26 +613,11 @@ useEffect(() => {
     status: userAccount.challengeStats.status
   });
   
-  // Update userAccount in state and localStorage
-  setUserAccount(prev => {
-    const updated = {
-      ...prev,
-      challengeStats: {
-        ...prev.challengeStats,
-        dailyLoss: newDailyLoss,
-        totalLoss: newTotalLoss,
-        currentProfit: newProfit
-      }
-    };
-    // Update localStorage
-    localStorage.setItem('userData', JSON.stringify(updated));
-    return updated;
-  });
-  
   // Check challenge rules with the correct percentages
   checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
+  
   // Check challenge rules
  const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
   if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
