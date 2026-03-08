@@ -726,12 +726,12 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
           `Keep up the amazing work! 🌟`);
     
     // Update user account with the reward
-    const updatedUserAccount = {
-      ...userAccount,
-      realBalance: totalReward, // Set realBalance to the reward amount
-      paperBalance: userAccount.paperBalance, // Keep paper balance for reference
+    setUserAccount(prev => ({
+      ...prev,
+      realBalance: (prev.realBalance || 0) + totalReward,
+      paperBalance: prev.paperBalance,
       challengeStats: {
-        ...userAccount.challengeStats,
+        ...prev.challengeStats,
         status: 'passed',
         endReason: 'Profit target achieved',
         feeRefund: challenge.feeRefund,
@@ -740,16 +740,26 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
         withdrawalAvailable: totalReward,
         withdrawalCompleted: false
       }
-    };
-    
-    setUserAccount(updatedUserAccount);
-    
-    // Also update the balance state
-    setBalance(userAccount.paperBalance);
-    setEquity(userAccount.paperBalance);
+    }));
     
     // Save to localStorage
-    localStorage.setItem('userData', JSON.stringify(updatedUserAccount));
+    setTimeout(() => {
+      const updatedUser = {
+        ...userAccount,
+        realBalance: (userAccount.realBalance || 0) + totalReward,
+        challengeStats: {
+          ...userAccount.challengeStats,
+          status: 'passed',
+          endReason: 'Profit target achieved',
+          feeRefund: challenge.feeRefund,
+          skillReward: challenge.skillReward,
+          totalReward: totalReward,
+          withdrawalAvailable: totalReward,
+          withdrawalCompleted: false
+        }
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUser));
+    }, 100);
     
     updateChallengeStatus('passed', 'Profit target achieved');
     
@@ -882,33 +892,43 @@ useEffect(() => {
     } else if (userAccount.challengeStats.status === 'passed') {
       // For passed challenges, ensure realBalance is set to the reward amount
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (challenge) {
+      if (challenge && !userAccount.challengeStats.withdrawalCompleted && userAccount.realBalance === 0) {
         const totalReward = challenge.feeRefund + challenge.skillReward;
         
-        setUserAccount(prev => {
-          // Only update if withdrawal not completed and realBalance is not already set
-          if (!prev.challengeStats?.withdrawalCompleted && prev.realBalance === 0) {
-            const updated = {
-              ...prev,
-              realBalance: totalReward,
-              challengeStats: {
-                ...prev.challengeStats,
-                feeRefund: challenge.feeRefund,
-                skillReward: challenge.skillReward,
-                totalReward: totalReward,
-                withdrawalAvailable: totalReward,
-                withdrawalCompleted: false
-              }
-            };
-            localStorage.setItem('userData', JSON.stringify(updated));
-            return updated;
+        setUserAccount(prev => ({
+          ...prev,
+          realBalance: totalReward,
+          challengeStats: {
+            ...prev.challengeStats,
+            feeRefund: challenge.feeRefund,
+            skillReward: challenge.skillReward,
+            totalReward: totalReward,
+            withdrawalAvailable: totalReward,
+            withdrawalCompleted: false
           }
-          return prev;
-        });
+        }));
+        
+        // Save to localStorage
+        setTimeout(() => {
+          const updatedUser = {
+            ...userAccount,
+            realBalance: totalReward,
+            challengeStats: {
+              ...userAccount.challengeStats,
+              feeRefund: challenge.feeRefund,
+              skillReward: challenge.skillReward,
+              totalReward: totalReward,
+              withdrawalAvailable: totalReward,
+              withdrawalCompleted: false
+            }
+          };
+          localStorage.setItem('userData', JSON.stringify(updatedUser));
+        }, 100);
       }
     }
   }
 }, [userAccount.currentChallenge, userAccount.challengeStats?.status]);
+
 
 useEffect(() => {
   const initialPrices = {};
