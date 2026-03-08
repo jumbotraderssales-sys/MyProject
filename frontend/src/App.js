@@ -632,34 +632,55 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
 
   const today = new Date().toDateString();
 
-  // ⛔ DAILY LOSS → BLOCK ONLY FOR TODAY
-  if (dailyLossPct >= challenge.dailyLossLimit) {
-    if (userAccount.challengeStats.dailyBlockDate !== today) {
-      // Show alert
-      alert(`⛔ Trading Blocked for Today\n\nDaily loss limit ${challenge.dailyLossLimit}% hit.\nTry again tomorrow.`);
+// ⛔ DAILY LOSS → BLOCK ONLY FOR TODAY
+if (dailyLossPct >= challenge.dailyLossLimit) {
+  if (userAccount.challengeStats.dailyBlockDate !== today) {
+    // Show alert with encouraging message
+    alert(`⛔ Daily Trading Limit Reached\n\n` +
+          `You've hit the ${challenge.dailyLossLimit}% daily loss limit.\n\n` +
+          `🛑 Trading is paused until tomorrow.\n\n` +
+          `💡 What successful traders do:\n` +
+          `✓ Review your losing trades\n` +
+          `✓ Identify what went wrong\n` +
+          `✓ Adjust your strategy\n` +
+          `✓ Come back stronger tomorrow\n\n` +
+          `🌟 This is not a failure, it's a learning opportunity!\n` +
+          `The best traders learn more from losses than wins.`);
 
-      setUserAccount(prev => ({
-        ...prev,
-        challengeStats: {
-          ...prev.challengeStats,
-          dailyBlockDate: today
-        }
-      }));
-    }
-    return;
+    setUserAccount(prev => ({
+      ...prev,
+      challengeStats: {
+        ...prev.challengeStats,
+        dailyBlockDate: today
+      }
+    }));
   }
+  return;
+}
 
   // ❌ MAX LOSS → CHALLENGE FAIL
   if (totalLossPct >= challenge.maxLossLimit) {
-    // Show custom failure message
-    alert(`❌ CHALLENGE FAILED\n\nYou have reached the maximum loss limit of ${challenge.maxLossLimit}%.\n\nYour paper balance has been reset to ₹0.\nYou can purchase a new challenge to try again!`);
-    
     // Close all open positions first
     if (positions.length > 0) {
       positions.forEach(pos => {
         closePosition(pos.id, 'CHALLENGE_FAILED');
       });
     }
+    
+    // Show encouraging failure message
+    alert(`❌ Challenge Not This Time\n\n` +
+          `You've reached the maximum loss limit of ${challenge.maxLossLimit}%.\n\n` +
+          `🌟 EVERY MASTER WAS ONCE A BEGINNER 🌟\n\n` +
+          `💡 What you've gained:\n` +
+          `✓ Real trading experience\n` +
+          `✓ Understanding of market dynamics\n` +
+          `✓ Knowledge of risk management\n` +
+          `✓ Valuable lessons for next time\n\n` +
+          `🚀 Your next attempt will be stronger!\n` +
+          `🎯 Learn, adapt, and come back stronger.\n\n` +
+          `💰 Your paper balance has been reset to ₹0.\n` +
+          `✨ You can purchase a new challenge anytime!\n\n` +
+          `Remember: The only real failure is giving up! 💪`);
     
     // Reset paper balance to 0 and update challenge status
     setUserAccount(prev => ({
@@ -694,14 +715,18 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
     }
     
     // Show success message with reward info
-    alert(`🎉🎉🎉 CONGRATULATIONS! CHALLENGE PASSED! 🎉🎉🎉\n\n` +
-          `You have successfully achieved the ${challenge.profitTarget}% profit target!\n\n` +
-          `💰 TOTAL WITHDRAWAL AMOUNT: ₹${totalReward.toLocaleString()}\n` +
+    alert(`🎉🎉🎉 CHALLENGE CONQUERED! 🎉🎉🎉\n\n` +
+          `🏆 You've achieved the ${challenge.profitTarget}% profit target!\n\n` +
+          `💰 YOUR REWARD: ₹${totalReward.toLocaleString()}\n` +
           `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
           `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
           `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
-          `✨ You can now withdraw your reward from the Profile section!\n\n` +
-          `🏆 Great job! Keep up the excellent trading!`);
+          `⭐ What's next:\n` +
+          `1. Withdraw your reward from Profile section\n` +
+          `2. Try a higher challenge level\n` +
+          `3. Share your success with friends\n\n` +
+          `🎯 You're proving that disciplined trading pays off!\n` +
+          `Keep up the amazing work! 🌟`);
     
     // Update real balance with total reward
     setUserAccount(prev => ({
@@ -723,7 +748,6 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
     return;
   }
 };
-
  const updateChallengeStatus = (status, reason) => {
   setUserAccount(prev => {
     const updated = {
@@ -1736,13 +1760,16 @@ const validateTrade = () => {
 
   const today = new Date().toDateString();
 
-  // ⛔ BLOCKED FOR TODAY
-  if (userAccount.challengeStats.dailyBlockDate === today) {
-    return {
-      valid: false,
-      message: '⛔ Trading blocked today due to daily loss hit. Try again tomorrow.'
-    };
-  }
+// ⛔ BLOCKED FOR TODAY
+if (userAccount.challengeStats?.dailyBlockDate === today) {
+  return {
+    valid: false,
+    message: '⛔ Trading paused today - daily loss limit reached.\n\n' +
+             '💪 Use this time to analyze your trades.\n' +
+             '📚 Review the market, plan your strategy.\n' +
+             '🌅 See you tomorrow, stronger than ever!'
+  };
+}
 
   // One trade at a time
   if (challenge.oneTradeAtTime && positions.length > 0) {
