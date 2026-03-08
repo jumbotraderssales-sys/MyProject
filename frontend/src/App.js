@@ -51,12 +51,12 @@ const CHALLENGES = [
     name: "🚀 Beginner Challenge",
     fee: "₹1,000",
     paperBalance: 20000,
-    profitTarget: 10,
+    profitTarget: 1,
     dailyLossLimit: 4,
-    maxLossLimit: 10,
+    maxLossLimit: 1,
     maxOrderSize: 20, // percentage of capital
     maxLeverage: 10,
-    autoStopLossTarget: 10, // kept for reference but no longer auto-applied
+    autoStopLossTarget: 1, // kept for reference but no longer auto-applied
     oneTradeAtTime: true,
     reward: "Fee Refund + Skill Reward (20% of paper profit)",
     color: "#22c55e",
