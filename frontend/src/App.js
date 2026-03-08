@@ -1256,30 +1256,31 @@ const syncUserWallet = async () => {
     } else {
       // If backend fails, use localStorage
       const userDataStr = localStorage.getItem('userData');
-    if (userDataStr) {
-  let userData = JSON.parse(userDataStr);
-  
-  // IMPORTANT: If challenge status is failed, set paper balance to 0
-  if (userData.challengeStats?.status === 'failed') {
-    userData.paperBalance = 0;
-  }
-  
-  setUserAccount(userData);
-  setBalance(userData.paperBalance || 0);
-  setEquity(userData.paperBalance || 0);
-  
-  // Load challenge progress from userData
-  if (userData.challengeStats) {
-    setDailyLoss(userData.challengeStats.dailyLoss || 0);
-    setTotalLoss(userData.challengeStats.totalLoss || 0);
-    setChallengeProgress({
-      profit: userData.challengeStats.currentProfit || 0,
-      dailyLoss: userData.challengeStats.dailyLoss || 0,
-      totalLoss: userData.challengeStats.totalLoss || 0,
-      status: userData.challengeStats.status || 'not_started'
-    });
-  }
-}
+      if (userDataStr) {
+        let userData = JSON.parse(userDataStr);
+        
+        // IMPORTANT: If challenge status is failed, set paper balance to 0
+        if (userData.challengeStats?.status === 'failed') {
+          userData.paperBalance = 0;
+        }
+        
+        setUserAccount(userData);
+        setBalance(userData.paperBalance || 0);
+        setEquity(userData.paperBalance || 0);
+        
+        // Load challenge progress from userData
+        if (userData.challengeStats) {
+          setDailyLoss(userData.challengeStats.dailyLoss || 0);
+          setTotalLoss(userData.challengeStats.totalLoss || 0);
+          setChallengeProgress({
+            profit: userData.challengeStats.currentProfit || 0,
+            dailyLoss: userData.challengeStats.dailyLoss || 0,
+            totalLoss: userData.challengeStats.totalLoss || 0,
+            status: userData.challengeStats.status || 'not_started'
+          });
+        }
+      }
+    }
     
     // Load positions
     const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
