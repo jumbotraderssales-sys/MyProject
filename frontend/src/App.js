@@ -1097,6 +1097,27 @@ useEffect(() => {
   
   loadInitialData();
 }, []);
+// After setting userAccount, preserve challenge stats from localStorage
+const savedUserStr = localStorage.getItem('userData');
+if (savedUserStr) {
+  try {
+    const savedUser = JSON.parse(savedUserStr);
+    if (savedUser.challengeStats) {
+      // Override with saved stats
+      setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
+      setTotalLoss(savedUser.challengeStats.totalLoss || 0);
+      setChallengeProgress({
+        profit: savedUser.challengeStats.currentProfit || 0,
+        dailyLoss: savedUser.challengeStats.dailyLoss || 0,
+        totalLoss: savedUser.challengeStats.totalLoss || 0,
+        status: savedUser.challengeStats.status || 'not_started'
+      });
+    }
+  } catch (e) {
+    console.error('Error parsing saved user data:', e);
+  }
+}
+  
   
 // ===== ADD THE NEW useEffect HERE =====
 // Check challenge status on load and set balance to 0 if failed
