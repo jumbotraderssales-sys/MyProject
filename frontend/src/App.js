@@ -711,21 +711,41 @@ useEffect(() => {
 }, []); // runs once on mount
   
 useEffect(() => {
-  // Don't calculate until we have actual user data
+  // First, try to load from saved userData in localStorage
+  const userDataStr = localStorage.getItem('userData');
+  if (userDataStr) {
+    try {
+      const savedUserData = JSON.parse(userDataStr);
+      if (savedUserData.challengeStats) {
+        // Use saved stats directly without recalculation
+        const savedStats = savedUserData.challengeStats;
+        
+        setDailyLoss(savedStats.dailyLoss || 0);
+        setTotalLoss(savedStats.totalLoss || 0);
+        setChallengeProgress({
+          profit: savedStats.currentProfit || 0,
+          dailyLoss: savedStats.dailyLoss || 0,
+          totalLoss: savedStats.totalLoss || 0,
+          status: savedStats.status || 'not_started'
+        });
+        
+        // Don't recalculate if we have saved stats
+        if (orderHistory.length === 0) {
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing saved user data:', e);
+    }
+  }
+  
+  // Only calculate if we have order history AND no saved stats were used
   if (!userAccount.currentChallenge || !userAccount.challengeStats || !userAccount.paperBalance) {
     return;
   }
 
-  // If we have saved stats but no order history, use saved stats
-  if (orderHistory.length === 0 && userAccount.challengeStats.dailyLoss !== undefined) {
-    setDailyLoss(userAccount.challengeStats.dailyLoss);
-    setTotalLoss(userAccount.challengeStats.totalLoss);
-    setChallengeProgress({
-      profit: userAccount.challengeStats.currentProfit || 0,
-      dailyLoss: userAccount.challengeStats.dailyLoss || 0,
-      totalLoss: userAccount.challengeStats.totalLoss || 0,
-      status: userAccount.challengeStats.status
-    });
+  // If we have saved stats but order history is loading, keep saved values
+  if (orderHistory.length === 0) {
     return;
   }
 
@@ -776,9 +796,10 @@ useEffect(() => {
     status: userAccount.challengeStats.status
   });
   
-  // Check challenge rules with the correct percentages
+  // Check challenge rules
   checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
-  // Save updated stats to localStorage
+  
+  // Save to localStorage
   const updatedUser = {
     ...userAccount,
     challengeStats: {
@@ -791,8 +812,7 @@ useEffect(() => {
   };
   localStorage.setItem('userData', JSON.stringify(updatedUser));
   
-}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
-  
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);  
  
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
