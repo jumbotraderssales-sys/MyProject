@@ -55,7 +55,7 @@ const CHALLENGES = [
     maxLossLimit: 10,
     maxOrderSize: 20,
     maxLeverage: 5,
-    autoStopLossTarget: 1,
+    autoStopLossTarget: 10,
     oneTradeAtTime: true,
     feeRefund: 1000,        // Fee refund amount in rupees
     skillReward: 1000,       // Skill reward amount in rupees
@@ -73,7 +73,7 @@ const CHALLENGES = [
     dailyLossLimit: 4,
     maxLossLimit: 10,
     maxOrderSize: 20,
-    maxLeverage: 10,
+    maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
     feeRefund: 2500,        // Fee refund amount in rupees
@@ -88,11 +88,11 @@ const CHALLENGES = [
     name: "🔴 PRO Challenge",
     fee: "₹5,000",
     paperBalance: 100000,
-    profitTarget: 10,
+    profitTarget: 30,
     dailyLossLimit: 4,
     maxLossLimit: 10,
     maxOrderSize: 20,
-    maxLeverage: 10,
+    maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
     feeRefund: 5000,        // Fee refund amount in rupees
@@ -3004,7 +3004,7 @@ const calculateOrderPnL = (order) => {
         <div className="leverage-section-top">
           <div className="section-label">Leverage (Max: {challenge?.maxLeverage || 10}x)</div>
           <div className="leverage-buttons-top">
-            {[1, 5, 10, 20].map(lev => (
+            {[1, 5].map(lev => (
               <button
                 key={lev}
                 className={`leverage-btn-top ${leverage === lev ? 'active' : ''}`}
