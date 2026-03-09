@@ -736,32 +736,25 @@ useEffect(() => {
   
 useEffect(() => {
   // First, try to load from saved userData in localStorage
-  const userDataStr = localStorage.getItem('userData');
-  if (userDataStr) {
-    try {
-      const savedUserData = JSON.parse(userDataStr);
-      if (savedUserData.challengeStats) {
-        // Use saved stats directly without recalculation
-        const savedStats = savedUserData.challengeStats;
-        
-        setDailyLoss(savedStats.dailyLoss || 0);
-        setTotalLoss(savedStats.totalLoss || 0);
-        setChallengeProgress({
-          profit: savedStats.currentProfit || 0,
-          dailyLoss: savedStats.dailyLoss || 0,
-          totalLoss: savedStats.totalLoss || 0,
-          status: savedStats.status || 'not_started'
-        });
-        
-        // Don't recalculate if we have saved stats
-        if (orderHistory.length === 0) {
-          return;
-        }
-      }
-    } catch (e) {
-      console.error('Error parsing saved user data:', e);
+const savedUserStr = localStorage.getItem('userData');
+if (savedUserStr) {
+  try {
+    const savedUser = JSON.parse(savedUserStr);
+    if (savedUser.challengeStats) {
+      // Override with saved stats
+      setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
+      setTotalLoss(savedUser.challengeStats.totalLoss || 0);
+      setChallengeProgress({
+        profit: savedUser.challengeStats.currentProfit || 0,
+        dailyLoss: savedUser.challengeStats.dailyLoss || 0,
+        totalLoss: savedUser.challengeStats.totalLoss || 0,
+        status: savedUser.challengeStats.status || 'not_started'
+      });
     }
+  } catch (e) {
+    console.error('Error parsing saved user data:', e);
   }
+}
   
   // Only calculate if we have order history AND no saved stats were used
   if (!userAccount.currentChallenge || !userAccount.challengeStats || !userAccount.paperBalance) {
@@ -1097,26 +1090,7 @@ useEffect(() => {
   
   loadInitialData();
 }, []);
-// After setting userAccount, preserve challenge stats from localStorage
-const savedUserStr = localStorage.getItem('userData');
-if (savedUserStr) {
-  try {
-    const savedUser = JSON.parse(savedUserStr);
-    if (savedUser.challengeStats) {
-      // Override with saved stats
-      setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
-      setTotalLoss(savedUser.challengeStats.totalLoss || 0);
-      setChallengeProgress({
-        profit: savedUser.challengeStats.currentProfit || 0,
-        dailyLoss: savedUser.challengeStats.dailyLoss || 0,
-        totalLoss: savedUser.challengeStats.totalLoss || 0,
-        status: savedUser.challengeStats.status || 'not_started'
-      });
-    }
-  } catch (e) {
-    console.error('Error parsing saved user data:', e);
-  }
-}
+
   
   
 // ===== ADD THE NEW useEffect HERE =====
