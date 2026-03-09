@@ -767,22 +767,6 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
   }
 };
   
-  // Update backend
-  const token = localStorage.getItem('token');
-  if (token) {
-    fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        status,
-        reason
-      })
-    }).catch(console.error);
-  }
-};
   const calculateDollarBalance = (paperBalance) => {
     return (paperBalance / dollarRate).toFixed(2);
   };
