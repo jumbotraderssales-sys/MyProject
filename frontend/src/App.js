@@ -1216,24 +1216,32 @@ const syncUserWallet = async () => {
       if (data.success) {
         console.log('✅ Backend user data received, balance:', data.user.paperBalance);
         
-        // Preserve challenge stats if user has passed a challenge
-        let updatedUser = data.user;
-        if (userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0) {
-          updatedUser = {
-            ...data.user,
-            realBalance: userAccount.challengeStats.withdrawalAvailable,
-            challengeStats: {
-              ...data.user.challengeStats,
-              ...userAccount.challengeStats,
-              status: 'passed',
-              withdrawalAvailable: userAccount.challengeStats.withdrawalAvailable
-            }
-          };
+        // Check current user state from localStorage
+        const currentUserStr = localStorage.getItem('userData');
+        let finalUserData = data.user;
+        
+        if (currentUserStr) {
+          const currentUser = JSON.parse(currentUserStr);
+          
+          // If user has passed a challenge, preserve that state
+          if (currentUser.challengeStats?.status === 'passed' && !currentUser.challengeStats?.withdrawalCompleted) {
+            finalUserData = {
+              ...data.user,
+              realBalance: currentUser.challengeStats.withdrawalAvailable,
+              challengeStats: {
+                ...data.user.challengeStats,
+                ...currentUser.challengeStats,
+                status: 'passed',
+                withdrawalAvailable: currentUser.challengeStats.withdrawalAvailable,
+                withdrawalCompleted: false
+              }
+            };
+          }
         }
         
-        setUserAccount(prev => ({ ...prev, ...updatedUser }));
-        setBalance(updatedUser.paperBalance);
-        localStorage.setItem('userData', JSON.stringify(updatedUser));
+        setUserAccount(finalUserData);
+        setBalance(finalUserData.paperBalance);
+        localStorage.setItem('userData', JSON.stringify(finalUserData));
       }
     }
   } catch (error) {
