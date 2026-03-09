@@ -482,17 +482,63 @@ useEffect(() => {
   }
 }, []);
 
-  // Load withdrawal requests from localStorage
+// Check for approved withdrawals on load and update user account
 useEffect(() => {
-  const savedRequests = localStorage.getItem('withdrawalRequests');
-  if (savedRequests) {
-    try {
-      setWithdrawalRequests(JSON.parse(savedRequests));
-    } catch (e) {
-      console.error('Error parsing withdrawal requests:', e);
+  if (userAccount.id) {
+    const savedRequests = localStorage.getItem('withdrawalRequests');
+    if (savedRequests) {
+      const requests = JSON.parse(savedRequests);
+      const userApprovedWithdrawals = requests.filter(
+        req => req.userId === userAccount.id && req.status === 'approved' && req.isReward
+      );
+      
+      if (userApprovedWithdrawals.length > 0 && !userAccount.challengeStats?.withdrawalCompleted) {
+        const totalApprovedAmount = userApprovedWithdrawals.reduce((sum, req) => sum + req.amount, 0);
+        
+        setUserAccount(prev => {
+          const updated = {
+            ...prev,
+            challengeStats: {
+              ...prev.challengeStats,
+              withdrawalCompleted: true,
+              withdrawalDate: new Date().toISOString()
+            },
+            realBalance: (prev.realBalance || 0) - totalApprovedAmount
+          };
+          
+          // Update localStorage
+          localStorage.setItem('userData', JSON.stringify(updated));
+          
+          return updated;
+        });
+      }
     }
   }
-}, []);
+}, [userAccount.id]); // Run once on load when userAccount.id is available
+  
+  // Load withdrawal requests from localStorage
+// After setting userData from backend/localStorage, add this:
+// Check for approved withdrawals
+const savedRequests = localStorage.getItem('withdrawalRequests');
+if (savedRequests) {
+  const requests = JSON.parse(savedRequests);
+  const userApprovedWithdrawals = requests.filter(
+    req => req.userId === userData.id && req.status === 'approved' && req.isReward
+  );
+  
+  if (userApprovedWithdrawals.length > 0) {
+    const totalApprovedAmount = userApprovedWithdrawals.reduce((sum, req) => sum + req.amount, 0);
+    userData = {
+      ...userData,
+      challengeStats: {
+        ...userData.challengeStats,
+        withdrawalCompleted: true,
+        withdrawalDate: new Date().toISOString()
+      },
+      realBalance: (userData.realBalance || 0) - totalApprovedAmount
+    };
+  }
+}
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
     try {
@@ -5088,63 +5134,72 @@ onClick={() => {
           
           <div style={{display: 'flex', gap: '10px'}}>
             <button
-              onClick={() => {
-                if (window.confirm(`Approve withdrawal of ₹${request.amount} for ${request.userName}?`)) {
-                  const updatedRequests = withdrawalRequests.map(req => 
-                    req.id === request.id ? {
-                      ...req,
-                      status: 'approved',
-                      approvedAt: new Date().toLocaleString(),
-                      approvedBy: 'Admin'
-                    } : req
-                  );
-                  setWithdrawalRequests(updatedRequests);
-                  localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
-                  
-                  // If this was a reward withdrawal, mark it as completed in user data
-                  if (request.isReward) {
-                    // Find and update the user's challenge stats
-                    const userDataStr = localStorage.getItem('userData');
-                    if (userDataStr) {
-                      const userData = JSON.parse(userDataStr);
-                      if (userData.id === request.userId) {
-                        const updatedUserData = {
-                          ...userData,
-                          realBalance: (userData.realBalance || 0) - request.amount,
-                          challengeStats: {
-                            ...userData.challengeStats,
-                            withdrawalCompleted: true,
-                            withdrawalDate: new Date().toISOString(),
-                            withdrawalPending: false,
-                            withdrawalRequestId: null
-                          }
-                        };
-                        localStorage.setItem('userData', JSON.stringify(updatedUserData));
-                        
-                        // If this is the current user, update state
-                        if (userAccount.id === request.userId) {
-                          setUserAccount(updatedUserData);
-                        }
-                      }
-                    }
-                  }
-                  
-                  alert(`✅ Withdrawal #${request.id} approved! User notified.`);
-                }
-              }}
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              ✅ Approve & Release Funds
-            </button>
+             onClick={() => {
+    if (window.confirm(`Approve withdrawal of ₹${request.amount} for ${request.userName}?`)) {
+      
+      // If this is a reward withdrawal, update the user's challenge stats
+      if (request.isReward) {
+        // Find the user in localStorage (in a real app, this would be an API call)
+        const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+        const userIndex = allUsers.findIndex(u => u.id === request.userId);
+        
+        if (userIndex !== -1) {
+          // Update user's challenge stats to mark withdrawal as completed
+          allUsers[userIndex] = {
+            ...allUsers[userIndex],
+            challengeStats: {
+              ...allUsers[userIndex].challengeStats,
+              withdrawalCompleted: true,
+              withdrawalDate: new Date().toISOString()
+            },
+            realBalance: (allUsers[userIndex].realBalance || 0) - request.amount
+          };
+          
+          localStorage.setItem('allUsers', JSON.stringify(allUsers));
+          
+          // If this is the current logged-in user, update their state
+          if (request.userId === userAccount.id) {
+            setUserAccount(prev => ({
+              ...prev,
+              challengeStats: {
+                ...prev.challengeStats,
+                withdrawalCompleted: true,
+                withdrawalDate: new Date().toISOString()
+              },
+              realBalance: (prev.realBalance || 0) - request.amount
+            }));
+          }
+        }
+      }
+      
+      const updatedRequests = withdrawalRequests.map(req => 
+        req.id === request.id ? {
+          ...req,
+          status: 'approved',
+          approvedAt: new Date().toLocaleString(),
+          approvedBy: 'Admin'
+        } : req
+      );
+      
+      setWithdrawalRequests(updatedRequests);
+      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
+      
+      alert(`✅ Withdrawal #${request.id} approved! Funds released to user.`);
+    }
+  }}
+  style={{
+    flex: 1,
+    padding: '12px',
+    background: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontWeight: 'bold'
+  }}
+>
+  ✅ Approve & Release Funds
+</button>
             
             <button
               onClick={() => {
