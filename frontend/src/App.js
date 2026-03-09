@@ -12,6 +12,7 @@ import img1 from './data/1.png';
 import img2 from './data/2.png';
 import img3 from './data/3.png';
 const carouselImages = [img7, img6, img1, img2, img3];
+/* eslint-disable no-unused-vars */
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
 const TIMEFRAMES = ['1', '5', '15', '60', '240', '1D', '1W', '1M'];
