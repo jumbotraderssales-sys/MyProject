@@ -1448,57 +1448,56 @@ const syncUserWallet = async () => {
     if (profileResponse.ok) {
       const profileData = await profileResponse.json();
       if (profileData.success) {
-        const backendUser = profileData.user;
+        let userData = profileData.user;
         
-        // Check if current user has passed a challenge
-        const currentUserStr = localStorage.getItem('userData');
-        let finalUserData = backendUser;
-        
-        if (currentUserStr) {
-          const currentUser = JSON.parse(currentUserStr);
-          
-          // If user has passed a challenge, preserve that state
-          if (currentUser.challengeStats?.status === 'passed' && !currentUser.challengeStats?.withdrawalCompleted) {
-            finalUserData = {
-              ...backendUser,
-              realBalance: currentUser.challengeStats.withdrawalAvailable,
-              challengeStats: {
-                ...backendUser.challengeStats,
-                ...currentUser.challengeStats,
-                status: 'passed',
-                withdrawalAvailable: currentUser.challengeStats.withdrawalAvailable,
-                withdrawalCompleted: false
-              }
+        // IMPORTANT: Preserve existing challenge stats from localStorage
+        const savedUserStr = localStorage.getItem('userData');
+        if (savedUserStr) {
+          const savedUser = JSON.parse(savedUserStr);
+          if (savedUser.challengeStats) {
+            userData.challengeStats = {
+              ...userData.challengeStats,
+              ...savedUser.challengeStats,
+              dailyLoss: savedUser.challengeStats.dailyLoss || 0,
+              totalLoss: savedUser.challengeStats.totalLoss || 0,
+              currentProfit: savedUser.challengeStats.currentProfit || 0
             };
-          }
-          // If challenge status is failed, set paper balance to 0
-          else if (backendUser.challengeStats?.status === 'failed') {
-            finalUserData.paperBalance = 0;
           }
         }
         
-        setUserAccount(finalUserData);
-        setBalance(finalUserData.paperBalance || 0);
-        setEquity(finalUserData.paperBalance || 0);
+        // IMPORTANT: If challenge status is failed, set paper balance to 0
+        if (userData.challengeStats?.status === 'failed') {
+          userData.paperBalance = 0;
+        }
         
-        if (finalUserData.challengeStats) {
-          setDailyLoss(finalUserData.challengeStats.dailyLoss || 0);
-          setTotalLoss(finalUserData.challengeStats.totalLoss || 0);
+        setUserAccount(userData);
+        setBalance(userData.paperBalance || 0);
+        setEquity(userData.paperBalance || 0);
+        
+        if (userData.challengeStats) {
+          setDailyLoss(userData.challengeStats.dailyLoss || 0);
+          setTotalLoss(userData.challengeStats.totalLoss || 0);
           setChallengeProgress({
-            profit: finalUserData.challengeStats.currentProfit || 0,
-            dailyLoss: finalUserData.challengeStats.dailyLoss || 0,
-            totalLoss: finalUserData.challengeStats.totalLoss || 0,
-            status: finalUserData.challengeStats.status || 'not_started'
+            profit: userData.challengeStats.currentProfit || 0,
+            dailyLoss: userData.challengeStats.dailyLoss || 0,
+            totalLoss: userData.challengeStats.totalLoss || 0,
+            status: userData.challengeStats.status || 'not_started'
           });
         }
         
-        localStorage.setItem('userData', JSON.stringify(finalUserData));
+        localStorage.setItem('userData', JSON.stringify(userData));
       }
     } else {
-      // If backend fails, use localStorage with preserved state
+      // If backend fails, use localStorage
       const userDataStr = localStorage.getItem('userData');
       if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
+        let userData = JSON.parse(userDataStr);
+        
+        // IMPORTANT: If challenge status is failed, set paper balance to 0
+        if (userData.challengeStats?.status === 'failed') {
+          userData.paperBalance = 0;
+        }
+        
         setUserAccount(userData);
         setBalance(userData.paperBalance || 0);
         setEquity(userData.paperBalance || 0);
