@@ -539,6 +539,32 @@ if (savedRequests) {
     };
   }
 }
+// Load challenge stats from localStorage on initial load
+useEffect(() => {
+  const loadChallengeStats = () => {
+    const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+      try {
+        const userData = JSON.parse(userDataStr);
+        if (userData.challengeStats) {
+          setDailyLoss(userData.challengeStats.dailyLoss || 0);
+          setTotalLoss(userData.challengeStats.totalLoss || 0);
+          setChallengeProgress({
+            profit: userData.challengeStats.currentProfit || 0,
+            dailyLoss: userData.challengeStats.dailyLoss || 0,
+            totalLoss: userData.challengeStats.totalLoss || 0,
+            status: userData.challengeStats.status || 'not_started'
+          });
+        }
+      } catch (e) {
+        console.error('Error loading challenge stats:', e);
+      }
+    }
+  };
+
+  loadChallengeStats();
+}, []);
+  
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
     try {
