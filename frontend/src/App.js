@@ -885,38 +885,7 @@ useEffect(() => {
   
 // ===== ADD THE NEW useEffect HERE =====
 // Check challenge status on load and set balance to 0 if failed
-// Monitor and preserve challenge pass state
-useEffect(() => {
-  if (userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0) {
-    // Ensure realBalance is set correctly
-    if (userAccount.realBalance !== userAccount.challengeStats.withdrawalAvailable) {
-      setUserAccount(prev => ({
-        ...prev,
-        realBalance: prev.challengeStats.withdrawalAvailable
-      }));
-    }
-    
-    // Also update localStorage to ensure it persists
-    const currentStorage = localStorage.getItem('userData');
-    if (currentStorage) {
-      const storageData = JSON.parse(currentStorage);
-      if (storageData.challengeStats?.status !== 'passed' || 
-          storageData.realBalance !== userAccount.challengeStats.withdrawalAvailable) {
-        const updatedStorage = {
-          ...storageData,
-          realBalance: userAccount.challengeStats.withdrawalAvailable,
-          challengeStats: {
-            ...storageData.challengeStats,
-            ...userAccount.challengeStats,
-            status: 'passed',
-            withdrawalAvailable: userAccount.challengeStats.withdrawalAvailable
-          }
-        };
-        localStorage.setItem('userData', JSON.stringify(updatedStorage));
-      }
-    }
-  }
-}, [userAccount.challengeStats?.status, userAccount.challengeStats?.withdrawalAvailable, userAccount.realBalance]);
+
   
 useEffect(() => {
   if (userAccount.currentChallenge && userAccount.challengeStats) {
