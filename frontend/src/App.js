@@ -469,7 +469,18 @@ useEffect(() => {
   }
 }, [userAccount.challengeStats?.status, userAccount.challengeStats?.withdrawalAvailable, userAccount.realBalance]);
   
-
+// Load bank account from localStorage on mount
+useEffect(() => {
+  const savedBankAccount = localStorage.getItem('userBankAccount');
+  if (savedBankAccount) {
+    try {
+      const parsed = JSON.parse(savedBankAccount);
+      setUserBankAccount(parsed);
+    } catch (e) {
+      console.error('Error parsing bank account:', e);
+    }
+  }
+}, []);
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
     try {
