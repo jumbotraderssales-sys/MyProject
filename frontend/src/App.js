@@ -733,8 +733,8 @@ useEffect(() => {
   const interval = setInterval(fetchAllPrices, 10000); // every 10 seconds
   return () => clearInterval(interval);
 }, []); // runs once on mount
- useEffect(() => {
-  // ===== STEP 1: ALWAYS LOAD SAVED VALUES FIRST =====
+useEffect(() => {
+  // ===== STEP 1: ALWAYS USE SAVED VALUES FIRST =====
   const savedUserStr = localStorage.getItem('userData');
   if (savedUserStr) {
     try {
@@ -742,7 +742,7 @@ useEffect(() => {
       if (savedUser.challengeStats) {
         console.log('Loading saved challenge stats:', savedUser.challengeStats);
         
-        // Force set these values from saved data
+        // ALWAYS use saved values - they are the source of truth
         setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
         setTotalLoss(savedUser.challengeStats.totalLoss || 0);
         setChallengeProgress({
@@ -752,7 +752,7 @@ useEffect(() => {
           status: savedUser.challengeStats.status || 'not_started'
         });
         
-        // Return early if orderHistory is empty - don't recalculate
+        // Don't recalculate on every render - only when we have new trades
         if (orderHistory.length === 0) {
           console.log('No order history, keeping saved values');
           return;
@@ -763,7 +763,7 @@ useEffect(() => {
     }
   }
   
-  // ===== STEP 2: ONLY RECALCULATE IF WE HAVE ORDER HISTORY =====
+  // ===== STEP 2: ONLY RECALCULATE IF WE HAVE NEW TRADES =====
   if (orderHistory.length === 0 || !userAccount.currentChallenge || !userAccount.paperBalance) {
     return;
   }
@@ -773,82 +773,47 @@ useEffect(() => {
 
   const today = new Date().toDateString();
   
-  // DEBUG: Log all orders to see structure
-  console.log('All orders:', orderHistory.map(o => ({
-    id: o.id,
-    status: o.status,
-    pnl: o.pnl,
-    timestamp: o.timestamp,
-    side: o.side
-  })));
-  
-  // FILTER 1: Today's closed trades (for daily loss)
-  const todayTrades = orderHistory.filter(order => {
-    // Check if order is closed
-    const isClosed = order.status === 'CLOSED' || order.status === 'closed';
-    
-    // Check if order is from today
-    let isToday = false;
-    if (order.timestamp) {
-      const orderDate = new Date(order.timestamp).toDateString();
-      isToday = orderDate === today;
-    }
-    
-    return isClosed && isToday;
-  });
-  
-  console.log('Today trades:', todayTrades);
-  
-  // FILTER 2: ALL closed trades (for total loss and profit)
+  // Get all closed trades
   const allClosedTrades = orderHistory.filter(order => 
     order.status === 'CLOSED' || order.status === 'closed'
   );
   
-  console.log('All closed trades:', allClosedTrades);
+  // If we have no closed trades, keep saved values
+  if (allClosedTrades.length === 0) {
+    console.log('No closed trades found, keeping saved values');
+    return;
+  }
   
-  // Daily loss calculation (losses from TODAY only)
-  const dailyLossTrades = todayTrades.filter(order => {
-    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
-    return pnl < 0;
+  // Calculate daily loss (today's trades only)
+  const todayTrades = allClosedTrades.filter(order => {
+    const orderDate = new Date(order.timestamp).toDateString();
+    return orderDate === today;
   });
   
-  const dailyLossAmountUSD = Math.abs(dailyLossTrades.reduce((sum, order) => {
-    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
-    return sum + pnl;
-  }, 0));
+  const dailyLossAmountUSD = Math.abs(todayTrades
+    .filter(order => (order.pnl || 0) < 0)
+    .reduce((sum, order) => sum + Math.abs(order.pnl || 0), 0));
   
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
   const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total loss calculation (ALL losses from ALL time)
-  const totalLossTrades = allClosedTrades.filter(order => {
-    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
-    return pnl < 0;
-  });
+  // Calculate total loss (ALL closed trades)
+  const totalLossAmountUSD = allClosedTrades
+    .filter(order => (order.pnl || 0) < 0)
+    .reduce((sum, order) => sum + Math.abs(order.pnl || 0), 0);
   
-  const allLossesUSD = Math.abs(totalLossTrades.reduce((sum, order) => {
-    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
-    return sum + pnl;
-  }, 0));
+  const totalLossAmountINR = totalLossAmountUSD * dollarRate;
+  const totalLossPercentage = userAccount.paperBalance > 0 ? (totalLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  const allLossesINR = allLossesUSD * dollarRate;
-  const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
+  // Calculate total profit
+  const totalProfitAmountUSD = allClosedTrades
+    .filter(order => (order.pnl || 0) > 0)
+    .reduce((sum, order) => sum + (order.pnl || 0), 0);
   
-  // Total profit calculation (ALL profits from ALL time)
-  const profitTrades = allClosedTrades.filter(order => {
-    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
-    return pnl > 0;
-  });
+  const totalProfitAmountINR = totalProfitAmountUSD * dollarRate;
+  const profitPercentage = userAccount.paperBalance > 0 ? (totalProfitAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  const allProfitsUSD = profitTrades.reduce((sum, order) => {
-    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
-    return sum + pnl;
-  }, 0);
-  
-  const allProfitsINR = allProfitsUSD * dollarRate;
-  const profitPercentage = userAccount.paperBalance > 0 ? (allProfitsINR / userAccount.paperBalance) * 100 : 0;
-  
-  // ===== STEP 3: GET SAVED VALUES AS FALLBACK =====
+  // Get saved values for comparison
   let savedDailyLoss = 0;
   let savedTotalLoss = 0;
   let savedProfit = 0;
@@ -864,21 +829,25 @@ useEffect(() => {
     } catch (e) {}
   }
   
-  // ===== STEP 4: USE CALCULATED VALUES WITH PROPER FALLBACKS =====
-  // Daily loss - use calculation if we have today trades, otherwise use saved
-  const newDailyLoss = todayTrades.length > 0 && !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage)
+  // ===== STEP 3: DECIDE WHICH VALUES TO USE =====
+  // If calculated total loss is LESS than saved total loss, keep saved value
+  // This prevents overwriting historical data with incomplete calculations
+  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) && dailyLossPercentage > 0
     ? dailyLossPercentage 
     : savedDailyLoss;
 
-  // Total loss - use calculation if we have any closed trades, otherwise use saved
-  const newTotalLoss = allClosedTrades.length > 0 && !isNaN(totalLossPercentage) && isFinite(totalLossPercentage)
-    ? totalLossPercentage
-    : savedTotalLoss;
+  // For total loss: ALWAYS use the LARGER value (saved vs calculated)
+  // This ensures we never lose historical loss data
+  const newTotalLoss = Math.max(
+    savedTotalLoss,
+    !isNaN(totalLossPercentage) && isFinite(totalLossPercentage) ? totalLossPercentage : 0
+  );
 
-  // Profit - use calculation if we have any closed trades, otherwise use saved
-  const newProfit = allClosedTrades.length > 0 && !isNaN(profitPercentage) && isFinite(profitPercentage)
-    ? profitPercentage
-    : savedProfit;
+  // For profit: ALWAYS use the LARGER value
+  const newProfit = Math.max(
+    savedProfit,
+    !isNaN(profitPercentage) && isFinite(profitPercentage) ? profitPercentage : 0
+  );
   
   console.log('Calculated values:', {
     dailyCalc: dailyLossPercentage,
@@ -890,14 +859,10 @@ useEffect(() => {
     newDaily: newDailyLoss,
     newTotal: newTotalLoss,
     newProfit: newProfit,
-    todayTradesCount: todayTrades.length,
-    dailyLossTrades: dailyLossTrades.length,
-    totalLossTrades: totalLossTrades.length,
-    profitTrades: profitTrades.length,
     allClosedTrades: allClosedTrades.length
   });
   
-  // ===== STEP 5: ONLY UPDATE IF VALUES ACTUALLY CHANGED =====
+  // ===== STEP 4: UPDATE ONLY IF VALUES CHANGED =====
   if (newDailyLoss !== dailyLoss || newTotalLoss !== totalLoss || newProfit !== challengeProgress.profit) {
     console.log('Updating challenge stats:', { newDailyLoss, newTotalLoss, newProfit });
     
