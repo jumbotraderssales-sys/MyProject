@@ -733,7 +733,7 @@ useEffect(() => {
   const interval = setInterval(fetchAllPrices, 10000); // every 10 seconds
   return () => clearInterval(interval);
 }, []); // runs once on mount
-  useEffect(() => {
+ useEffect(() => {
   // ===== STEP 1: ALWAYS LOAD SAVED VALUES FIRST =====
   const savedUserStr = localStorage.getItem('userData');
   if (savedUserStr) {
@@ -773,39 +773,77 @@ useEffect(() => {
 
   const today = new Date().toDateString();
   
+  // DEBUG: Log all orders to see structure
+  console.log('All orders:', orderHistory.map(o => ({
+    id: o.id,
+    status: o.status,
+    pnl: o.pnl,
+    timestamp: o.timestamp,
+    side: o.side
+  })));
+  
   // FILTER 1: Today's closed trades (for daily loss)
-  // If order doesn't have challengeName, include all trades from today
   const todayTrades = orderHistory.filter(order => {
-    const orderDate = new Date(order.timestamp).toDateString();
-    return orderDate === today && order.status === 'CLOSED';
+    // Check if order is closed
+    const isClosed = order.status === 'CLOSED' || order.status === 'closed';
+    
+    // Check if order is from today
+    let isToday = false;
+    if (order.timestamp) {
+      const orderDate = new Date(order.timestamp).toDateString();
+      isToday = orderDate === today;
+    }
+    
+    return isClosed && isToday;
   });
   
+  console.log('Today trades:', todayTrades);
+  
   // FILTER 2: ALL closed trades (for total loss and profit)
-  // If orders don't have challengeName, include all trades
-  const allChallengeTrades = orderHistory.filter(order => 
-    order.status === 'CLOSED'
+  const allClosedTrades = orderHistory.filter(order => 
+    order.status === 'CLOSED' || order.status === 'closed'
   );
   
+  console.log('All closed trades:', allClosedTrades);
+  
   // Daily loss calculation (losses from TODAY only)
-  const dailyLossAmountUSD = Math.abs(todayTrades
-    .filter(order => order.pnl < 0)
-    .reduce((sum, order) => sum + order.pnl, 0));
+  const dailyLossTrades = todayTrades.filter(order => {
+    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
+    return pnl < 0;
+  });
+  
+  const dailyLossAmountUSD = Math.abs(dailyLossTrades.reduce((sum, order) => {
+    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
+    return sum + pnl;
+  }, 0));
   
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
   const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
   // Total loss calculation (ALL losses from ALL time)
-  const allLossesUSD = allChallengeTrades
-    .filter(order => order.pnl < 0)
-    .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
+  const totalLossTrades = allClosedTrades.filter(order => {
+    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
+    return pnl < 0;
+  });
+  
+  const allLossesUSD = Math.abs(totalLossTrades.reduce((sum, order) => {
+    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
+    return sum + pnl;
+  }, 0));
   
   const allLossesINR = allLossesUSD * dollarRate;
   const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
   
   // Total profit calculation (ALL profits from ALL time)
-  const allProfitsUSD = allChallengeTrades
-    .filter(order => order.pnl > 0)
-    .reduce((sum, order) => sum + order.pnl, 0);
+  const profitTrades = allClosedTrades.filter(order => {
+    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
+    return pnl > 0;
+  });
+  
+  const allProfitsUSD = profitTrades.reduce((sum, order) => {
+    const pnl = typeof order.pnl === 'number' ? order.pnl : parseFloat(order.pnl) || 0;
+    return sum + pnl;
+  }, 0);
   
   const allProfitsINR = allProfitsUSD * dollarRate;
   const profitPercentage = userAccount.paperBalance > 0 ? (allProfitsINR / userAccount.paperBalance) * 100 : 0;
@@ -827,18 +865,18 @@ useEffect(() => {
   }
   
   // ===== STEP 4: USE CALCULATED VALUES WITH PROPER FALLBACKS =====
-  // Daily loss - use calculation if valid, otherwise use saved
-  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) 
+  // Daily loss - use calculation if we have today trades, otherwise use saved
+  const newDailyLoss = todayTrades.length > 0 && !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage)
     ? dailyLossPercentage 
     : savedDailyLoss;
 
-  // Total loss - use calculation if we have any trades, otherwise use saved
-  const newTotalLoss = allChallengeTrades.length > 0 && !isNaN(totalLossPercentage) && isFinite(totalLossPercentage)
+  // Total loss - use calculation if we have any closed trades, otherwise use saved
+  const newTotalLoss = allClosedTrades.length > 0 && !isNaN(totalLossPercentage) && isFinite(totalLossPercentage)
     ? totalLossPercentage
     : savedTotalLoss;
 
-  // Profit - use calculation if we have any trades, otherwise use saved
-  const newProfit = allChallengeTrades.length > 0 && !isNaN(profitPercentage) && isFinite(profitPercentage)
+  // Profit - use calculation if we have any closed trades, otherwise use saved
+  const newProfit = allClosedTrades.length > 0 && !isNaN(profitPercentage) && isFinite(profitPercentage)
     ? profitPercentage
     : savedProfit;
   
@@ -853,8 +891,10 @@ useEffect(() => {
     newTotal: newTotalLoss,
     newProfit: newProfit,
     todayTradesCount: todayTrades.length,
-    allTradesCount: allChallengeTrades.length,
-    paperBalance: userAccount.paperBalance
+    dailyLossTrades: dailyLossTrades.length,
+    totalLossTrades: totalLossTrades.length,
+    profitTrades: profitTrades.length,
+    allClosedTrades: allClosedTrades.length
   });
   
   // ===== STEP 5: ONLY UPDATE IF VALUES ACTUALLY CHANGED =====
