@@ -622,6 +622,41 @@ useEffect(() => {
   checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
+
+  // First define updateChallengeStatus
+const updateChallengeStatus = (status, reason) => {
+  setUserAccount(prev => {
+    const updated = {
+      ...prev,
+      challengeStats: {
+        ...prev.challengeStats,
+        status,
+        endReason: reason
+      }
+    };
+    
+    // Update localStorage
+    localStorage.setItem('userData', JSON.stringify(updated));
+    return updated;
+  });
+  
+  // Update backend
+  const token = localStorage.getItem('token');
+  if (token) {
+    fetch('https://myproject1-d097.onrender.com/api/challenge/status', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        status,
+        reason
+      })
+    }).catch(console.error);
+  }
+};
+
   
   // Check challenge rules
 const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
