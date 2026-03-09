@@ -4108,104 +4108,157 @@ const calculateOrderPnL = (order) => {
 <div className="profile-card withdraw-card">
   <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
   
-  {/* Show available reward if challenge passed and not withdrawn */}
-  {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
-    <div style={{
-      background: 'linear-gradient(135deg, #10b981, #059669)',
-      padding: '20px',
-      borderRadius: '10px',
-      marginBottom: '25px',
-      textAlign: 'center',
-      animation: 'pulse 2s infinite',
-      border: '2px solid #34d399'
+{/* Show available reward if challenge passed and not withdrawn and no pending request */}
+{userAccount.challengeStats?.status === 'passed' && 
+ userAccount.challengeStats?.withdrawalAvailable > 0 && 
+ !userAccount.challengeStats?.withdrawalCompleted && 
+ !userAccount.challengeStats?.withdrawalPending && (
+  <div style={{
+    background: 'linear-gradient(135deg, #10b981, #059669)',
+    padding: '20px',
+    borderRadius: '10px',
+    marginBottom: '25px',
+    textAlign: 'center',
+    animation: 'pulse 2s infinite',
+    border: '2px solid #34d399'
+  }}>
+    <div style={{fontSize: '40px', marginBottom: '10px'}}>💰</div>
+    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
+      FUNDS AVAILABLE FOR WITHDRAWAL!
+    </h3>
+    <p style={{
+      color: 'white',
+      fontSize: '36px',
+      fontWeight: 'bold',
+      marginBottom: '15px',
+      textShadow: '0 2px 4px rgba(0,0,0,0.2)'
     }}>
-      <div style={{fontSize: '40px', marginBottom: '10px'}}>💰</div>
-      <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
-        FUNDS AVAILABLE FOR WITHDRAWAL!
-      </h3>
-      <p style={{
-        color: 'white',
-        fontSize: '36px',
-        fontWeight: 'bold',
-        marginBottom: '15px',
-        textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-      }}>
-        ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
-      </p>
-      <div style={{
-        background: 'rgba(255,255,255,0.15)',
-        padding: '15px',
-        borderRadius: '8px',
-        marginBottom: '15px',
-        textAlign: 'left'
-      }}>
-        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: 'white'}}>
-          <span>Fee Refund:</span>
-          <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.feeRefund?.toLocaleString() || '0'}</span>
-        </div>
-        <div style={{display: 'flex', justifyContent: 'space-between', color: 'white'}}>
-          <span>Skill Reward:</span>
-          <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.skillReward?.toLocaleString() || '0'}</span>
-        </div>
+      ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
+    </p>
+    <div style={{
+      background: 'rgba(255,255,255,0.15)',
+      padding: '15px',
+      borderRadius: '8px',
+      marginBottom: '15px',
+      textAlign: 'left'
+    }}>
+      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: 'white'}}>
+        <span>Fee Refund:</span>
+        <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.feeRefund?.toLocaleString() || '0'}</span>
       </div>
-      <div style={{
-        background: '#f59e0b',
-        padding: '10px',
+      <div style={{display: 'flex', justifyContent: 'space-between', color: 'white'}}>
+        <span>Skill Reward:</span>
+        <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.skillReward?.toLocaleString() || '0'}</span>
+      </div>
+    </div>
+    <div style={{
+      background: '#f59e0b',
+      padding: '10px',
+      borderRadius: '5px',
+      marginBottom: '15px',
+      fontSize: '14px',
+      color: 'white'
+    }}>
+      ⚡ Click "Request Withdrawal" below to claim your reward!
+    </div>
+    <button
+      onClick={() => {
+        if (!userBankAccount.accountNumber) {
+          alert('⚠️ Please set up your bank account first');
+          setShowAccountSetup(true);
+        } else {
+          setShowWithdrawalRequest(true);
+        }
+      }}
+      style={{
+        padding: '12px 24px',
+        background: 'white',
+        color: '#059669',
+        border: 'none',
         borderRadius: '5px',
-        marginBottom: '15px',
-        fontSize: '14px',
-        color: 'white'
-      }}>
-        ⚡ Click "Request Withdrawal" below to claim your reward!
-      </div>
-      <button
-        onClick={() => {
-          if (!userBankAccount.accountNumber) {
-            alert('⚠️ Please set up your bank account first');
-            setShowAccountSetup(true);
-          } else {
-            setShowWithdrawalRequest(true);
-          }
-        }}
-        style={{
-          padding: '12px 24px',
-          background: 'white',
-          color: '#059669',
-          border: 'none',
-          borderRadius: '5px',
-          fontWeight: 'bold',
-          fontSize: '16px',
-          cursor: 'pointer',
-          width: '100%',
-          transition: 'all 0.2s'
-        }}
-        onMouseOver={(e) => e.currentTarget.style.background = '#f3f4f6'}
-        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
-      >
-        WITHDRAW ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()} NOW
-      </button>
-    </div>
-  )}
+        fontWeight: 'bold',
+        fontSize: '16px',
+        cursor: 'pointer',
+        width: '100%',
+        transition: 'all 0.2s'
+      }}
+      onMouseOver={(e) => e.currentTarget.style.background = '#f3f4f6'}
+      onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+    >
+      WITHDRAW ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()} NOW
+    </button>
+  </div>
+)}
 
-  {/* Show message if reward already withdrawn */}
-  {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalCompleted && (
-    <div style={{
-      background: '#4b5563',
-      padding: '20px',
-      borderRadius: '10px',
-      marginBottom: '25px',
-      textAlign: 'center'
+{/* Show pending withdrawal message */}
+{userAccount.challengeStats?.withdrawalPending && (
+  <div style={{
+    background: '#f59e0b',
+    padding: '20px',
+    borderRadius: '10px',
+    marginBottom: '25px',
+    textAlign: 'center',
+    border: '2px solid #fbbf24'
+  }}>
+    <div style={{fontSize: '40px', marginBottom: '10px'}}>⏳</div>
+    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
+      WITHDRAWAL PENDING APPROVAL
+    </h3>
+    <p style={{
+      color: 'white',
+      fontSize: '24px',
+      fontWeight: 'bold',
+      marginBottom: '15px'
     }}>
-      <div style={{fontSize: '40px', marginBottom: '10px'}}>✅</div>
-      <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>Reward Withdrawn</h3>
-      <p style={{color: '#d1d5db', fontSize: '16px', marginBottom: '5px'}}>
-        You've successfully withdrawn ₹{userAccount.challengeStats.totalReward?.toLocaleString()}
+      ₹{userAccount.challengeStats.withdrawalAvailable?.toLocaleString()}
+    </p>
+    <div style={{
+      background: 'rgba(255,255,255,0.15)',
+      padding: '15px',
+      borderRadius: '8px',
+      marginBottom: '15px'
+    }}>
+      <p style={{color: 'white', marginBottom: '5px'}}>
+        Request ID: <strong>{userAccount.challengeStats.withdrawalRequestId}</strong>
       </p>
-      <p style={{color: '#9ca3af', fontSize: '14px'}}>
-        Complete another challenge to earn more rewards!
+      <p style={{color: '#fde68a', fontSize: '14px'}}>
+        Submitted: {userAccount.challengeStats.withdrawalRequestDate ? 
+          new Date(userAccount.challengeStats.withdrawalRequestDate).toLocaleString() : 
+          'N/A'}
       </p>
     </div>
-  )}
+    <div style={{
+      background: 'rgba(0,0,0,0.2)',
+      padding: '10px',
+      borderRadius: '5px',
+      fontSize: '14px',
+      color: 'white'
+    }}>
+      ⏳ Your withdrawal request is being processed by admin.<br/>
+      You will be notified once approved (usually within 24-48 hours).
+    </div>
+  </div>
+)}
+
+{/* Show message if reward already withdrawn */}
+{userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalCompleted && (
+  <div style={{
+    background: '#4b5563',
+    padding: '20px',
+    borderRadius: '10px',
+    marginBottom: '25px',
+    textAlign: 'center'
+  }}>
+    <div style={{fontSize: '40px', marginBottom: '10px'}}>✅</div>
+    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>Reward Withdrawn</h3>
+    <p style={{color: '#d1d5db', fontSize: '16px', marginBottom: '5px'}}>
+      You've successfully withdrawn ₹{userAccount.challengeStats.totalReward?.toLocaleString()}
+    </p>
+    <p style={{color: '#9ca3af', fontSize: '14px'}}>
+      Complete another challenge to earn more rewards!
+    </p>
+  </div>
+)}
   
   <div className="withdrawal-options-grid">
     <div className="withdrawal-card" onClick={() => {
@@ -5029,21 +5082,49 @@ onClick={() => {
               
               <div style={{display: 'flex', gap: '10px'}}>
                 <button
-                  onClick={() => {
-                    if (window.confirm(`Approve withdrawal of ₹${request.amount} for ${request.userName}?`)) {
-                      const updatedRequests = withdrawalRequests.map(req => 
-                        req.id === request.id ? {
-                          ...req,
-                          status: 'approved',
-                          approvedAt: new Date().toLocaleString(),
-                          approvedBy: 'Admin'
-                        } : req
-                      );
-                      setWithdrawalRequests(updatedRequests);
-                      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
-                      alert(`✅ Withdrawal #${request.id} approved! Notification sent to user.`);
-                    }
-                  }}
+  onClick={() => {
+    if (window.confirm(`Approve withdrawal of ₹${request.amount} for ${request.userName}?`)) {
+      const updatedRequests = withdrawalRequests.map(req => 
+        req.id === request.id ? {
+          ...req,
+          status: 'approved',
+          approvedAt: new Date().toLocaleString(),
+          approvedBy: 'Admin'
+        } : req
+      );
+      setWithdrawalRequests(updatedRequests);
+      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
+      
+      // If this was a reward withdrawal, mark it as completed in user data
+      if (request.isReward) {
+        // Find and update the user's challenge stats
+        const userDataStr = localStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          if (userData.id === request.userId) {
+            const updatedUserData = {
+              ...userData,
+              realBalance: (userData.realBalance || 0) - request.amount,
+              challengeStats: {
+                ...userData.challengeStats,
+                withdrawalCompleted: true,
+                withdrawalDate: new Date().toISOString(),
+                withdrawalPending: false
+              }
+            };
+            localStorage.setItem('userData', JSON.stringify(updatedUserData));
+            
+            // If this is the current user, update state
+            if (userAccount.id === request.userId) {
+              setUserAccount(updatedUserData);
+            }
+          }
+        }
+      }
+      
+      alert(`✅ Withdrawal #${request.id} approved! User notified.`);
+    }
+  }}
                   style={{
                     flex: 1,
                     padding: '12px',
@@ -5058,30 +5139,48 @@ onClick={() => {
                   ✅ Approve & Release Funds
                 </button>
                 
-                <button
-                  onClick={() => {
-                    const reason = prompt('Enter rejection reason:');
-                    if (reason) {
-                      const updatedRequests = withdrawalRequests.map(req => 
-                        req.id === request.id ? {
-                          ...req,
-                          status: 'rejected',
-                          reason: reason,
-                          rejectedAt: new Date().toLocaleString()
-                        } : req
-                      );
-                      setWithdrawalRequests(updatedRequests);
-                      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
-                      
-                      // Refund the amount to user's real balance
-                      setUserAccount(prev => ({
-                        ...prev,
-                        realBalance: (prev.realBalance || 0) + request.amount
-                      }));
-                      
-                      alert(`❌ Withdrawal #${request.id} rejected. Reason: ${reason}`);
-                    }
-                  }}
+               <button
+  onClick={() => {
+    const reason = prompt('Enter rejection reason:');
+    if (reason) {
+      const updatedRequests = withdrawalRequests.map(req => 
+        req.id === request.id ? {
+          ...req,
+          status: 'rejected',
+          reason: reason,
+          rejectedAt: new Date().toLocaleString()
+        } : req
+      );
+      setWithdrawalRequests(updatedRequests);
+      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
+      
+      // If this was a reward withdrawal, reset the pending flag
+      if (request.isReward) {
+        const userDataStr = localStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          if (userData.id === request.userId) {
+            const updatedUserData = {
+              ...userData,
+              // Don't add back to balance since it wasn't deducted yet
+              challengeStats: {
+                ...userData.challengeStats,
+                withdrawalPending: false,
+                withdrawalRequestId: null
+              }
+            };
+            localStorage.setItem('userData', JSON.stringify(updatedUserData));
+            
+            if (userAccount.id === request.userId) {
+              setUserAccount(updatedUserData);
+            }
+          }
+        }
+      }
+      
+      alert(`❌ Withdrawal #${request.id} rejected. Reason: ${reason}`);
+    }
+  }}
                   style={{
                     flex: 1,
                     padding: '12px',
