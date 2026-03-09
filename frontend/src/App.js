@@ -4673,11 +4673,6 @@ const calculateOrderPnL = (order) => {
     )}
   </div>
 </div>
-These complete blocks will:
-
-Show proper messages when challenge passes/fails
-
-Reset paper balance to ₹0 on failure
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3>Payment History</h3>
