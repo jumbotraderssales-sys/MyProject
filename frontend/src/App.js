@@ -1319,47 +1319,32 @@ const syncUserWallet = async () => {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
-    if (profileResponse.ok) {
-      const profileData = await profileResponse.json();
-      if (profileData.success) {
-        const userData = profileData.user;
-        
-        // IMPORTANT: If challenge status is failed, set paper balance to 0
-        if (userData.challengeStats?.status === 'failed') {
-          userData.paperBalance = 0;
+if (profileResponse.ok) {
+  const profileData = await profileResponse.json();
+  if (profileData.success) {
+    let userData = profileData.user;
+    
+    // IMPORTANT: Preserve challenge stats if they exist in current state
+    if (userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0) {
+      userData = {
+        ...userData,
+        realBalance: userAccount.challengeStats.withdrawalAvailable,
+        challengeStats: {
+          ...userData.challengeStats,
+          ...userAccount.challengeStats,
+          status: 'passed',
+          withdrawalAvailable: userAccount.challengeStats.withdrawalAvailable
         }
-        
-        setUserAccount(userData);
-        setBalance(userData.paperBalance || 0);
-        setEquity(userData.paperBalance || 0);
-        
-        if (userData.challengeStats) {
-          setDailyLoss(userData.challengeStats.dailyLoss || 0);
-          setTotalLoss(userData.challengeStats.totalLoss || 0);
-          setChallengeProgress({
-            profit: userData.challengeStats.currentProfit || 0,
-            dailyLoss: userData.challengeStats.dailyLoss || 0,
-            totalLoss: userData.challengeStats.totalLoss || 0,
-            status: userData.challengeStats.status || 'not_started'
-          });
-        }
-        
-        localStorage.setItem('userData', JSON.stringify(userData));
-      }
-    } else {
-      // If backend fails, use localStorage
-      const userDataStr = localStorage.getItem('userData');
-      if (userDataStr) {
-        let userData = JSON.parse(userDataStr);
-        
-        // IMPORTANT: If challenge status is failed, set paper balance to 0
-        if (userData.challengeStats?.status === 'failed') {
-          userData.paperBalance = 0;
-        }
-        
-        setUserAccount(userData);
-        setBalance(userData.paperBalance || 0);
-        setEquity(userData.paperBalance || 0);
+      };
+    }
+    // IMPORTANT: If challenge status is failed, set paper balance to 0
+    else if (userData.challengeStats?.status === 'failed') {
+      userData.paperBalance = 0;
+    }
+    
+    setUserAccount(userData);
+    setBalance(userData.paperBalance || 0);
+    setEquity(userData.paperBalance || 0);
         
         // Load challenge progress from userData
         if (userData.challengeStats) {
