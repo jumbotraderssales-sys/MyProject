@@ -2335,6 +2335,16 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
           ...prev,
           challengeStats: updatedStats
         }));
+        // Save updated stats to localStorage immediately
+  const userDataStr = localStorage.getItem('userData');
+  if (userDataStr) {
+    const userData = JSON.parse(userDataStr);
+    userData.challengeStats = updatedStats;
+    localStorage.setItem('userData', JSON.stringify(userData));
+  }
+
+  setTimeout(() => checkChallengeRules(), 100);
+}
 
         setTimeout(() => checkChallengeRules(), 100);
       }
