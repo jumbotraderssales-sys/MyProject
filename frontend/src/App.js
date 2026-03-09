@@ -1256,9 +1256,25 @@ const syncUserWallet = async () => {
       const data = await response.json();
       if (data.success) {
         console.log('✅ Backend user data received, balance:', data.user.paperBalance);
-        setUserAccount(prev => ({ ...prev, ...data.user }));
-        setBalance(data.user.paperBalance);
-        localStorage.setItem('userData', JSON.stringify(data.user));
+        
+        // Preserve challenge stats if user has passed a challenge
+        let updatedUser = data.user;
+        if (userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0) {
+          updatedUser = {
+            ...data.user,
+            realBalance: userAccount.challengeStats.withdrawalAvailable,
+            challengeStats: {
+              ...data.user.challengeStats,
+              ...userAccount.challengeStats,
+              status: 'passed',
+              withdrawalAvailable: userAccount.challengeStats.withdrawalAvailable
+            }
+          };
+        }
+        
+        setUserAccount(prev => ({ ...prev, ...updatedUser }));
+        setBalance(updatedUser.paperBalance);
+        localStorage.setItem('userData', JSON.stringify(updatedUser));
       }
     }
   } catch (error) {
