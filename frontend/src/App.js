@@ -748,11 +748,25 @@ useEffect(() => {
     status: userAccount.challengeStats.status
   });
   
+  // Update userAccount challengeStats in localStorage
+  setUserAccount(prev => {
+    const updated = {
+      ...prev,
+      challengeStats: {
+        ...prev.challengeStats,
+        dailyLoss: newDailyLoss,
+        totalLoss: newTotalLoss,
+        currentProfit: newProfit
+      }
+    };
+    localStorage.setItem('userData', JSON.stringify(updated));
+    return updated;
+  });
+  
   // Check challenge rules with the correct percentages
   checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
-
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
   setUserAccount(prev => {
