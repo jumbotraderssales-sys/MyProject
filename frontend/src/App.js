@@ -734,7 +734,7 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, []); // runs once on mount
   
-  useEffect(() => {
+ useEffect(() => {
   // ===== STEP 1: ALWAYS LOAD SAVED VALUES FIRST =====
   const savedUserStr = localStorage.getItem('userData');
   if (savedUserStr) {
@@ -773,10 +773,18 @@ useEffect(() => {
   if (!challenge) return;
 
   const today = new Date().toDateString();
+  
+  // FILTER 1: Today's closed trades (for daily loss)
   const todayTrades = orderHistory.filter(order => {
     const orderDate = new Date(order.timestamp).toDateString();
     return orderDate === today && order.status === 'CLOSED';
   });
+  
+  // FILTER 2: ALL closed trades from this challenge (for total loss and profit)
+  const allChallengeTrades = orderHistory.filter(order => 
+    order.status === 'CLOSED' && 
+    order.challengeName === userAccount.currentChallenge
+  );
   
   // Daily loss calculation (losses from TODAY only)
   const dailyLossAmountUSD = Math.abs(todayTrades
@@ -786,21 +794,21 @@ useEffect(() => {
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
   const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total loss calculation (ALL losses from ALL time)
-  const allLossesUSD = orderHistory
-    .filter(order => order.status === 'CLOSED' && order.pnl < 0)
+  // Total loss calculation (ALL losses from ALL time in this challenge)
+  const allLossesUSD = allChallengeTrades
+    .filter(order => order.pnl < 0)
     .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
   
   const allLossesINR = allLossesUSD * dollarRate;
   const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total profit calculation (ALL profits from ALL time)
-  const totalProfitUSD = orderHistory
-    .filter(order => order.status === 'CLOSED' && order.pnl > 0)
+  // Total profit calculation (ALL profits from ALL time in this challenge)
+  const allProfitsUSD = allChallengeTrades
+    .filter(order => order.pnl > 0)
     .reduce((sum, order) => sum + order.pnl, 0);
   
-  const totalProfitINR = totalProfitUSD * dollarRate;
-  const profitPercentage = userAccount.paperBalance > 0 ? (totalProfitINR / userAccount.paperBalance) * 100 : 0;
+  const allProfitsINR = allProfitsUSD * dollarRate;
+  const profitPercentage = userAccount.paperBalance > 0 ? (allProfitsINR / userAccount.paperBalance) * 100 : 0;
   
   // ===== STEP 3: GET SAVED VALUES AS FALLBACK =====
   let savedDailyLoss = 0;
@@ -820,18 +828,18 @@ useEffect(() => {
   
   // ===== STEP 4: USE CALCULATED VALUES WITH PROPER FALLBACKS =====
   // Daily loss - use calculation if valid, otherwise use saved
-  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) 
+  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) && dailyLossPercentage > 0
     ? dailyLossPercentage 
     : savedDailyLoss;
 
-  // Total loss - use calculation if valid, otherwise use saved
-  const newTotalLoss = !isNaN(totalLossPercentage) && isFinite(totalLossPercentage) 
-    ? totalLossPercentage 
+  // Total loss - ALWAYS use calculation if we have trades, otherwise use saved
+  const newTotalLoss = allChallengeTrades.length > 0 && !isNaN(totalLossPercentage) && isFinite(totalLossPercentage)
+    ? totalLossPercentage
     : savedTotalLoss;
 
-  // Profit - use calculation if valid, otherwise use saved
-  const newProfit = !isNaN(profitPercentage) && isFinite(profitPercentage) 
-    ? profitPercentage 
+  // Profit - ALWAYS use calculation if we have trades, otherwise use saved
+  const newProfit = allChallengeTrades.length > 0 && !isNaN(profitPercentage) && isFinite(profitPercentage)
+    ? profitPercentage
     : savedProfit;
   
   console.log('Calculated values:', {
@@ -843,7 +851,9 @@ useEffect(() => {
     savedProfit: savedProfit,
     newDaily: newDailyLoss,
     newTotal: newTotalLoss,
-    newProfit: newProfit
+    newProfit: newProfit,
+    todayTradesCount: todayTrades.length,
+    allTradesCount: allChallengeTrades.length
   });
   
   // ===== STEP 5: ONLY UPDATE IF VALUES ACTUALLY CHANGED =====
