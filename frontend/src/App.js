@@ -4673,6 +4673,7 @@ const calculateOrderPnL = (order) => {
     )}
   </div>
 </div>
+
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3>Payment History</h3>
@@ -6058,6 +6059,7 @@ const calculateOrderPnL = (order) => {
         📊
         <span className="tooltip">Chat on Telegram</span>
       </div>
+      
       {/* PWA Install Popup */}
       {showInstallButton && !isAppInstalled && (
         <div className="install-pwa-popup" style={{
@@ -6100,9 +6102,9 @@ const calculateOrderPnL = (order) => {
             ✕
           </button>
         </div>
-   )}
+      )}
     </div>
   );
 }
-      
+
 export default App;
