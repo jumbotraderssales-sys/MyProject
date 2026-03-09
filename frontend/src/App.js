@@ -4564,7 +4564,7 @@ const calculateOrderPnL = (order) => {
       </div>
       
       <button
-  onClick={() => {
+onClick={() => {
   const amount = parseFloat(withdrawalAmount);
   const balance = userAccount.realBalance || 0;
   
@@ -4607,229 +4607,59 @@ const calculateOrderPnL = (order) => {
     return updated;
   });
   
-  // IMPORTANT FIX: Update user account - mark withdrawal as pending
-  // but DON'T reduce the realBalance yet (admin will approve/reject)
-  setUserAccount(prev => ({
-    ...prev,
-    // Keep realBalance the same until admin approves
-    challengeStats: isFullRewardWithdrawal ? {
-      ...prev.challengeStats,
-      withdrawalPending: true, // Add this flag
-      withdrawalRequestId: newRequest.id,
-      withdrawalRequestDate: new Date().toISOString()
-    } : prev.challengeStats
-  }));
-  
-  // Show appropriate message
+  // IMPORTANT: Update user account - mark withdrawal as pending but DON'T deduct balance yet
   if (isFullRewardWithdrawal) {
+    setUserAccount(prev => ({
+      ...prev,
+      // Keep realBalance the same until admin approves
+      challengeStats: {
+        ...prev.challengeStats,
+        withdrawalPending: true,
+        withdrawalRequestId: newRequest.id,
+        withdrawalRequestDate: new Date().toISOString()
+      }
+    }));
+    
+    // Also update localStorage
+    const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      const updatedUserData = {
+        ...userData,
+        // Don't change realBalance here
+        challengeStats: {
+          ...userData.challengeStats,
+          withdrawalPending: true,
+          withdrawalRequestId: newRequest.id,
+          withdrawalRequestDate: new Date().toISOString()
+        }
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+    }
+    
+    // Show appropriate message for reward withdrawal
     alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
           `Your challenge reward withdrawal request has been submitted for admin approval.\n` +
           `You will be notified once it's processed (usually within 24-48 hours).\n\n` +
           `Funds will be deducted from your real balance only after admin approval.`);
   } else {
+    // For non-reward withdrawals, you can either deduct immediately or also require approval
+    // Option 1: Deduct immediately (as in original)
+    const newRealBalance = balance - amount;
+    
+    setUserAccount(prev => ({
+      ...prev,
+      realBalance: newRealBalance
+    }));
+    
     alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
           `It will be processed by admin within 24-48 hours.\n\n` +
-          `Current balance: ₹${balance.toLocaleString()}`);
+          `Remaining balance: ₹${newRealBalance.toLocaleString()}`);
   }
   
   setWithdrawalAmount('');
   setShowWithdrawalRequest(false);
 }}
-          
-{/* Show pending withdrawal requests */}
-{withdrawalRequests.filter(req => req.userId === userAccount.id).length > 0 && (
-  <div style={{ marginTop: '30px' }}>
-    <h3 style={{ color: 'white', marginBottom: '15px' }}>📋 Your Withdrawal Requests</h3>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-      {withdrawalRequests
-        .filter(req => req.userId === userAccount.id)
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .map(request => (
-          <div key={request.id} style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '10px',
-            padding: '15px',
-            border: request.status === 'pending' ? '1px solid #f59e0b' : 
-                    request.status === 'approved' ? '1px solid #10b981' : 
-                    '1px solid #ef4444'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <div>
-                <span style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>
-                  ₹{request.amount.toLocaleString()}
-                </span>
-                <span style={{ color: '#94a3b8', marginLeft: '10px', fontSize: '14px' }}>
-                  {request.date}
-                </span>
-              </div>
-              <span style={{
-                padding: '5px 12px',
-                borderRadius: '20px',
-                fontSize: '12px',
-                fontWeight: '600',
-                background: request.status === 'pending' ? '#f59e0b' : 
-                           request.status === 'approved' ? '#10b981' : 
-                           '#ef4444',
-                color: 'white'
-              }}>
-                {request.status.toUpperCase()}
-              </span>
-            </div>
-            
-            {/* Tracking steps for pending requests */}
-            {request.status === 'pending' && (
-              <div style={{ marginTop: '15px' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '10px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: '#f59e0b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px'
-                    }}>1</div>
-                    <span style={{ color: 'white' }}>Request Submitted</span>
-                  </div>
-                  <span style={{ color: '#10b981', fontSize: '12px' }}>✓ Completed</span>
-                </div>
-                
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '10px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: '#f59e0b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px'
-                    }}>2</div>
-                    <span style={{ color: 'white' }}>Admin Review</span>
-                  </div>
-                  <span style={{ color: '#f59e0b', fontSize: '12px' }}>⏳ In Progress</span>
-                </div>
-                
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: '#4b5563',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px'
-                    }}>3</div>
-                    <span style={{ color: 'white' }}>Funds Released</span>
-                  </div>
-                  <span style={{ color: '#94a3b8', fontSize: '12px' }}>⏳ Pending</span>
-                </div>
-                
-                <div style={{
-                  marginTop: '15px',
-                  padding: '10px',
-                  background: 'rgba(245, 158, 11, 0.1)',
-                  borderRadius: '5px',
-                  borderLeft: '3px solid #f59e0b'
-                }}>
-                  <p style={{ color: '#f59e0b', fontSize: '13px', margin: 0 }}>
-                    ⏳ Your withdrawal request is pending admin approval. 
-                    This typically takes 24-48 hours.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* Approved message */}
-            {request.status === 'approved' && (
-              <div style={{
-                marginTop: '10px',
-                padding: '10px',
-                background: 'rgba(16, 185, 129, 0.1)',
-                borderRadius: '5px',
-                borderLeft: '3px solid #10b981'
-              }}>
-                <p style={{ color: '#10b981', fontSize: '13px', margin: 0 }}>
-                  ✅ Your withdrawal has been approved! Funds will be credited to your bank account within 24 hours.
-                </p>
-              </div>
-            )}
-            
-            {/* Rejected message */}
-            {request.status === 'rejected' && (
-              <div style={{
-                marginTop: '10px',
-                padding: '10px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                borderRadius: '5px',
-                borderLeft: '3px solid #ef4444'
-              }}>
-                <p style={{ color: '#ef4444', fontSize: '13px', margin: 0 }}>
-                  ❌ Your withdrawal request was rejected. 
-                  {request.reason ? ` Reason: ${request.reason}` : ' Please contact support for more information.'}
-                </p>
-              </div>
-            )}
-          </div>
-        ))}
-    </div>
-  </div>
-)}          
-          // Update user account - subtract withdrawn amount
-          const newRealBalance = balance - amount;
-          
-          // Check if this was the full reward withdrawal
-          const isFullRewardWithdrawal = 
-            userAccount.challengeStats?.status === 'passed' && 
-            amount === userAccount.challengeStats?.withdrawalAvailable;
-          
-          setUserAccount(prev => ({
-            ...prev,
-            realBalance: newRealBalance,
-            challengeStats: isFullRewardWithdrawal ? {
-              ...prev.challengeStats,
-              withdrawalCompleted: true,
-              withdrawalDate: new Date().toISOString()
-            } : prev.challengeStats
-          }));
-          
-          // Show different messages based on withdrawal type
-          if (isFullRewardWithdrawal) {
-            alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
-                  `Your challenge reward withdrawal has been requested.\n` +
-                  `After processing, your real balance will become ₹0.\n\n` +
-                  `Complete more challenges to earn more rewards! 🎯`);
-          } else {
-            alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
-                  `It will be processed by admin within 24-48 hours.\n\n` +
-                  `Remaining balance: ₹${newRealBalance.toLocaleString()}`);
-          }
-          
-          setWithdrawalAmount('');
-          setShowWithdrawalRequest(false);
-        }}
         style={{
           width: '100%',
           padding: '12px',
