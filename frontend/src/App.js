@@ -733,8 +733,7 @@ useEffect(() => {
   const interval = setInterval(fetchAllPrices, 10000); // every 10 seconds
   return () => clearInterval(interval);
 }, []); // runs once on mount
-  
- useEffect(() => {
+  useEffect(() => {
   // ===== STEP 1: ALWAYS LOAD SAVED VALUES FIRST =====
   const savedUserStr = localStorage.getItem('userData');
   if (savedUserStr) {
@@ -775,15 +774,16 @@ useEffect(() => {
   const today = new Date().toDateString();
   
   // FILTER 1: Today's closed trades (for daily loss)
+  // If order doesn't have challengeName, include all trades from today
   const todayTrades = orderHistory.filter(order => {
     const orderDate = new Date(order.timestamp).toDateString();
     return orderDate === today && order.status === 'CLOSED';
   });
   
-  // FILTER 2: ALL closed trades from this challenge (for total loss and profit)
+  // FILTER 2: ALL closed trades (for total loss and profit)
+  // If orders don't have challengeName, include all trades
   const allChallengeTrades = orderHistory.filter(order => 
-    order.status === 'CLOSED' && 
-    order.challengeName === userAccount.currentChallenge
+    order.status === 'CLOSED'
   );
   
   // Daily loss calculation (losses from TODAY only)
@@ -794,7 +794,7 @@ useEffect(() => {
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
   const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total loss calculation (ALL losses from ALL time in this challenge)
+  // Total loss calculation (ALL losses from ALL time)
   const allLossesUSD = allChallengeTrades
     .filter(order => order.pnl < 0)
     .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
@@ -802,7 +802,7 @@ useEffect(() => {
   const allLossesINR = allLossesUSD * dollarRate;
   const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total profit calculation (ALL profits from ALL time in this challenge)
+  // Total profit calculation (ALL profits from ALL time)
   const allProfitsUSD = allChallengeTrades
     .filter(order => order.pnl > 0)
     .reduce((sum, order) => sum + order.pnl, 0);
@@ -828,16 +828,16 @@ useEffect(() => {
   
   // ===== STEP 4: USE CALCULATED VALUES WITH PROPER FALLBACKS =====
   // Daily loss - use calculation if valid, otherwise use saved
-  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) && dailyLossPercentage > 0
+  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) 
     ? dailyLossPercentage 
     : savedDailyLoss;
 
-  // Total loss - ALWAYS use calculation if we have trades, otherwise use saved
+  // Total loss - use calculation if we have any trades, otherwise use saved
   const newTotalLoss = allChallengeTrades.length > 0 && !isNaN(totalLossPercentage) && isFinite(totalLossPercentage)
     ? totalLossPercentage
     : savedTotalLoss;
 
-  // Profit - ALWAYS use calculation if we have trades, otherwise use saved
+  // Profit - use calculation if we have any trades, otherwise use saved
   const newProfit = allChallengeTrades.length > 0 && !isNaN(profitPercentage) && isFinite(profitPercentage)
     ? profitPercentage
     : savedProfit;
@@ -853,7 +853,8 @@ useEffect(() => {
     newTotal: newTotalLoss,
     newProfit: newProfit,
     todayTradesCount: todayTrades.length,
-    allTradesCount: allChallengeTrades.length
+    allTradesCount: allChallengeTrades.length,
+    paperBalance: userAccount.paperBalance
   });
   
   // ===== STEP 5: ONLY UPDATE IF VALUES ACTUALLY CHANGED =====
@@ -887,6 +888,7 @@ useEffect(() => {
   }
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
+  
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
   setUserAccount(prev => {
