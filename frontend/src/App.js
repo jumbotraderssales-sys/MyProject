@@ -733,6 +733,7 @@ useEffect(() => {
   const interval = setInterval(fetchAllPrices, 10000); // every 10 seconds
   return () => clearInterval(interval);
 }, []); // runs once on mount
+  
   useEffect(() => {
   // ===== STEP 1: ALWAYS LOAD SAVED VALUES FIRST =====
   const savedUserStr = localStorage.getItem('userData');
@@ -777,7 +778,7 @@ useEffect(() => {
     return orderDate === today && order.status === 'CLOSED';
   });
   
-  // Daily loss calculation
+  // Daily loss calculation (losses from TODAY only)
   const dailyLossAmountUSD = Math.abs(todayTrades
     .filter(order => order.pnl < 0)
     .reduce((sum, order) => sum + order.pnl, 0));
@@ -785,7 +786,7 @@ useEffect(() => {
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
   const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total loss calculation
+  // Total loss calculation (ALL losses from ALL time)
   const allLossesUSD = orderHistory
     .filter(order => order.status === 'CLOSED' && order.pnl < 0)
     .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
@@ -793,7 +794,7 @@ useEffect(() => {
   const allLossesINR = allLossesUSD * dollarRate;
   const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
   
-  // Profit calculation
+  // Total profit calculation (ALL profits from ALL time)
   const totalProfitUSD = orderHistory
     .filter(order => order.status === 'CLOSED' && order.pnl > 0)
     .reduce((sum, order) => sum + order.pnl, 0);
@@ -817,18 +818,33 @@ useEffect(() => {
     } catch (e) {}
   }
   
-  // ===== STEP 4: USE CALCULATED VALUES ONLY IF THEY'RE VALID AND DIFFERENT =====
-  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) && dailyLossPercentage > 0 
+  // ===== STEP 4: USE CALCULATED VALUES WITH PROPER FALLBACKS =====
+  // Daily loss - use calculation if valid, otherwise use saved
+  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) 
     ? dailyLossPercentage 
     : savedDailyLoss;
-    
-  const newTotalLoss = !isNaN(totalLossPercentage) && isFinite(totalLossPercentage) && totalLossPercentage > 0 
+
+  // Total loss - use calculation if valid, otherwise use saved
+  const newTotalLoss = !isNaN(totalLossPercentage) && isFinite(totalLossPercentage) 
     ? totalLossPercentage 
     : savedTotalLoss;
-    
-  const newProfit = !isNaN(profitPercentage) && isFinite(profitPercentage) && profitPercentage > 0 
+
+  // Profit - use calculation if valid, otherwise use saved
+  const newProfit = !isNaN(profitPercentage) && isFinite(profitPercentage) 
     ? profitPercentage 
     : savedProfit;
+  
+  console.log('Calculated values:', {
+    dailyCalc: dailyLossPercentage,
+    totalCalc: totalLossPercentage,
+    profitCalc: profitPercentage,
+    savedDaily: savedDailyLoss,
+    savedTotal: savedTotalLoss,
+    savedProfit: savedProfit,
+    newDaily: newDailyLoss,
+    newTotal: newTotalLoss,
+    newProfit: newProfit
+  });
   
   // ===== STEP 5: ONLY UPDATE IF VALUES ACTUALLY CHANGED =====
   if (newDailyLoss !== dailyLoss || newTotalLoss !== totalLoss || newProfit !== challengeProgress.profit) {
@@ -861,7 +877,6 @@ useEffect(() => {
   }
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
- 
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
   setUserAccount(prev => {
