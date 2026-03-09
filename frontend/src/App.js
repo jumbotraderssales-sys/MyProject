@@ -4564,43 +4564,77 @@ const calculateOrderPnL = (order) => {
       </div>
       
       <button
-        onClick={() => {
-          const amount = parseFloat(withdrawalAmount);
-          const balance = userAccount.realBalance || 0;
-          
-          if (!amount || amount <= 0) {
-            alert('Please enter a valid amount');
-            return;
-          }
-          
-          if (amount < 100) {
-            alert('Minimum withdrawal amount is ₹100');
-            return;
-          }
-          
-          if (amount > balance) {
-            alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
-            return;
-          }
-          
-   const newRequest = {
-  id: `WD${Date.now()}`,
-  amount: amount,
-  status: 'pending',
-  date: new Date().toLocaleString(),
-  bankDetails: userBankAccount,
-  isReward: userAccount.challengeStats?.status === 'passed' && amount === userAccount.challengeStats?.withdrawalAvailable,
-  userName: userAccount.name,
-  userEmail: userAccount.email,
-  userId: userAccount.id
-};
+  onClick={() => {
+  const amount = parseFloat(withdrawalAmount);
+  const balance = userAccount.realBalance || 0;
+  
+  if (!amount || amount <= 0) {
+    alert('Please enter a valid amount');
+    return;
+  }
+  
+  if (amount < 100) {
+    alert('Minimum withdrawal amount is ₹100');
+    return;
+  }
+  
+  if (amount > balance) {
+    alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
+    return;
+  }
+  
+  // Check if this is the full reward withdrawal
+  const isFullRewardWithdrawal = 
+    userAccount.challengeStats?.status === 'passed' && 
+    amount === userAccount.challengeStats?.withdrawalAvailable;
+  
+  const newRequest = {
+    id: `WD${Date.now()}`,
+    amount: amount,
+    status: 'pending',
+    date: new Date().toLocaleString(),
+    bankDetails: userBankAccount,
+    isReward: isFullRewardWithdrawal,
+    userName: userAccount.name,
+    userEmail: userAccount.email,
+    userId: userAccount.id
+  };
 
-setWithdrawalRequests(prev => {
-  const updated = [newRequest, ...prev];
-  // Save to localStorage
-  localStorage.setItem('withdrawalRequests', JSON.stringify(updated));
-  return updated;
-});
+  // Update withdrawal requests
+  setWithdrawalRequests(prev => {
+    const updated = [newRequest, ...prev];
+    localStorage.setItem('withdrawalRequests', JSON.stringify(updated));
+    return updated;
+  });
+  
+  // IMPORTANT FIX: Update user account - mark withdrawal as pending
+  // but DON'T reduce the realBalance yet (admin will approve/reject)
+  setUserAccount(prev => ({
+    ...prev,
+    // Keep realBalance the same until admin approves
+    challengeStats: isFullRewardWithdrawal ? {
+      ...prev.challengeStats,
+      withdrawalPending: true, // Add this flag
+      withdrawalRequestId: newRequest.id,
+      withdrawalRequestDate: new Date().toISOString()
+    } : prev.challengeStats
+  }));
+  
+  // Show appropriate message
+  if (isFullRewardWithdrawal) {
+    alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
+          `Your challenge reward withdrawal request has been submitted for admin approval.\n` +
+          `You will be notified once it's processed (usually within 24-48 hours).\n\n` +
+          `Funds will be deducted from your real balance only after admin approval.`);
+  } else {
+    alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
+          `It will be processed by admin within 24-48 hours.\n\n` +
+          `Current balance: ₹${balance.toLocaleString()}`);
+  }
+  
+  setWithdrawalAmount('');
+  setShowWithdrawalRequest(false);
+}}
           
 {/* Show pending withdrawal requests */}
 {withdrawalRequests.filter(req => req.userId === userAccount.id).length > 0 && (
