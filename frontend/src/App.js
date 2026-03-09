@@ -5013,197 +5013,204 @@ onClick={() => {
         <p style={{ color: '#94a3b8' }}>Total Approved</p>
       </div>
     </div>
-    
     {/* Pending Requests */}
-    <div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px', marginBottom: '20px'}}>
-      <h3 style={{color: 'white', marginBottom: '15px'}}>⏳ Pending Withdrawal Requests</h3>
-      
-      {withdrawalRequests.filter(req => req.status === 'pending').length > 0 ? (
-        <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-          {withdrawalRequests.filter(req => req.status === 'pending').map(request => (
-            <div key={request.id} style={{
-              background: 'rgba(255,255,255,0.05)',
-              padding: '20px',
-              borderRadius: '8px',
-              border: '1px solid #f59e0b'
-            }}>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
-                <div>
-                  <h4 style={{color: 'white', marginBottom: '5px'}}>Request #{request.id}</h4>
-                  <p style={{color: '#f59e0b', fontWeight: 'bold', fontSize: '18px'}}>
-                    ₹{request.amount?.toLocaleString()}
-                  </p>
-                </div>
-                <span style={{
-                  padding: '5px 12px',
-                  background: '#f59e0b',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  color: 'white',
-                  fontWeight: '600'
-                }}>
-                  PENDING
-                </span>
-              </div>
-              
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '15px',
-                background: '#2d3748',
-                padding: '15px',
-                borderRadius: '5px',
-                marginBottom: '15px'
-              }}>
-                <div>
-                  <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>User Details</p>
-                  <p style={{color: 'white', marginBottom: '3px'}}>{request.userName || 'N/A'}</p>
-                  <p style={{color: '#94a3b8', fontSize: '13px'}}>{request.userEmail || 'N/A'}</p>
-                </div>
-                <div>
-                  <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>Bank Details</p>
-                  <p style={{color: 'white', marginBottom: '3px'}}>{request.bankDetails?.accountHolderName}</p>
-                  <p style={{color: '#94a3b8', fontSize: '13px'}}>
-                    {request.bankDetails?.bankName} - XXXX{request.bankDetails?.accountNumber?.slice(-4)}
-                  </p>
-                  <p style={{color: '#94a3b8', fontSize: '13px'}}>IFSC: {request.bankDetails?.ifscCode}</p>
-                </div>
-                <div>
-                  <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>Submitted</p>
-                  <p style={{color: 'white'}}>{request.date}</p>
-                </div>
-                <div>
-                  <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>Reward Request</p>
-                  <p style={{color: request.isReward ? '#10b981' : 'white'}}>
-                    {request.isReward ? '✅ Challenge Reward' : 'Regular Withdrawal'}
-                  </p>
-                </div>
-              </div>
-              
-              <div style={{display: 'flex', gap: '10px'}}>
-                <button
-  onClick={() => {
-    if (window.confirm(`Approve withdrawal of ₹${request.amount} for ${request.userName}?`)) {
-      const updatedRequests = withdrawalRequests.map(req => 
-        req.id === request.id ? {
-          ...req,
-          status: 'approved',
-          approvedAt: new Date().toLocaleString(),
-          approvedBy: 'Admin'
-        } : req
-      );
-      setWithdrawalRequests(updatedRequests);
-      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
-      
-      // If this was a reward withdrawal, mark it as completed in user data
-      if (request.isReward) {
-        // Find and update the user's challenge stats
-        const userDataStr = localStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          if (userData.id === request.userId) {
-            const updatedUserData = {
-              ...userData,
-              realBalance: (userData.realBalance || 0) - request.amount,
-              challengeStats: {
-                ...userData.challengeStats,
-                withdrawalCompleted: true,
-                withdrawalDate: new Date().toISOString(),
-                withdrawalPending: false
-              }
-            };
-            localStorage.setItem('userData', JSON.stringify(updatedUserData));
-            
-            // If this is the current user, update state
-            if (userAccount.id === request.userId) {
-              setUserAccount(updatedUserData);
-            }
-          }
-        }
-      }
-      
-      alert(`✅ Withdrawal #${request.id} approved! User notified.`);
-    }
-  }}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  ✅ Approve & Release Funds
-                </button>
-                
-               <button
-  onClick={() => {
-    const reason = prompt('Enter rejection reason:');
-    if (reason) {
-      const updatedRequests = withdrawalRequests.map(req => 
-        req.id === request.id ? {
-          ...req,
-          status: 'rejected',
-          reason: reason,
-          rejectedAt: new Date().toLocaleString()
-        } : req
-      );
-      setWithdrawalRequests(updatedRequests);
-      localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
-      
-      // If this was a reward withdrawal, reset the pending flag
-      if (request.isReward) {
-        const userDataStr = localStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          if (userData.id === request.userId) {
-            const updatedUserData = {
-              ...userData,
-              // Don't add back to balance since it wasn't deducted yet
-              challengeStats: {
-                ...userData.challengeStats,
-                withdrawalPending: false,
-                withdrawalRequestId: null
-              }
-            };
-            localStorage.setItem('userData', JSON.stringify(updatedUserData));
-            
-            if (userAccount.id === request.userId) {
-              setUserAccount(updatedUserData);
-            }
-          }
-        }
-      }
-      
-      alert(`❌ Withdrawal #${request.id} rejected. Reason: ${reason}`);
-    }
-  }}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  ❌ Reject
-                </button>
-              </div>
+<div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px', marginBottom: '20px'}}>
+  <h3 style={{color: 'white', marginBottom: '15px'}}>⏳ Pending Withdrawal Requests</h3>
+  
+  {withdrawalRequests.filter(req => req.status === 'pending').length > 0 ? (
+    <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
+      {withdrawalRequests
+        .filter(req => req.status === 'pending')
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map(request => (
+        <div key={request.id} style={{
+          background: 'rgba(255,255,255,0.05)',
+          padding: '20px',
+          borderRadius: '8px',
+          border: '1px solid #f59e0b'
+        }}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+            <div>
+              <h4 style={{color: 'white', marginBottom: '5px'}}>Request #{request.id}</h4>
+              <p style={{color: '#f59e0b', fontWeight: 'bold', fontSize: '18px'}}>
+                ₹{request.amount?.toLocaleString()}
+              </p>
             </div>
-          ))}
+            <span style={{
+              padding: '5px 12px',
+              background: '#f59e0b',
+              borderRadius: '20px',
+              fontSize: '12px',
+              color: 'white',
+              fontWeight: '600'
+            }}>
+              PENDING
+            </span>
+          </div>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '15px',
+            background: '#2d3748',
+            padding: '15px',
+            borderRadius: '5px',
+            marginBottom: '15px'
+          }}>
+            <div>
+              <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>User Details</p>
+              <p style={{color: 'white', marginBottom: '3px'}}>{request.userName || 'N/A'}</p>
+              <p style={{color: '#94a3b8', fontSize: '13px'}}>{request.userEmail || 'N/A'}</p>
+              <p style={{color: '#94a3b8', fontSize: '13px'}}>User ID: {request.userId}</p>
+            </div>
+            <div>
+              <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>Bank Details</p>
+              <p style={{color: 'white', marginBottom: '3px'}}>{request.bankDetails?.accountHolderName}</p>
+              <p style={{color: '#94a3b8', fontSize: '13px'}}>
+                {request.bankDetails?.bankName} - XXXX{request.bankDetails?.accountNumber?.slice(-4)}
+              </p>
+              <p style={{color: '#94a3b8', fontSize: '13px'}}>IFSC: {request.bankDetails?.ifscCode}</p>
+              {request.bankDetails?.upiId && (
+                <p style={{color: '#94a3b8', fontSize: '13px'}}>UPI: {request.bankDetails.upiId}</p>
+              )}
+            </div>
+            <div>
+              <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>Submitted</p>
+              <p style={{color: 'white'}}>{request.date}</p>
+            </div>
+            <div>
+              <p style={{color: '#94a3b8', fontSize: '12px', marginBottom: '5px'}}>Reward Request</p>
+              <p style={{color: request.isReward ? '#10b981' : 'white'}}>
+                {request.isReward ? '✅ Challenge Reward' : 'Regular Withdrawal'}
+              </p>
+            </div>
+          </div>
+          
+          <div style={{display: 'flex', gap: '10px'}}>
+            <button
+              onClick={() => {
+                if (window.confirm(`Approve withdrawal of ₹${request.amount} for ${request.userName}?`)) {
+                  const updatedRequests = withdrawalRequests.map(req => 
+                    req.id === request.id ? {
+                      ...req,
+                      status: 'approved',
+                      approvedAt: new Date().toLocaleString(),
+                      approvedBy: 'Admin'
+                    } : req
+                  );
+                  setWithdrawalRequests(updatedRequests);
+                  localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
+                  
+                  // If this was a reward withdrawal, mark it as completed in user data
+                  if (request.isReward) {
+                    // Find and update the user's challenge stats
+                    const userDataStr = localStorage.getItem('userData');
+                    if (userDataStr) {
+                      const userData = JSON.parse(userDataStr);
+                      if (userData.id === request.userId) {
+                        const updatedUserData = {
+                          ...userData,
+                          realBalance: (userData.realBalance || 0) - request.amount,
+                          challengeStats: {
+                            ...userData.challengeStats,
+                            withdrawalCompleted: true,
+                            withdrawalDate: new Date().toISOString(),
+                            withdrawalPending: false,
+                            withdrawalRequestId: null
+                          }
+                        };
+                        localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                        
+                        // If this is the current user, update state
+                        if (userAccount.id === request.userId) {
+                          setUserAccount(updatedUserData);
+                        }
+                      }
+                    }
+                  }
+                  
+                  alert(`✅ Withdrawal #${request.id} approved! User notified.`);
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              ✅ Approve & Release Funds
+            </button>
+            
+            <button
+              onClick={() => {
+                const reason = prompt('Enter rejection reason:');
+                if (reason) {
+                  const updatedRequests = withdrawalRequests.map(req => 
+                    req.id === request.id ? {
+                      ...req,
+                      status: 'rejected',
+                      reason: reason,
+                      rejectedAt: new Date().toLocaleString()
+                    } : req
+                  );
+                  setWithdrawalRequests(updatedRequests);
+                  localStorage.setItem('withdrawalRequests', JSON.stringify(updatedRequests));
+                  
+                  // If this was a reward withdrawal, reset the pending flag
+                  if (request.isReward) {
+                    const userDataStr = localStorage.getItem('userData');
+                    if (userDataStr) {
+                      const userData = JSON.parse(userDataStr);
+                      if (userData.id === request.userId) {
+                        const updatedUserData = {
+                          ...userData,
+                          // Don't add back to balance since it wasn't deducted yet
+                          challengeStats: {
+                            ...userData.challengeStats,
+                            withdrawalPending: false,
+                            withdrawalRequestId: null
+                          }
+                        };
+                        localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                        
+                        if (userAccount.id === request.userId) {
+                          setUserAccount(updatedUserData);
+                        }
+                      }
+                    }
+                  }
+                  
+                  alert(`❌ Withdrawal #${request.id} rejected. Reason: ${reason}`);
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              ❌ Reject
+            </button>
+          </div>
         </div>
-      ) : (
-        <p style={{color: '#94a3b8', textAlign: 'center', padding: '30px'}}>
-          No pending withdrawal requests
-        </p>
-      )}
+      ))}
     </div>
+  ) : (
+    <p style={{color: '#94a3b8', textAlign: 'center', padding: '30px'}}>
+      No pending withdrawal requests
+    </p>
+  )}
+</div>
     
     {/* All Requests History */}
     <div style={{background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
