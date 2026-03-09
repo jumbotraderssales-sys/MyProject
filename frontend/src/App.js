@@ -896,8 +896,7 @@ const updateChallengeStatus = (status, reason) => {
   }
 };
 
-  
-  // Check challenge rules
+// Check challenge rules
 const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
   if (!userAccount.currentChallenge || userAccount.challengeStats.status !== 'active') return;
 
@@ -909,15 +908,18 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
   // ⛔ DAILY LOSS → BLOCK ONLY FOR TODAY
   if (dailyLossPct >= challenge.dailyLossLimit) {
     if (userAccount.challengeStats.dailyBlockDate !== today) {
-      alert(`⛔ Daily Trading Limit Reached\n\n` +
-            `You've hit the ${challenge.dailyLossLimit}% daily loss limit.\n\n` +
-            `🛑 Trading is paused until tomorrow.\n\n` +
-            `💡 What successful traders do:\n` +
-            `✓ Review your losing trades\n` +
-            `✓ Identify what went wrong\n` +
-            `✓ Adjust your strategy\n` +
-            `✓ Come back stronger tomorrow\n\n` +
-            `🌟 This is not a failure, it's a learning opportunity!`);
+      // Show the alert with a slight delay to ensure it appears
+      setTimeout(() => {
+        alert(`⛔ Daily Trading Limit Reached\n\n` +
+              `You've hit the ${challenge.dailyLossLimit}% daily loss limit.\n\n` +
+              `🛑 Trading is paused until tomorrow.\n\n` +
+              `💡 What successful traders do:\n` +
+              `✓ Review your losing trades\n` +
+              `✓ Identify what went wrong\n` +
+              `✓ Adjust your strategy\n` +
+              `✓ Come back stronger tomorrow\n\n` +
+              `🌟 This is not a failure, it's a learning opportunity!`);
+      }, 100);
 
       setUserAccount(prev => ({
         ...prev,
@@ -930,103 +932,125 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
     return;
   }
 
-  // ❌ MAX LOSS → CHALLENGE FAIL
+  // ❌ MAX LOSS → CHALLENGE FAIL - THIS IS THE ONE WE NEED TO FIX
   if (totalLossPct >= challenge.maxLossLimit) {
+    console.log('Max loss limit reached!', totalLossPct, '>=', challenge.maxLossLimit);
+    
+    // Close any open positions
     if (positions.length > 0) {
       positions.forEach(pos => {
         closePosition(pos.id, 'CHALLENGE_FAILED');
       });
     }
     
-    alert(`❌ Challenge Not This Time\n\n` +
-          `You've reached the maximum loss limit of ${challenge.maxLossLimit}%.\n\n` +
-          `🌟 EVERY MASTER WAS ONCE A BEGINNER 🌟\n\n` +
-          `💡 What you've gained:\n` +
-          `✓ Real trading experience\n` +
-          `✓ Understanding of market dynamics\n` +
-          `✓ Knowledge of risk management\n` +
-          `✓ Valuable lessons for next time\n\n` +
-          `🚀 Your next attempt will be stronger!\n\n` +
-          `💰 Your paper balance has been reset to ₹0.\n` +
-          `✨ You can purchase a new challenge anytime!\n\n` +
-          `Remember: The only real failure is giving up! 💪`);
+    // Show the encouraging message
+    setTimeout(() => {
+      alert(`❌ Challenge Not This Time\n\n` +
+            `You've reached the maximum loss limit of ${challenge.maxLossLimit}%.\n\n` +
+            `🌟 EVERY MASTER WAS ONCE A BEGINNER 🌟\n\n` +
+            `💡 What you've gained:\n` +
+            `✓ Real trading experience\n` +
+            `✓ Understanding of market dynamics\n` +
+            `✓ Knowledge of risk management\n` +
+            `✓ Valuable lessons for next time\n\n` +
+            `🚀 Your next attempt will be stronger!\n\n` +
+            `💰 Your paper balance has been reset to ₹0.\n` +
+            `✨ You can purchase a new challenge anytime!\n\n` +
+            `Remember: The only real failure is giving up! 💪`);
+    }, 100);
     
-    setUserAccount(prev => ({
-      ...prev,
+    // Update user account
+    const updatedUser = {
+      ...userAccount,
       paperBalance: 0,
-      realBalance: 0,
+      realBalance: userAccount.realBalance || 0, // Keep real balance if any
       challengeStats: {
-        ...prev.challengeStats,
+        ...userAccount.challengeStats,
         status: 'failed',
         endReason: 'Maximum loss limit exceeded',
         withdrawalAvailable: 0,
-        withdrawalCompleted: false
+        withdrawalCompleted: false,
+        dailyLoss: dailyLossPct,
+        totalLoss: totalLossPct,
+        currentProfit: profitPct
       }
-    }));
+    };
     
+    setUserAccount(updatedUser);
     setBalance(0);
-    setEquity(0);
+    setEquity(userAccount.realBalance || 0);
     
+    // Save to localStorage immediately
+    localStorage.setItem('userData', JSON.stringify(updatedUser));
+    
+    // Update backend
     updateChallengeStatus('failed', 'Maximum loss limit exceeded');
     
     return;
   }
 
-// 🎉 PROFIT TARGET → CHALLENGE PASS
-if (profitPct >= challenge.profitTarget) {
-  // Calculate total reward (fee refund + skill reward)
-  const totalReward = challenge.feeRefund + challenge.skillReward;
-  
-  if (positions.length > 0) {
-    positions.forEach(pos => {
-      closePosition(pos.id, 'CHALLENGE_PASSED');
-    });
-  }
-  
-  // Show success message with withdrawal info
-  alert(`🎉🎉🎉 CHALLENGE CONQUERED! 🎉🎉🎉\n\n` +
-        `🏆 You've achieved the ${challenge.profitTarget}% profit target!\n\n` +
-        `💰 WITHDRAWAL AVAILABLE: ₹${totalReward.toLocaleString()}\n` +
-        `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
-        `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
-        `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
-        `✨ NEXT STEPS:\n` +
-        `1️⃣ Go to Profile section\n` +
-        `2️⃣ You'll see your available funds for withdrawal\n` +
-        `3️⃣ Click "Request Withdrawal"\n` +
-        `4️⃣ Enter amount or click "Set to Reward Amount"\n` +
-        `5️⃣ Complete withdrawal\n\n` +
-        `🎯 You're proving that disciplined trading pays off!\n` +
-        `Keep up the amazing work! 🌟`);
-  
-  // Create the updated user object
-  const updatedUser = {
-    ...userAccount,
-    realBalance: totalReward,
-    paperBalance: userAccount.paperBalance,
-    challengeStats: {
-      ...userAccount.challengeStats,
-      status: 'passed',
-      endReason: 'Profit target achieved',
-      feeRefund: challenge.feeRefund,
-      skillReward: challenge.skillReward,
-      totalReward: totalReward,
-      withdrawalAvailable: totalReward,
-      withdrawalCompleted: false
+  // 🎉 PROFIT TARGET → CHALLENGE PASS
+  if (profitPct >= challenge.profitTarget) {
+    console.log('Profit target reached!', profitPct, '>=', challenge.profitTarget);
+    
+    // Calculate total reward
+    const totalReward = challenge.feeRefund + challenge.skillReward;
+    
+    if (positions.length > 0) {
+      positions.forEach(pos => {
+        closePosition(pos.id, 'CHALLENGE_PASSED');
+      });
     }
-  };
-  
-  // Update state
-  setUserAccount(updatedUser);
-  
-  // Save to localStorage immediately
-  localStorage.setItem('userData', JSON.stringify(updatedUser));
-  
-  // Update backend
-  updateChallengeStatus('passed', 'Profit target achieved');
-  
-  return;
-}
+    
+    // Show success message
+    setTimeout(() => {
+      alert(`🎉🎉🎉 CHALLENGE CONQUERED! 🎉🎉🎉\n\n` +
+            `🏆 You've achieved the ${challenge.profitTarget}% profit target!\n\n` +
+            `💰 WITHDRAWAL AVAILABLE: ₹${totalReward.toLocaleString()}\n` +
+            `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
+            `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
+            `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
+            `✨ NEXT STEPS:\n` +
+            `1️⃣ Go to Profile section\n` +
+            `2️⃣ You'll see your available funds for withdrawal\n` +
+            `3️⃣ Click "Request Withdrawal"\n` +
+            `4️⃣ Enter amount or click "Set to Reward Amount"\n` +
+            `5️⃣ Complete withdrawal\n\n` +
+            `🎯 You're proving that disciplined trading pays off!\n` +
+            `Keep up the amazing work! 🌟`);
+    }, 100);
+    
+    // Create updated user
+    const updatedUser = {
+      ...userAccount,
+      realBalance: (userAccount.realBalance || 0) + totalReward,
+      paperBalance: userAccount.paperBalance,
+      challengeStats: {
+        ...userAccount.challengeStats,
+        status: 'passed',
+        endReason: 'Profit target achieved',
+        feeRefund: challenge.feeRefund,
+        skillReward: challenge.skillReward,
+        totalReward: totalReward,
+        withdrawalAvailable: totalReward,
+        withdrawalCompleted: false,
+        dailyLoss: dailyLossPct,
+        totalLoss: totalLossPct,
+        currentProfit: profitPct
+      }
+    };
+    
+    // Update state
+    setUserAccount(updatedUser);
+    
+    // Save to localStorage immediately
+    localStorage.setItem('userData', JSON.stringify(updatedUser));
+    
+    // Update backend
+    updateChallengeStatus('passed', 'Profit target achieved');
+    
+    return;
+  }
 };
   
   const calculateDollarBalance = (paperBalance) => {
