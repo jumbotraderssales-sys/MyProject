@@ -734,26 +734,36 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, []); // runs once on mount
   useEffect(() => {
-  // CRITICAL: Always use saved values from userAccount.challengeStats first
-  if (userAccount.challengeStats) {
-    console.log('Using saved challenge stats:', userAccount.challengeStats);
-    
-    setDailyLoss(userAccount.challengeStats.dailyLoss || 0);
-    setTotalLoss(userAccount.challengeStats.totalLoss || 0);
-    setChallengeProgress({
-      profit: userAccount.challengeStats.currentProfit || 0,
-      dailyLoss: userAccount.challengeStats.dailyLoss || 0,
-      totalLoss: userAccount.challengeStats.totalLoss || 0,
-      status: userAccount.challengeStats.status || 'not_started'
-    });
-    
-    // Don't recalculate if we don't have order history yet
-    if (orderHistory.length === 0) {
-      return;
+  // ===== STEP 1: ALWAYS LOAD SAVED VALUES FIRST =====
+  const savedUserStr = localStorage.getItem('userData');
+  if (savedUserStr) {
+    try {
+      const savedUser = JSON.parse(savedUserStr);
+      if (savedUser.challengeStats) {
+        console.log('Loading saved challenge stats:', savedUser.challengeStats);
+        
+        // Force set these values from saved data
+        setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
+        setTotalLoss(savedUser.challengeStats.totalLoss || 0);
+        setChallengeProgress({
+          profit: savedUser.challengeStats.currentProfit || 0,
+          dailyLoss: savedUser.challengeStats.dailyLoss || 0,
+          totalLoss: savedUser.challengeStats.totalLoss || 0,
+          status: savedUser.challengeStats.status || 'not_started'
+        });
+        
+        // Return early if orderHistory is empty - don't recalculate
+        if (orderHistory.length === 0) {
+          console.log('No order history, keeping saved values');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing saved user data:', e);
     }
   }
   
-  // Only calculate if we have order history
+  // ===== STEP 2: ONLY RECALCULATE IF WE HAVE ORDER HISTORY =====
   if (orderHistory.length === 0 || !userAccount.currentChallenge || !userAccount.paperBalance) {
     return;
   }
@@ -767,7 +777,7 @@ useEffect(() => {
     return orderDate === today && order.status === 'CLOSED';
   });
   
-  // Daily loss - convert from USD to INR
+  // Daily loss calculation
   const dailyLossAmountUSD = Math.abs(todayTrades
     .filter(order => order.pnl < 0)
     .reduce((sum, order) => sum + order.pnl, 0));
@@ -775,7 +785,7 @@ useEffect(() => {
   const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
   const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total loss - convert from USD to INR
+  // Total loss calculation
   const allLossesUSD = orderHistory
     .filter(order => order.status === 'CLOSED' && order.pnl < 0)
     .reduce((sum, order) => sum + Math.abs(order.pnl), 0);
@@ -783,7 +793,7 @@ useEffect(() => {
   const allLossesINR = allLossesUSD * dollarRate;
   const totalLossPercentage = userAccount.paperBalance > 0 ? (allLossesINR / userAccount.paperBalance) * 100 : 0;
   
-  // Total profit - convert from USD to INR
+  // Profit calculation
   const totalProfitUSD = orderHistory
     .filter(order => order.status === 'CLOSED' && order.pnl > 0)
     .reduce((sum, order) => sum + order.pnl, 0);
@@ -791,13 +801,39 @@ useEffect(() => {
   const totalProfitINR = totalProfitUSD * dollarRate;
   const profitPercentage = userAccount.paperBalance > 0 ? (totalProfitINR / userAccount.paperBalance) * 100 : 0;
   
-  // Update state with calculated values
-  const newDailyLoss = isNaN(dailyLossPercentage) || !isFinite(dailyLossPercentage) ? userAccount.challengeStats?.dailyLoss || 0 : dailyLossPercentage;
-  const newTotalLoss = isNaN(totalLossPercentage) || !isFinite(totalLossPercentage) ? userAccount.challengeStats?.totalLoss || 0 : totalLossPercentage;
-  const newProfit = isNaN(profitPercentage) || !isFinite(profitPercentage) ? userAccount.challengeStats?.currentProfit || 0 : profitPercentage;
+  // ===== STEP 3: GET SAVED VALUES AS FALLBACK =====
+  let savedDailyLoss = 0;
+  let savedTotalLoss = 0;
+  let savedProfit = 0;
   
-  // Only update if values actually changed
+  if (savedUserStr) {
+    try {
+      const savedUser = JSON.parse(savedUserStr);
+      if (savedUser.challengeStats) {
+        savedDailyLoss = savedUser.challengeStats.dailyLoss || 0;
+        savedTotalLoss = savedUser.challengeStats.totalLoss || 0;
+        savedProfit = savedUser.challengeStats.currentProfit || 0;
+      }
+    } catch (e) {}
+  }
+  
+  // ===== STEP 4: USE CALCULATED VALUES ONLY IF THEY'RE VALID AND DIFFERENT =====
+  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) && dailyLossPercentage > 0 
+    ? dailyLossPercentage 
+    : savedDailyLoss;
+    
+  const newTotalLoss = !isNaN(totalLossPercentage) && isFinite(totalLossPercentage) && totalLossPercentage > 0 
+    ? totalLossPercentage 
+    : savedTotalLoss;
+    
+  const newProfit = !isNaN(profitPercentage) && isFinite(profitPercentage) && profitPercentage > 0 
+    ? profitPercentage 
+    : savedProfit;
+  
+  // ===== STEP 5: ONLY UPDATE IF VALUES ACTUALLY CHANGED =====
   if (newDailyLoss !== dailyLoss || newTotalLoss !== totalLoss || newProfit !== challengeProgress.profit) {
+    console.log('Updating challenge stats:', { newDailyLoss, newTotalLoss, newProfit });
+    
     setDailyLoss(newDailyLoss);
     setTotalLoss(newTotalLoss);
     setChallengeProgress({
@@ -824,7 +860,7 @@ useEffect(() => {
     localStorage.setItem('userData', JSON.stringify(updatedUser));
   }
   
-}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]); 
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
  
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
