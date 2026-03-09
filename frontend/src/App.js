@@ -326,7 +326,31 @@ function App() {
     totalLoss: 0,
     status: 'active'
   });
-
+// CRITICAL: Load saved challenge stats FIRST - before anything else
+useEffect(() => {
+  const userDataStr = localStorage.getItem('userData');
+  if (userDataStr) {
+    try {
+      const userData = JSON.parse(userDataStr);
+      if (userData.challengeStats) {
+        console.log('Loading saved challenge stats:', userData.challengeStats);
+        
+        // Set all challenge-related state from saved data
+        setDailyLoss(userData.challengeStats.dailyLoss || 0);
+        setTotalLoss(userData.challengeStats.totalLoss || 0);
+        setChallengeProgress({
+          profit: userData.challengeStats.currentProfit || 0,
+          dailyLoss: userData.challengeStats.dailyLoss || 0,
+          totalLoss: userData.challengeStats.totalLoss || 0,
+          status: userData.challengeStats.status || 'not_started'
+        });
+      }
+    } catch (e) {
+      console.error('Error loading challenge stats:', e);
+    }
+  }
+}, []); // Empty dependency array = runs once on mount
+  
   // ========== NEW REFERRAL STATE ==========
   const [referralInfo, setReferralInfo] = useState(null);
   const [referralSettings, setReferralSettings] = useState({ target: 20, rewardName: 'Beginner Challenge', rewardAmount: 20000 });
