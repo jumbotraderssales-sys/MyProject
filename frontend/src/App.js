@@ -757,74 +757,61 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
     return;
   }
 
-  // 🎉 PROFIT TARGET → CHALLENGE PASS
-  if (profitPct >= challenge.profitTarget) {
-    // Calculate total reward (fee refund + skill reward)
-    const totalReward = challenge.feeRefund + challenge.skillReward;
-    
-    if (positions.length > 0) {
-      positions.forEach(pos => {
-        closePosition(pos.id, 'CHALLENGE_PASSED');
-      });
-    }
-    
-    // Show success message with withdrawal info
-    alert(`🎉🎉🎉 CHALLENGE CONQUERED! 🎉🎉🎉\n\n` +
-          `🏆 You've achieved the ${challenge.profitTarget}% profit target!\n\n` +
-          `💰 WITHDRAWAL AVAILABLE: ₹${totalReward.toLocaleString()}\n` +
-          `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
-          `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
-          `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
-          `✨ NEXT STEPS:\n` +
-          `1️⃣ Go to Profile section\n` +
-          `2️⃣ You'll see your available funds for withdrawal\n` +
-          `3️⃣ Click "Request Withdrawal"\n` +
-          `4️⃣ Enter amount or click "Set to Reward Amount"\n` +
-          `5️⃣ Complete withdrawal\n\n` +
-          `🎯 You're proving that disciplined trading pays off!\n` +
-          `Keep up the amazing work! 🌟`);
-    
-    // Update user account with the reward
-    setUserAccount(prev => ({
-      ...prev,
-      realBalance: (prev.realBalance || 0) + totalReward,
-      paperBalance: prev.paperBalance,
-      challengeStats: {
-        ...prev.challengeStats,
-        status: 'passed',
-        endReason: 'Profit target achieved',
-        feeRefund: challenge.feeRefund,
-        skillReward: challenge.skillReward,
-        totalReward: totalReward,
-        withdrawalAvailable: totalReward,
-        withdrawalCompleted: false
-      }
-    }));
-    
-    // Save to localStorage
-    setTimeout(() => {
-      const updatedUser = {
-        ...userAccount,
-        realBalance: (userAccount.realBalance || 0) + totalReward,
-        challengeStats: {
-          ...userAccount.challengeStats,
-          status: 'passed',
-          endReason: 'Profit target achieved',
-          feeRefund: challenge.feeRefund,
-          skillReward: challenge.skillReward,
-          totalReward: totalReward,
-          withdrawalAvailable: totalReward,
-          withdrawalCompleted: false
-        }
-      };
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
-    }, 100);
-    
-    updateChallengeStatus('passed', 'Profit target achieved');
-    
-    return;
+// 🎉 PROFIT TARGET → CHALLENGE PASS
+if (profitPct >= challenge.profitTarget) {
+  // Calculate total reward (fee refund + skill reward)
+  const totalReward = challenge.feeRefund + challenge.skillReward;
+  
+  if (positions.length > 0) {
+    positions.forEach(pos => {
+      closePosition(pos.id, 'CHALLENGE_PASSED');
+    });
   }
-};
+  
+  // Show success message with withdrawal info
+  alert(`🎉🎉🎉 CHALLENGE CONQUERED! 🎉🎉🎉\n\n` +
+        `🏆 You've achieved the ${challenge.profitTarget}% profit target!\n\n` +
+        `💰 WITHDRAWAL AVAILABLE: ₹${totalReward.toLocaleString()}\n` +
+        `   ├─ Fee Refund: ₹${challenge.feeRefund.toLocaleString()}\n` +
+        `   └─ Skill Reward: ₹${challenge.skillReward.toLocaleString()}\n\n` +
+        `📊 Final Paper Balance: ₹${userAccount.paperBalance.toFixed(2)}\n\n` +
+        `✨ NEXT STEPS:\n` +
+        `1️⃣ Go to Profile section\n` +
+        `2️⃣ You'll see your available funds for withdrawal\n` +
+        `3️⃣ Click "Request Withdrawal"\n` +
+        `4️⃣ Enter amount or click "Set to Reward Amount"\n` +
+        `5️⃣ Complete withdrawal\n\n` +
+        `🎯 You're proving that disciplined trading pays off!\n` +
+        `Keep up the amazing work! 🌟`);
+  
+  // Create the updated user object
+  const updatedUser = {
+    ...userAccount,
+    realBalance: totalReward,
+    paperBalance: userAccount.paperBalance,
+    challengeStats: {
+      ...userAccount.challengeStats,
+      status: 'passed',
+      endReason: 'Profit target achieved',
+      feeRefund: challenge.feeRefund,
+      skillReward: challenge.skillReward,
+      totalReward: totalReward,
+      withdrawalAvailable: totalReward,
+      withdrawalCompleted: false
+    }
+  };
+  
+  // Update state
+  setUserAccount(updatedUser);
+  
+  // Save to localStorage immediately
+  localStorage.setItem('userData', JSON.stringify(updatedUser));
+  
+  // Update backend
+  updateChallengeStatus('passed', 'Profit target achieved');
+  
+  return;
+}
   
   const calculateDollarBalance = (paperBalance) => {
     return (paperBalance / dollarRate).toFixed(2);
