@@ -778,8 +778,21 @@ useEffect(() => {
   
   // Check challenge rules with the correct percentages
   checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
+  // Save updated stats to localStorage
+  const updatedUser = {
+    ...userAccount,
+    challengeStats: {
+      ...userAccount.challengeStats,
+      dailyLoss: newDailyLoss,
+      totalLoss: newTotalLoss,
+      currentProfit: newProfit,
+      status: userAccount.challengeStats.status
+    }
+  };
+  localStorage.setItem('userData', JSON.stringify(updatedUser));
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
+  
  
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
