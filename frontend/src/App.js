@@ -2325,18 +2325,6 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
 
         setTimeout(() => checkChallengeRules(), 100);
       }
-// Save updated stats to localStorage
-const updatedUser = {
-  ...userAccount,
-  challengeStats: {
-    ...userAccount.challengeStats,
-    dailyLoss: newDailyLoss,
-    totalLoss: newTotalLoss,
-    currentProfit: newProfit,
-    status: userAccount.challengeStats.status
-  }
-};
-localStorage.setItem('userData', JSON.stringify(updatedUser));
       
       // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
       await syncUserWallet();
