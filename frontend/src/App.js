@@ -428,6 +428,32 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
     positionsRef.current = positions;
   }, [positions]);
 
+  // Load saved challenge progress from localStorage on mount
+useEffect(() => {
+  const loadSavedProgress = () => {
+    const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+      try {
+        const userData = JSON.parse(userDataStr);
+        if (userData.challengeStats) {
+          setDailyLoss(userData.challengeStats.dailyLoss || 0);
+          setTotalLoss(userData.challengeStats.totalLoss || 0);
+          setChallengeProgress({
+            profit: userData.challengeStats.currentProfit || 0,
+            dailyLoss: userData.challengeStats.dailyLoss || 0,
+            totalLoss: userData.challengeStats.totalLoss || 0,
+            status: userData.challengeStats.status || 'not_started'
+          });
+        }
+      } catch (e) {
+        console.error('Error loading challenge stats:', e);
+      }
+    }
+  };
+
+  loadSavedProgress();
+}, []);
+
   // ========== CAPTURE REFERRAL CODE FROM URL ==========
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -613,6 +639,7 @@ useEffect(() => {
     }
   }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);
   
+ 
   // Fetch real-time price for the selected symbol every 3 seconds
   useEffect(() => {
     if (!selectedSymbol) return;
@@ -2298,7 +2325,19 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
 
         setTimeout(() => checkChallengeRules(), 100);
       }
-
+// Save updated stats to localStorage
+const updatedUser = {
+  ...userAccount,
+  challengeStats: {
+    ...userAccount.challengeStats,
+    dailyLoss: newDailyLoss,
+    totalLoss: newTotalLoss,
+    currentProfit: newProfit,
+    status: userAccount.challengeStats.status
+  }
+};
+localStorage.setItem('userData', JSON.stringify(updatedUser));
+      
       // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
       await syncUserWallet();
 
