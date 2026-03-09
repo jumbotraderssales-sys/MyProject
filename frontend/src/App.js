@@ -766,7 +766,8 @@ useEffect(() => {
   // Check challenge rules with the correct percentages
   checkChallengeRules(newProfit, newDailyLoss, newTotalLoss);
   
-}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
+}, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate, checkChallengeRules]); // Added checkChallengeRules herets, dollarRate]);
+ 
   // First define updateChallengeStatus
 const updateChallengeStatus = (status, reason) => {
   setUserAccount(prev => {
