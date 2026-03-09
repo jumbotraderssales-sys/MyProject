@@ -2346,9 +2346,6 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   setTimeout(() => checkChallengeRules(), 100);
 }
 
-        setTimeout(() => checkChallengeRules(), 100);
-      }
-      
       // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
       await syncUserWallet();
 
