@@ -481,6 +481,18 @@ useEffect(() => {
     }
   }
 }, []);
+
+  // Load withdrawal requests from localStorage
+useEffect(() => {
+  const savedRequests = localStorage.getItem('withdrawalRequests');
+  if (savedRequests) {
+    try {
+      setWithdrawalRequests(JSON.parse(savedRequests));
+    } catch (e) {
+      console.error('Error parsing withdrawal requests:', e);
+    }
+  }
+}, []);
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
     try {
@@ -4571,16 +4583,24 @@ const calculateOrderPnL = (order) => {
             return;
           }
           
-          const newRequest = {
-            id: `WD${Date.now()}`,
-            amount: amount,
-            status: 'pending',
-            date: new Date().toLocaleString(),
-            bankDetails: userBankAccount,
-            isReward: userAccount.challengeStats?.status === 'passed' && amount === userAccount.challengeStats?.withdrawalAvailable
-          };
-          
-          setWithdrawalRequests([newRequest, ...withdrawalRequests]);
+   const newRequest = {
+  id: `WD${Date.now()}`,
+  amount: amount,
+  status: 'pending',
+  date: new Date().toLocaleString(),
+  bankDetails: userBankAccount,
+  isReward: userAccount.challengeStats?.status === 'passed' && amount === userAccount.challengeStats?.withdrawalAvailable,
+  userName: userAccount.name,
+  userEmail: userAccount.email,
+  userId: userAccount.id
+};
+
+setWithdrawalRequests(prev => {
+  const updated = [newRequest, ...prev];
+  // Save to localStorage
+  localStorage.setItem('withdrawalRequests', JSON.stringify(updated));
+  return updated;
+});
           
           // Update user account - subtract withdrawn amount
           const newRealBalance = balance - amount;
