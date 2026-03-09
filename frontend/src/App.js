@@ -935,42 +935,34 @@ useEffect(() => {
     } else if (userAccount.challengeStats.status === 'passed') {
       // For passed challenges, ensure realBalance is set to the reward amount
       const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-      if (challenge && !userAccount.challengeStats.withdrawalCompleted && userAccount.realBalance === 0) {
-        const totalReward = challenge.feeRefund + challenge.skillReward;
+      if (challenge) {
+        const totalReward = userAccount.challengeStats.withdrawalAvailable || (challenge.feeRefund + challenge.skillReward);
         
-        setUserAccount(prev => ({
-          ...prev,
-          realBalance: totalReward,
-          challengeStats: {
-            ...prev.challengeStats,
-            feeRefund: challenge.feeRefund,
-            skillReward: challenge.skillReward,
-            totalReward: totalReward,
-            withdrawalAvailable: totalReward,
-            withdrawalCompleted: false
+        setUserAccount(prev => {
+          // Only update if withdrawal not completed
+          if (!prev.challengeStats?.withdrawalCompleted) {
+            const updated = {
+              ...prev,
+              realBalance: totalReward,
+              challengeStats: {
+                ...prev.challengeStats,
+                feeRefund: challenge.feeRefund,
+                skillReward: challenge.skillReward,
+                totalReward: totalReward,
+                withdrawalAvailable: totalReward,
+                withdrawalCompleted: false
+              }
+            };
+            localStorage.setItem('userData', JSON.stringify(updated));
+            return updated;
           }
-        }));
-        
-        // Save to localStorage
-        setTimeout(() => {
-          const updatedUser = {
-            ...userAccount,
-            realBalance: totalReward,
-            challengeStats: {
-              ...userAccount.challengeStats,
-              feeRefund: challenge.feeRefund,
-              skillReward: challenge.skillReward,
-              totalReward: totalReward,
-              withdrawalAvailable: totalReward,
-              withdrawalCompleted: false
-            }
-          };
-          localStorage.setItem('userData', JSON.stringify(updatedUser));
-        }, 100);
+          return prev;
+        });
       }
     }
   }
 }, [userAccount.currentChallenge, userAccount.challengeStats?.status]);
+
 
 
 useEffect(() => {
