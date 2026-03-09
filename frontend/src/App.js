@@ -53,7 +53,7 @@ const CHALLENGES = [
     paperBalance: 20000,
     profitTarget: 30,
     dailyLossLimit: 4,
-    maxLossLimit: 10,
+    maxLossLimit: 1,
     maxOrderSize: 20,
     maxLeverage: 5,
     autoStopLossTarget: 10,
