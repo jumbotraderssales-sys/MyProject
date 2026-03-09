@@ -512,6 +512,30 @@ const [isAppInstalled, setIsAppInstalled] = useState(false);
     }, 5000);
     return () => clearInterval(interval);
   }, [carouselImages.length]);
+// Preserve challenge stats and realBalance when userAccount updates
+useEffect(() => {
+  if (userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0) {
+    // Make sure realBalance is set to the withdrawal amount
+    if (userAccount.realBalance === 0 && userAccount.challengeStats.withdrawalAvailable > 0) {
+      setUserAccount(prev => ({
+        ...prev,
+        realBalance: prev.challengeStats.withdrawalAvailable
+      }));
+    }
+    
+    // Save to localStorage to persist
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      if (parsed.challengeStats?.status === 'passed' && !parsed.challengeStats?.withdrawalCompleted) {
+        // Ensure localStorage has the correct realBalance
+        parsed.realBalance = parsed.challengeStats.withdrawalAvailable;
+        localStorage.setItem('userData', JSON.stringify(parsed));
+      }
+    }
+  }
+}, [userAccount.challengeStats?.status, userAccount.challengeStats?.withdrawalAvailable]);
+  
   // ========== FETCH PRICES FOR ALL SYMBOLS (FOR MARKET PAGE) ==========
 useEffect(() => {
   const fetchAllPrices = async () => {
