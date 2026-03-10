@@ -3823,7 +3823,7 @@ const calculateOrderPnL = (order) => {
     }
   }}
 >
-  {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'} - {challenge.fee}
+  {isLoggedIn ? 'GET ACCESS -Pass PRO challenge' : 'Sign Up & Buy'} - {challenge.fee}
 </button>
                     </div>
                   ))}
