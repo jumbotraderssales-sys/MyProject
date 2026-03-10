@@ -103,30 +103,25 @@ const CHALLENGES = [
     icon: "🔴",
     description: "For advanced traders ready for maximum rewards"
  },
-  {
+   {
     id: 4,
-    name: "💎 REAL Funded Account", // New challenge
-    fee: "₹0", // No fee
-    paperBalance: 0, 
-    realBalance: 100000, 
-    profitTarget: 0, 
-    dailyLossLimit: 3, 
+    name: "💎 REAL Funded Account",
+    fee: "No Fee", 
+    paperBalance: 100000, 
+    profitTarget: 0,
+    dailyLossLimit: 3,
     maxLossLimit: 10,
-    maxOrderSize: 20, 
-    maxLeverage: 20, 
-    autoStopLossTarget: 10, // 10% auto SL
-    autoTakeProfitTarget: 20, // 20% auto TP
+    maxOrderSize: 20,
+    maxLeverage: 20,
+    autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    profitSplit: {
-      user: 60,
-      platform: 40
-    },
+    feeRefund: 0,
+    skillReward: 0, // No skill reward, instead they get real funded account
+    reward: "Real cash 60% Profit Split-TAX T&C Apply",
     color: "#8b5cf6",
     icon: "💎",
-    description: "Prove your skill to get a real funded account of ₹1,00,000",
-    requirements: "Must pass PRO Challenge first",
-    type: "real", // Mark as real funded account
-    badge: "FUNDED"
+    description: "Prove your skill and Pass PRO Challenge to get a real funded account with ₹1,00,000 capital",
+    profitSplit: "User-60%/Platform-40%"
   }
 ];
 const PriceLineOverlay = ({ position, currentPrice }) => {
@@ -3802,25 +3797,32 @@ const calculateOrderPnL = (order) => {
                         <p>{challenge.description}</p>
                       </div>
                       
-                      <button 
-                        className="get-challenge-btn"
-                        style={{ background: challenge.color }}
-                        onClick={() => handleChallengeBuy(challenge)}
-                      >
-                        {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'} - {challenge.fee}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="cta-section">
-                <p className="cta-text">
-                  {isLoggedIn && userAccount.currentChallenge 
-                    ? 'Start trading with your paper balance now!' 
-                    : 'Practice with virtual money: Earn real cash rewards'}
-                </p>
-                <button 
+               <button 
+  className="get-challenge-btn"
+  style={{ background: challenge.color }}
+  onClick={() => {
+    if (challenge.name === "💎 REAL Funded Account") {
+      // For now, just show a message that it's paper trading
+      // Later this will connect to real API
+      alert(
+        '💎 REAL Funded Account\n\n' +
+        'This is our premium challenge that leads to a real funded account.\n\n' +
+        '💰 What you get:\n' +
+        '• Trade with ₹1,00,000 capital\n' +
+        '• 60% Profit Split\n' +
+        '• Up to 20x Leverage\n' +
+        '• 3% Daily Loss Limit\n' +
+        '• 10% Max Loss Limit\n\n' +
+        '📝 Note: Currently in paper trading mode.\n' +
+        'Complete this challenge to qualify for live trading!'
+      );
+    } else {
+      handleChallengeBuy(challenge);
+    }
+  }}
+>
+  {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'}
+</button>
                   className="cta-btn"
                   onClick={() => {
                     if (!isLoggedIn) {
