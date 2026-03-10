@@ -2386,6 +2386,159 @@ const requireAdmin = async (req, res, next) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+// ========== PERMANENT USER STATUS MANAGEMENT ==========
+
+// Update user account status (Permanent - saves to database/files)
+app.put('/api/admin/users/:userId/status', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { accountStatus } = req.body;
+    
+    console.log(`🔄 Updating user ${userId} status to: ${accountStatus}`);
+    
+    if (!accountStatus || !['active', 'inactive', 'suspended'].includes(accountStatus)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Valid account status is required (active/inactive/suspended)' 
+      });
+    }
+    
+    const users = await readUsers();
+    const userIndex = users.findIndex(u => u.id === userId || u._id === userId);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    // Update user status
+    users[userIndex].accountStatus = accountStatus;
+    users[userIndex].status = accountStatus; // Update both fields for compatibility
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    // Save to database/file
+    await writeUsers(users);
+    
+    // Also update in MongoDB if connected
+    if (isMongoConnected) {
+      try {
+        await UserModel.updateOne(
+          { id: userId },
+          { 
+            accountStatus: accountStatus,
+            status: accountStatus,
+            updatedAt: new Date().toISOString()
+          }
+        );
+        console.log('✅ MongoDB updated for user status');
+      } catch (mongoError) {
+        console.error('❌ MongoDB update failed:', mongoError.message);
+      }
+    }
+    
+    console.log(`✅ User ${userId} status updated to ${accountStatus} permanently`);
+    
+    const userResponse = { ...users[userIndex] };
+    delete userResponse.password;
+    
+    res.json({
+      success: true,
+      message: `User status updated to ${accountStatus} permanently`,
+      user: userResponse
+    });
+    
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Permanently delete user
+app.delete('/api/admin/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log(`🗑️ Attempting to permanently delete user: ${userId}`);
+    
+    // Read all data
+    const users = await readUsers();
+    const trades = await readTrades();
+    const orders = await readOrders();
+    const payments = await readPayments();
+    const withdrawals = await readWithdrawals();
+    const referrals = await readReferrals();
+    
+    // Find user
+    const userIndex = users.findIndex(u => u.id === userId || u._id === userId);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    const user = users[userIndex];
+    
+    // Filter out all user data
+    const updatedUsers = users.filter(u => u.id !== userId && u._id !== userId);
+    const updatedTrades = trades.filter(t => t.userId !== userId);
+    const updatedOrders = orders.filter(o => o.userId !== userId);
+    const updatedPayments = payments.filter(p => p.userId !== userId);
+    const updatedWithdrawals = withdrawals.filter(w => w.userId !== userId);
+    const updatedReferrals = referrals.filter(r => r.referrerId !== userId && r.referredId !== userId);
+    
+    // Save all filtered data
+    await writeUsers(updatedUsers);
+    await writeTrades(updatedTrades);
+    await writeOrders(updatedOrders);
+    await writePayments(updatedPayments);
+    await writeWithdrawals(updatedWithdrawals);
+    await writeReferrals(updatedReferrals);
+    
+    // Also delete from MongoDB if connected
+    if (isMongoConnected) {
+      try {
+        await UserModel.deleteOne({ id: userId });
+        await TradeModel.deleteMany({ userId });
+        await OrderModel.deleteMany({ userId });
+        await PaymentModel.deleteMany({ userId });
+        await WithdrawalModel.deleteMany({ userId });
+        await ReferralModel.deleteMany({ 
+          $or: [{ referrerId: userId }, { referredId: userId }] 
+        });
+        console.log('✅ MongoDB records deleted');
+      } catch (mongoError) {
+        console.error('❌ MongoDB deletion failed:', mongoError.message);
+      }
+    }
+    
+    console.log(`✅ User ${user.name} (${user.email}) permanently deleted`);
+    console.log(`   Removed: ${users.length - updatedUsers.length} user, ${trades.length - updatedTrades.length} trades, ${orders.length - updatedOrders.length} orders, ${payments.length - updatedPayments.length} payments`);
+    
+    res.json({
+      success: true,
+      message: `User ${user.name} has been permanently deleted`,
+      deletedUser: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
 
 // Get all users (for admin panel)
 app.get('/api/admin/users', async (req, res) => {
