@@ -3310,16 +3310,24 @@ const calculateOrderPnL = (order) => {
       {!isFullScreen && (
         <>
           <div className="top-horizontal-nav">
-  {/* Platform Branding - Left Corner */}
-  <div className="platform-brand">
-    <div className="brand-icon">
-      <span className="icon">📈</span>
-    </div>
-    <div className="brand-text">
-      <span className="brand-name">Paper2Real</span>
-      <span className="brand-quote">Learn. Practice. Get Funded.</span>
+ {/* Platform Branding - Left Corner with 3D Cube Logo */}
+<div className="platform-brand">
+  <div className="brand-logo-container">
+    <div className="logo-cube">
+      <div className="cube-face front"></div>
+      <div className="cube-face back"></div>
+      <div className="cube-face right"></div>
+      <div className="cube-face left"></div>
+      <div className="cube-face top"></div>
+      <div className="cube-face bottom"></div>
+      <div className="cube-glow"></div>
     </div>
   </div>
+  <div className="brand-text">
+    <span className="brand-name">Paper2Real</span>
+    <span className="brand-quote">Learn. Practice. Get Funded.</span>
+  </div>
+</div>
 
   <div className="nav-tabs-container">
     <div className={`nav-tab ${activeDashboard === 'Challenges' ? 'active' : ''}`} onClick={() => setActiveDashboard('Challenges')}>
