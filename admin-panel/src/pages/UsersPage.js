@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import adminApi from '../services/api';
 import UserWalletModal from '../components/UserWalletModal';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [updatingUserId, setUpdatingUserId] = useState(null);
 
   useEffect(() => {
     console.log('UsersPage: Component mounted, loading users...');
@@ -59,7 +63,7 @@ const UsersPage = () => {
         user.email || '',
         user.id ? user.id.toString() : '',
         user.userName || '',
-        user.referralCode || '' // include referral code in search
+        user.referralCode || ''
       ].join(' ').toLowerCase();
       
       const searchMatch = 
@@ -81,6 +85,9 @@ const UsersPage = () => {
     const activeUsers = users.filter(u => 
       (u.accountStatus || u.status) === 'active'
     ).length;
+    const inactiveUsers = users.filter(u => 
+      (u.accountStatus || u.status) === 'inactive'
+    ).length;
     const usersWithPlan = users.filter(u => u.currentChallenge || u.currentPlan).length;
     
     const totalBalance = users.reduce((sum, user) => 
@@ -90,7 +97,6 @@ const UsersPage = () => {
     const totalPaperBalance = users.reduce((sum, user) => sum + (user.paperBalance || 0), 0);
     const totalRealBalance = users.reduce((sum, user) => sum + (user.realBalance || 0), 0);
     
-    // ===== REFERRAL STATS =====
     const totalReferrals = users.reduce((sum, user) => sum + (user.referralCount || 0), 0);
     const usersWithReferrals = users.filter(u => (u.referralCount || 0) > 0).length;
     const rewardsGiven = users.filter(u => u.referralReward?.awarded).length;
@@ -98,6 +104,7 @@ const UsersPage = () => {
     return {
       totalUsers,
       activeUsers,
+      inactiveUsers,
       usersWithPlan,
       totalBalance,
       totalPaperBalance,
@@ -113,15 +120,76 @@ const UsersPage = () => {
 
   const updateUserStatus = async (userId, newStatus) => {
     try {
-      // In a real app, you would call an API endpoint to update user status
-      const updatedUsers = users.map(user => 
-        user.id === userId ? { ...user, accountStatus: newStatus } : user
-      );
-      setUsers(updatedUsers);
-      alert(`User status updated to ${newStatus}`);
+      setUpdatingUserId(userId);
+      
+      // Call API to update user status
+      const response = await adminApi.updateUserStatus(userId, { accountStatus: newStatus });
+      
+      if (response && response.success) {
+        // Update local state
+        const updatedUsers = users.map(user => 
+          user.id === userId ? { ...user, accountStatus: newStatus, status: newStatus } : user
+        );
+        setUsers(updatedUsers);
+        
+        // Also update localStorage for this user if they're logged in
+        const userDataStr = localStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          if (userData.id === userId) {
+            userData.accountStatus = newStatus;
+            localStorage.setItem('userData', JSON.stringify(userData));
+          }
+        }
+        
+        alert(`✅ User status updated to ${newStatus} successfully!`);
+      } else {
+        throw new Error('Failed to update status');
+      }
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert('Failed to update user status');
+      alert('❌ Failed to update user status. Please try again.');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const deleteUser = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      setUpdatingUserId(userToDelete.id);
+      
+      // Call API to delete user
+      const response = await adminApi.deleteUser(userToDelete.id);
+      
+      if (response && response.success) {
+        // Remove user from local state
+        const updatedUsers = users.filter(user => user.id !== userToDelete.id);
+        setUsers(updatedUsers);
+        
+        // Clear user from localStorage if they were logged in
+        const userDataStr = localStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          if (userData.id === userToDelete.id) {
+            localStorage.removeItem('userData');
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+          }
+        }
+        
+        alert(`✅ User ${userToDelete.name || userToDelete.email} has been deleted permanently.`);
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+      } else {
+        throw new Error('Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('❌ Failed to delete user. Please try again.');
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
@@ -163,7 +231,7 @@ const UsersPage = () => {
         <div className="stat-card">
           <div className="stat-title">Total Users</div>
           <div className="stat-value">{stats.totalUsers}</div>
-          <div className="stat-detail">{stats.activeUsers} active</div>
+          <div className="stat-detail">{stats.activeUsers} active, {stats.inactiveUsers} inactive</div>
         </div>
         <div className="stat-card">
           <div className="stat-title">Users with Plan</div>
@@ -180,7 +248,6 @@ const UsersPage = () => {
           <div className="stat-value">₹{(stats.totalRealBalance || 0).toLocaleString()}</div>
           <div className="stat-detail">Withdrawable</div>
         </div>
-        {/* ===== NEW REFERRAL STATS ===== */}
         <div className="stat-card">
           <div className="stat-title">Total Referrals</div>
           <div className="stat-value">{stats.totalReferrals}</div>
@@ -334,18 +401,40 @@ const UsersPage = () => {
                             className="action-btn deactivate"
                             title="Deactivate User"
                             onClick={() => updateUserStatus(user.id, 'inactive')}
+                            disabled={updatingUserId === user.id}
                           >
-                            <i className="fas fa-user-slash"></i>
+                            {updatingUserId === user.id ? (
+                              <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                              <i className="fas fa-user-slash"></i>
+                            )}
                           </button>
                         ) : (
                           <button 
                             className="action-btn activate"
                             title="Activate User"
                             onClick={() => updateUserStatus(user.id, 'active')}
+                            disabled={updatingUserId === user.id}
                           >
-                            <i className="fas fa-user-check"></i>
+                            {updatingUserId === user.id ? (
+                              <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                              <i className="fas fa-user-check"></i>
+                            )}
                           </button>
                         )}
+                        {/* NEW DELETE BUTTON */}
+                        <button 
+                          className="action-btn delete"
+                          title="Delete User Permanently"
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setShowDeleteModal(true);
+                          }}
+                          disabled={updatingUserId === user.id}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -376,6 +465,18 @@ const UsersPage = () => {
             setSelectedUser(null);
           }}
           onUpdate={loadUsers}
+        />
+      )}
+
+      {/* NEW DELETE CONFIRMATION MODAL */}
+      {showDeleteModal && userToDelete && (
+        <DeleteConfirmationModal
+          user={userToDelete}
+          onConfirm={deleteUser}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setUserToDelete(null);
+          }}
         />
       )}
     </div>
