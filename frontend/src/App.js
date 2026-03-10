@@ -831,6 +831,9 @@ useEffect(() => {
   
   // ===== STEP 7: DECIDE FINAL VALUES =====
   
+   // Calculate today's loss percentage for logging
+  const todayLossPercentage = todayLossUSD > 0 ? (todayLossINR / userAccount.paperBalance) * 100 : 0;
+  
   // DAILY LOSS: Use calculation if we have today trades, otherwise keep saved
   const newDailyLoss = todayTrades.length > 0 && !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage)
     ? dailyLossPercentage 
@@ -845,7 +848,7 @@ useEffect(() => {
     // Calculate what percentage of paper balance this new loss represents
     const newLossPercentage = (todayLossINR / userAccount.paperBalance) * 100;
     newTotalLoss = savedTotalLoss + newLossPercentage;
-    console.log(`Adding new loss ${newLossPercentage}% to existing total ${savedTotalLoss}% = ${newTotalLoss}%`);
+    console.log(`Adding new loss ${newLossPercentage.toFixed(2)}% to existing total ${savedTotalLoss.toFixed(2)}% = ${newTotalLoss.toFixed(2)}%`);
   } else {
     // If no new losses, keep saved total loss
     newTotalLoss = savedTotalLoss;
@@ -862,21 +865,20 @@ useEffect(() => {
   if (todayProfitUSD > 0) {
     const newProfitPercentage = (todayProfitUSD * dollarRate / userAccount.paperBalance) * 100;
     newProfit = savedProfit + newProfitPercentage;
-    console.log(`Adding new profit ${newProfitPercentage}% to existing ${savedProfit}% = ${newProfit}%`);
+    console.log(`Adding new profit ${newProfitPercentage.toFixed(2)}% to existing ${savedProfit.toFixed(2)}% = ${newProfit.toFixed(2)}%`);
   }
   
   console.log('Final values:', {
     todayTrades: todayTrades.length,
     todayLossUSD,
-    todayLossPercentage,
-    savedDailyLoss,
-    savedTotalLoss,
-    savedProfit,
-    newDailyLoss,
-    newTotalLoss,
-    newProfit
+    todayLossPercentage: todayLossPercentage.toFixed(2),
+    savedDailyLoss: savedDailyLoss.toFixed(2),
+    savedTotalLoss: savedTotalLoss.toFixed(2),
+    savedProfit: savedProfit.toFixed(2),
+    newDailyLoss: newDailyLoss.toFixed(2),
+    newTotalLoss: newTotalLoss.toFixed(2),
+    newProfit: newProfit.toFixed(2)
   });
-  
   // ===== STEP 8: UPDATE ONLY IF VALUES CHANGED =====
   if (newDailyLoss !== dailyLoss || newTotalLoss !== totalLoss || newProfit !== challengeProgress.profit) {
     console.log('Updating challenge stats:', { newDailyLoss, newTotalLoss, newProfit });
