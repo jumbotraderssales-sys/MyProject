@@ -742,7 +742,7 @@ useEffect(() => {
       if (savedUser.challengeStats) {
         console.log('Loading saved challenge stats:', savedUser.challengeStats);
         
-        // ALWAYS use saved values - they are the source of truth
+        // ALWAYS use saved values first
         setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
         setTotalLoss(savedUser.challengeStats.totalLoss || 0);
         setChallengeProgress({
@@ -752,7 +752,7 @@ useEffect(() => {
           status: savedUser.challengeStats.status || 'not_started'
         });
         
-        // Don't recalculate on every render - only when we have new trades
+        // If no order history, keep saved values
         if (orderHistory.length === 0) {
           console.log('No order history, keeping saved values');
           return;
@@ -763,7 +763,7 @@ useEffect(() => {
     }
   }
   
-  // ===== STEP 2: ONLY RECALCULATE IF WE HAVE NEW TRADES =====
+  // ===== STEP 2: ONLY RECALCULATE IF WE HAVE ORDER HISTORY =====
   if (orderHistory.length === 0 || !userAccount.currentChallenge || !userAccount.paperBalance) {
     return;
   }
@@ -773,47 +773,47 @@ useEffect(() => {
 
   const today = new Date().toDateString();
   
-  // Get all closed trades
+  // Get ALL closed trades
   const allClosedTrades = orderHistory.filter(order => 
     order.status === 'CLOSED' || order.status === 'closed'
   );
   
-  // If we have no closed trades, keep saved values
   if (allClosedTrades.length === 0) {
     console.log('No closed trades found, keeping saved values');
     return;
   }
   
-  // Calculate daily loss (today's trades only)
+  // ===== STEP 3: CALCULATE DAILY LOSS (TODAY ONLY) =====
   const todayTrades = allClosedTrades.filter(order => {
     const orderDate = new Date(order.timestamp).toDateString();
     return orderDate === today;
   });
   
-  const dailyLossAmountUSD = Math.abs(todayTrades
-    .filter(order => (order.pnl || 0) < 0)
-    .reduce((sum, order) => sum + Math.abs(order.pnl || 0), 0));
-  
-  const dailyLossAmountINR = dailyLossAmountUSD * dollarRate;
-  const dailyLossPercentage = userAccount.paperBalance > 0 ? (dailyLossAmountINR / userAccount.paperBalance) * 100 : 0;
-  
-  // Calculate total loss (ALL closed trades)
-  const totalLossAmountUSD = allClosedTrades
+  // Calculate today's total loss in USD
+  const todayLossUSD = todayTrades
     .filter(order => (order.pnl || 0) < 0)
     .reduce((sum, order) => sum + Math.abs(order.pnl || 0), 0);
   
-  const totalLossAmountINR = totalLossAmountUSD * dollarRate;
-  const totalLossPercentage = userAccount.paperBalance > 0 ? (totalLossAmountINR / userAccount.paperBalance) * 100 : 0;
+  const todayLossINR = todayLossUSD * dollarRate;
+  const dailyLossPercentage = userAccount.paperBalance > 0 ? (todayLossINR / userAccount.paperBalance) * 100 : 0;
   
-  // Calculate total profit
-  const totalProfitAmountUSD = allClosedTrades
+  // ===== STEP 4: CALCULATE TOTAL LOSS (ALL TIME) =====
+  const allTimeLossUSD = allClosedTrades
+    .filter(order => (order.pnl || 0) < 0)
+    .reduce((sum, order) => sum + Math.abs(order.pnl || 0), 0);
+  
+  const allTimeLossINR = allTimeLossUSD * dollarRate;
+  const calculatedTotalLossPercentage = userAccount.paperBalance > 0 ? (allTimeLossINR / userAccount.paperBalance) * 100 : 0;
+  
+  // ===== STEP 5: CALCULATE TOTAL PROFIT (ALL TIME) =====
+  const allTimeProfitUSD = allClosedTrades
     .filter(order => (order.pnl || 0) > 0)
     .reduce((sum, order) => sum + (order.pnl || 0), 0);
   
-  const totalProfitAmountINR = totalProfitAmountUSD * dollarRate;
-  const profitPercentage = userAccount.paperBalance > 0 ? (totalProfitAmountINR / userAccount.paperBalance) * 100 : 0;
+  const allTimeProfitINR = allTimeProfitUSD * dollarRate;
+  const calculatedProfitPercentage = userAccount.paperBalance > 0 ? (allTimeProfitINR / userAccount.paperBalance) * 100 : 0;
   
-  // Get saved values for comparison
+  // ===== STEP 6: GET SAVED VALUES =====
   let savedDailyLoss = 0;
   let savedTotalLoss = 0;
   let savedProfit = 0;
@@ -829,40 +829,55 @@ useEffect(() => {
     } catch (e) {}
   }
   
-  // ===== STEP 3: DECIDE WHICH VALUES TO USE =====
-  // If calculated total loss is LESS than saved total loss, keep saved value
-  // This prevents overwriting historical data with incomplete calculations
-  const newDailyLoss = !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage) && dailyLossPercentage > 0
+  // ===== STEP 7: DECIDE FINAL VALUES =====
+  
+  // DAILY LOSS: Use calculation if we have today trades, otherwise keep saved
+  const newDailyLoss = todayTrades.length > 0 && !isNaN(dailyLossPercentage) && isFinite(dailyLossPercentage)
     ? dailyLossPercentage 
     : savedDailyLoss;
 
-  // For total loss: ALWAYS use the LARGER value (saved vs calculated)
-  // This ensures we never lose historical loss data
-  const newTotalLoss = Math.max(
-    savedTotalLoss,
-    !isNaN(totalLossPercentage) && isFinite(totalLossPercentage) ? totalLossPercentage : 0
-  );
-
-  // For profit: ALWAYS use the LARGER value
-  const newProfit = Math.max(
-    savedProfit,
-    !isNaN(profitPercentage) && isFinite(profitPercentage) ? profitPercentage : 0
-  );
+  // TOTAL LOSS: ADD calculated loss to saved total loss
+  // This ensures new losses are ADDED to existing total loss
+  let newTotalLoss = savedTotalLoss;
   
-  console.log('Calculated values:', {
-    dailyCalc: dailyLossPercentage,
-    totalCalc: totalLossPercentage,
-    profitCalc: profitPercentage,
-    savedDaily: savedDailyLoss,
-    savedTotal: savedTotalLoss,
-    savedProfit: savedProfit,
-    newDaily: newDailyLoss,
-    newTotal: newTotalLoss,
-    newProfit: newProfit,
-    allClosedTrades: allClosedTrades.length
+  // If we have new losing trades today, add them to total loss
+  if (todayLossUSD > 0) {
+    // Calculate what percentage of paper balance this new loss represents
+    const newLossPercentage = (todayLossINR / userAccount.paperBalance) * 100;
+    newTotalLoss = savedTotalLoss + newLossPercentage;
+    console.log(`Adding new loss ${newLossPercentage}% to existing total ${savedTotalLoss}% = ${newTotalLoss}%`);
+  } else {
+    // If no new losses, keep saved total loss
+    newTotalLoss = savedTotalLoss;
+  }
+
+  // PROFIT: ADD calculated profit to saved profit
+  let newProfit = savedProfit;
+  
+  // Calculate today's profit
+  const todayProfitUSD = todayTrades
+    .filter(order => (order.pnl || 0) > 0)
+    .reduce((sum, order) => sum + (order.pnl || 0), 0);
+  
+  if (todayProfitUSD > 0) {
+    const newProfitPercentage = (todayProfitUSD * dollarRate / userAccount.paperBalance) * 100;
+    newProfit = savedProfit + newProfitPercentage;
+    console.log(`Adding new profit ${newProfitPercentage}% to existing ${savedProfit}% = ${newProfit}%`);
+  }
+  
+  console.log('Final values:', {
+    todayTrades: todayTrades.length,
+    todayLossUSD,
+    todayLossPercentage,
+    savedDailyLoss,
+    savedTotalLoss,
+    savedProfit,
+    newDailyLoss,
+    newTotalLoss,
+    newProfit
   });
   
-  // ===== STEP 4: UPDATE ONLY IF VALUES CHANGED =====
+  // ===== STEP 8: UPDATE ONLY IF VALUES CHANGED =====
   if (newDailyLoss !== dailyLoss || newTotalLoss !== totalLoss || newProfit !== challengeProgress.profit) {
     console.log('Updating challenge stats:', { newDailyLoss, newTotalLoss, newProfit });
     
