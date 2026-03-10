@@ -3793,17 +3793,20 @@ const calculateOrderPnL = (order) => {
                         </div>
                       </div>
                       
-                      <div className="challenge-description">
-                        <p>{challenge.description}</p>
-                      </div>
-                      
-               <button 
+                   <div className="challenge-description">
+  <p>{challenge.description}</p>
+  {challenge.profitSplit && (
+    <p style={{ marginTop: '5px', fontWeight: 'bold', color: challenge.color }}>
+      Profit Split: {challenge.profitSplit}
+    </p>
+  )}
+</div>
+
+<button 
   className="get-challenge-btn"
   style={{ background: challenge.color }}
   onClick={() => {
     if (challenge.name === "💎 REAL Funded Account") {
-      // For now, just show a message that it's paper trading
-      // Later this will connect to real API
       alert(
         '💎 REAL Funded Account\n\n' +
         'This is our premium challenge that leads to a real funded account.\n\n' +
@@ -3813,16 +3816,27 @@ const calculateOrderPnL = (order) => {
         '• Up to 20x Leverage\n' +
         '• 3% Daily Loss Limit\n' +
         '• 10% Max Loss Limit\n\n' +
-        '📝 Note: Currently in paper trading mode.\n' +
-        'Complete this challenge to qualify for live trading!'
+        '📝 Complete this challenge to qualify for live trading!'
       );
     } else {
       handleChallengeBuy(challenge);
     }
   }}
 >
-  {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'}
+  {isLoggedIn ? 'Buy Now' : 'Sign Up & Buy'} - {challenge.fee}
 </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="cta-section">
+                <p className="cta-text">
+                  {isLoggedIn && userAccount.currentChallenge 
+                    ? 'Start trading with your paper balance now!' 
+                    : 'Practice with virtual money: Earn real cash rewards'}
+                </p>
+                <button 
                   className="cta-btn"
                   onClick={() => {
                     if (!isLoggedIn) {
