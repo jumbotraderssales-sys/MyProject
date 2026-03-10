@@ -3310,10 +3310,21 @@ const calculateOrderPnL = (order) => {
       {!isFullScreen && (
         <>
           <div className="top-horizontal-nav">
-            <div className="nav-tabs-container">
-              <div className={`nav-tab ${activeDashboard === 'Challenges' ? 'active' : ''}`} onClick={() => setActiveDashboard('Challenges')}>
-                <span className="tab-text">CHALLENGES</span>
-              </div>
+  {/* Platform Branding - Left Corner */}
+  <div className="platform-brand">
+    <div className="brand-icon">
+      <span className="icon">📈</span>
+    </div>
+    <div className="brand-text">
+      <span className="brand-name">Paper2Real</span>
+      <span className="brand-quote">Learn. Practice. Get Funded.</span>
+    </div>
+  </div>
+
+  <div className="nav-tabs-container">
+    <div className={`nav-tab ${activeDashboard === 'Challenges' ? 'active' : ''}`} onClick={() => setActiveDashboard('Challenges')}>
+      <span className="tab-text">CHALLENGES</span>
+    </div>
 
               <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
                 if (!isLoggedIn) {
