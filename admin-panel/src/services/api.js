@@ -434,6 +434,24 @@ const adminApi = {
       }
     }
   },
+  // Add these methods to your adminApi object
+
+updateUserStatus: async (userId, data) => {
+  const response = await fetch(`${API_URL}/api/admin/users/${userId}/status`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data)
+  });
+  return handleResponse(response);
+},
+
+deleteUser: async (userId) => {
+  const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  return handleResponse(response);
+},
 
   // Search payments by criteria
   searchPayments: async (criteria) => {
@@ -479,5 +497,6 @@ const adminApi = {
     }
   }
 };
+
 
 export default adminApi;
