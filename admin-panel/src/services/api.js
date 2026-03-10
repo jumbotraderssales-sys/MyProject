@@ -1,7 +1,11 @@
-// Add these at the top of your api.js file
-const API_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
+// admin-panel/src/services/api.js
+import axios from 'axios';
 
-// Helper function to get headers
+// ===== CONSTANTS =====
+const API_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/api';
+
+// ===== HELPER FUNCTIONS =====
 const getHeaders = () => {
   const token = localStorage.getItem('token');
   return {
@@ -10,7 +14,6 @@ const getHeaders = () => {
   };
 };
 
-// Helper function to handle responses
 const handleResponse = async (response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -18,13 +21,8 @@ const handleResponse = async (response) => {
   }
   return response.json();
 };
-// admin-panel/src/services/api.js
-import axios from 'axios';
 
-// Use the environment variable or fallback
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com/api';
-
-// Define it as apiClient (not api)
+// ===== AXIOS CLIENT SETUP =====
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -63,65 +61,143 @@ apiClient.interceptors.response.use(
   }
 );
 
+// ===== ADMIN API OBJECT =====
 const adminApi = {
+  // ========== USER MANAGEMENT ==========
+  getAllUsers: async () => {
+    try {
+      const response = await apiClient.get('/admin/users');
+      return response.data;
+    } catch (error) {
+      console.error('API Error fetching users:', error);
+      return [];
+    }
+  },
+
+  updateUserStatus: async (userId, data) => {
+    try {
+      const response = await fetch(`${API_URL}/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error updating user status:', error);
+      throw error;
+    }
+  },
+
+  deleteUser: async (userId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error deleting user:', error);
+      throw error;
+    }
+  },
+
+  getUserWallet: async (userId) => {
+    try {
+      const response = await apiClient.get(`/admin/users/${userId}/wallet`);
+      return response.data;
+    } catch (error) {
+      console.error('API Error getting wallet:', error);
+      throw error;
+    }
+  },
+
+  addFundsToWallet: async (userId, amount, type, notes = '') => {
+    try {
+      const response = await apiClient.post(`/admin/users/${userId}/wallet/add`, {
+        amount: parseFloat(amount),
+        type,
+        notes
+      });
+      return response.data;
+    } catch (error) {
+      console.error('API Error adding funds to wallet:', error);
+      throw error;
+    }
+  },
+
+  deductFundsFromWallet: async (userId, amount, type, notes = '') => {
+    try {
+      const response = await apiClient.post(`/admin/users/${userId}/wallet/deduct`, {
+        amount: parseFloat(amount),
+        type,
+        notes
+      });
+      return response.data;
+    } catch (error) {
+      console.error('API Error deducting funds from wallet:', error);
+      throw error;
+    }
+  },
+
   // ========== WITHDRAWAL MANAGEMENT ==========
   getAllWithdrawals: async (status = '') => {
-  try {
-    console.log('📤 Fetching withdrawals with status:', status || 'all');
-    const response = await apiClient.get('/admin/withdrawals', {
-      params: { status: status || '' }
-    });
-    console.log('📥 Withdrawals response:', response.data);
-    
-    // Check if response.data is an array
-    if (Array.isArray(response.data)) {
-      console.log(`✅ Found ${response.data.length} withdrawals`);
-      return response.data;
-    } else {
-      console.warn('⚠️ Response data is not an array:', response.data);
-      throw new Error('Invalid response format');
+    try {
+      console.log('📤 Fetching withdrawals with status:', status || 'all');
+      const response = await apiClient.get('/admin/withdrawals', {
+        params: { status: status || '' }
+      });
+      console.log('📥 Withdrawals response:', response.data);
+      
+      // Check if response.data is an array
+      if (Array.isArray(response.data)) {
+        console.log(`✅ Found ${response.data.length} withdrawals`);
+        return response.data;
+      } else {
+        console.warn('⚠️ Response data is not an array:', response.data);
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('❌ API Error fetching withdrawals:', error.message);
+      console.error('❌ Full error:', error);
+      
+      // Only return mock data if it's a network error or 404
+      if (error.code === 'ERR_NETWORK' || error.response?.status === 404) {
+        console.log('🔄 Returning mock data as fallback');
+        return [
+          {
+            id: 'WD001',
+            userId: 'USER001',
+            userName: 'John Doe',
+            userEmail: 'john@example.com',
+            amount: 5000,
+            status: 'pending',
+            accountNumber: 'XXXXXX1234',
+            bankName: 'HDFC Bank',
+            accountHolderName: 'John Doe',
+            ifscCode: 'HDFC0000123',
+            requestedAt: '2024-01-20T09:15:00'
+          },
+          {
+            id: 'WD002',
+            userId: 'USER002',
+            userName: 'Jane Smith',
+            userEmail: 'jane@example.com',
+            amount: 3000,
+            status: 'pending',
+            accountNumber: 'XXXXXX5678',
+            bankName: 'SBI',
+            accountHolderName: 'Jane Smith',
+            ifscCode: 'SBIN0001234',
+            requestedAt: '2024-01-19T14:30:00'
+          }
+        ];
+      }
+      
+      // For other errors, re-throw
+      throw error;
     }
-  } catch (error) {
-    console.error('❌ API Error fetching withdrawals:', error.message);
-    console.error('❌ Full error:', error);
-    
-    // Only return mock data if it's a network error or 404
-    if (error.code === 'ERR_NETWORK' || error.response?.status === 404) {
-      console.log('🔄 Returning mock data as fallback');
-      return [
-        {
-          id: 'WD001',
-          userId: 'USER001',
-          userName: 'John Doe',
-          userEmail: 'john@example.com',
-          amount: 5000,
-          status: 'pending',
-          accountNumber: 'XXXXXX1234',
-          bankName: 'HDFC Bank',
-          accountHolderName: 'John Doe',
-          ifscCode: 'HDFC0000123',
-          requestedAt: '2024-01-20T09:15:00'
-        },
-        {
-          id: 'WD002',
-          userId: 'USER002',
-          userName: 'Jane Smith',
-          userEmail: 'jane@example.com',
-          amount: 3000,
-          status: 'pending',
-          accountNumber: 'XXXXXX5678',
-          bankName: 'SBI',
-          accountHolderName: 'Jane Smith',
-          ifscCode: 'SBIN0001234',
-          requestedAt: '2024-01-19T14:30:00'
-        }
-      ];
-    }
-    
-    // For other errors, re-throw
-    throw error;
-  }
-},
+  },
+
   approveWithdrawal: async (withdrawalId, transactionId) => {
     try {
       const response = await apiClient.post(`/admin/withdrawal/${withdrawalId}/approve`, {
@@ -143,17 +219,6 @@ const adminApi = {
     } catch (error) {
       console.error('API Error rejecting withdrawal:', error);
       throw error;
-    }
-  },
-
-  // ========== USER MANAGEMENT ==========
-  getAllUsers: async () => {
-    try {
-      const response = await apiClient.get('/admin/users');
-      return response.data;
-    } catch (error) {
-      console.error('API Error fetching users:', error);
-      return [];
     }
   },
 
@@ -203,8 +268,84 @@ const adminApi = {
     }
   },
 
+  getPaymentDetails: async (paymentId) => {
+    try {
+      // If there's a specific endpoint for payment details
+      const response = await apiClient.get(`/payments/${paymentId}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Payment details endpoint not available:', error.message);
+      
+      // Fallback: Get all payments and find the specific one
+      try {
+        const allPayments = await adminApi.getAllPayments();
+        const payment = allPayments.find(p => p.id === paymentId || p._id === paymentId);
+        
+        if (payment) {
+          return {
+            success: true,
+            payment: payment
+          };
+        } else {
+          return {
+            success: false,
+            error: 'Payment not found'
+          };
+        }
+      } catch (fallbackError) {
+        console.error('Error finding payment:', fallbackError);
+        return {
+          success: false,
+          error: 'Could not retrieve payment details'
+        };
+      }
+    }
+  },
+
+  searchPayments: async (criteria) => {
+    try {
+      // Try dedicated search endpoint
+      const response = await apiClient.post('/payments/search', criteria);
+      return response.data;
+    } catch (error) {
+      console.warn('Payment search endpoint not available, filtering locally:', error.message);
+      
+      // Fallback: Get all payments and filter locally
+      try {
+        const allPayments = await adminApi.getAllPayments();
+        
+        const filteredPayments = allPayments.filter(payment => {
+          let matches = true;
+          
+          if (criteria.status && payment.status !== criteria.status) matches = false;
+          if (criteria.userId && payment.userId !== criteria.userId) matches = false;
+          if (criteria.planName && payment.planName !== criteria.planName) matches = false;
+          
+          // Date filtering
+          if (criteria.startDate) {
+            const paymentDate = new Date(payment.submittedAt || payment.createdAt);
+            const startDate = new Date(criteria.startDate);
+            if (paymentDate < startDate) matches = false;
+          }
+          
+          if (criteria.endDate) {
+            const paymentDate = new Date(payment.submittedAt || payment.createdAt);
+            const endDate = new Date(criteria.endDate);
+            if (paymentDate > endDate) matches = false;
+          }
+          
+          return matches;
+        });
+        
+        return filteredPayments;
+      } catch (fallbackError) {
+        console.error('Error filtering payments:', fallbackError);
+        return [];
+      }
+    }
+  },
+
   // ========== PAYMENT STATISTICS ==========
-  // This gets payment-specific stats (pending payments, revenue, etc.)
   getPaymentStats: async () => {
     try {
       // Try the dedicated payment stats endpoint first
@@ -246,7 +387,6 @@ const adminApi = {
   },
 
   // ========== PLATFORM STATISTICS ==========
-  // This gets overall platform stats (users, trades, balance, etc.)
   getPlatformStats: async () => {
     try {
       const response = await apiClient.get('/admin/stats');
@@ -264,10 +404,8 @@ const adminApi = {
         totalPnl: stats.totalPnl || 0,
         totalTrades: stats.totalTrades || 0,
         winningTrades: stats.winningTrades || 0,
-        // Include payment stats if they exist in platform stats
         pendingPayments: stats.pendingPayments || 0,
         totalRevenue: stats.totalRevenue || 0,
-        // Other platform metrics
         totalDeposits: stats.totalDeposits || 0,
         totalWithdrawals: stats.totalWithdrawals || 0
       };
@@ -291,46 +429,7 @@ const adminApi = {
     }
   },
 
-  // ========== WALLET MANAGEMENT ==========
-  addFundsToWallet: async (userId, amount, type, notes = '') => {
-    try {
-      const response = await apiClient.post(`/admin/users/${userId}/wallet/add`, {
-        amount: parseFloat(amount),
-        type,
-        notes
-      });
-      return response.data;
-    } catch (error) {
-      console.error('API Error adding funds to wallet:', error);
-      throw error;
-    }
-  },
-
-  deductFundsFromWallet: async (userId, amount, type, notes = '') => {
-    try {
-      const response = await apiClient.post(`/admin/users/${userId}/wallet/deduct`, {
-        amount: parseFloat(amount),
-        type,
-        notes
-      });
-      return response.data;
-    } catch (error) {
-      console.error('API Error deducting funds from wallet:', error);
-      throw error;
-    }
-  },
-
-  getUserWallet: async (userId) => {
-    try {
-      const response = await apiClient.get(`/admin/users/${userId}/wallet`);
-      return response.data;
-    } catch (error) {
-      console.error('API Error getting wallet:', error);
-      throw error;
-    }
-  },
-
-  // ========== DEPOSITS & WITHDRAWALS ==========
+  // ========== DEPOSITS ==========
   getAllDeposits: async () => {
     try {
       const response = await apiClient.get('/admin/deposits');
@@ -417,106 +516,7 @@ const adminApi = {
       console.error('API Error health check:', error);
       throw error;
     }
-  },
-
-  // ========== HELPER METHODS ==========
-  // Get detailed payment information for admin panel
-  getPaymentDetails: async (paymentId) => {
-    try {
-      // If there's a specific endpoint for payment details
-      const response = await apiClient.get(`/payments/${paymentId}`);
-      return response.data;
-    } catch (error) {
-      console.warn('Payment details endpoint not available:', error.message);
-      
-      // Fallback: Get all payments and find the specific one
-      try {
-        const allPayments = await adminApi.getAllPayments();
-        const payment = allPayments.find(p => p.id === paymentId || p._id === paymentId);
-        
-        if (payment) {
-          return {
-            success: true,
-            payment: payment
-          };
-        } else {
-          return {
-            success: false,
-            error: 'Payment not found'
-          };
-        }
-      } catch (fallbackError) {
-        console.error('Error finding payment:', fallbackError);
-        return {
-          success: false,
-          error: 'Could not retrieve payment details'
-        };
-      }
-    }
-  },
-  // Add these methods to your adminApi object
-
-updateUserStatus: async (userId, data) => {
-  const response = await fetch(`${API_URL}/api/admin/users/${userId}/status`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(data)
-  });
-  return handleResponse(response);
-},
-
-deleteUser: async (userId) => {
-  const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
-    method: 'DELETE',
-    headers: getHeaders()
-  });
-  return handleResponse(response);
-},
-
-  // Search payments by criteria
-  searchPayments: async (criteria) => {
-    try {
-      // Try dedicated search endpoint
-      const response = await apiClient.post('/payments/search', criteria);
-      return response.data;
-    } catch (error) {
-      console.warn('Payment search endpoint not available, filtering locally:', error.message);
-      
-      // Fallback: Get all payments and filter locally
-      try {
-        const allPayments = await adminApi.getAllPayments();
-        
-        const filteredPayments = allPayments.filter(payment => {
-          let matches = true;
-          
-          if (criteria.status && payment.status !== criteria.status) matches = false;
-          if (criteria.userId && payment.userId !== criteria.userId) matches = false;
-          if (criteria.planName && payment.planName !== criteria.planName) matches = false;
-          
-          // Date filtering
-          if (criteria.startDate) {
-            const paymentDate = new Date(payment.submittedAt || payment.createdAt);
-            const startDate = new Date(criteria.startDate);
-            if (paymentDate < startDate) matches = false;
-          }
-          
-          if (criteria.endDate) {
-            const paymentDate = new Date(payment.submittedAt || payment.createdAt);
-            const endDate = new Date(criteria.endDate);
-            if (paymentDate > endDate) matches = false;
-          }
-          
-          return matches;
-        });
-        
-        return filteredPayments;
-      } catch (fallbackError) {
-        console.error('Error filtering payments:', fallbackError);
-        return [];
-      }
-    }
   }
 };
-
 
 export default adminApi;
