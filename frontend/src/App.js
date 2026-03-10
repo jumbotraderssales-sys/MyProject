@@ -3870,14 +3870,18 @@ const calculateOrderPnL = (order) => {
         '• Up to 20x Leverage\n' +
         '• 3% Daily Loss Limit\n' +
         '• 10% Max Loss Limit\n\n' +
-        '📝 Complete this challenge to qualify for live trading!'
+        '📝 Complete PRO Challenge first to unlock this!'
       );
     } else {
       handleChallengeBuy(challenge);
     }
   }}
 >
-  {isLoggedIn ? 'GET ACCESS -Pass PRO challenge' : 'Sign Up & Buy'} - {challenge.fee}
+  {isLoggedIn ? (
+    challenge.name === "💎 REAL Funded Account" 
+      ? '🎯 Unlock with PRO Challenge' 
+      : 'Buy Now'
+  ) : 'Sign Up & Buy'} - {challenge.fee}
 </button>
                     </div>
                   ))}
