@@ -102,6 +102,31 @@ const CHALLENGES = [
     color: "#ef4444",
     icon: "🔴",
     description: "For advanced traders ready for maximum rewards"
+ },
+  {
+    id: 4,
+    name: "💎 REAL Funded Account", // New challenge
+    fee: "₹0", // No fee
+    paperBalance: 0, // No paper balance
+    realBalance: 100000, // Real money funded
+    profitTarget: 0, // No profit target, just prove skill
+    dailyLossLimit: 3, // 3% daily loss limit
+    maxLossLimit: 10, // 10% max loss limit
+    maxOrderSize: 20, // 20% of capital per trade
+    maxLeverage: 20, // Up to 20x leverage
+    autoStopLossTarget: 10, // 10% auto SL
+    autoTakeProfitTarget: 20, // 20% auto TP
+    oneTradeAtTime: true,
+    profitSplit: {
+      user: 60,
+      platform: 40
+    },
+    color: "#8b5cf6",
+    icon: "💎",
+    description: "Prove your skill to get a real funded account of ₹1,00,000",
+    requirements: "Must pass PRO Challenge first",
+    type: "real", // Mark as real funded account
+    badge: "FUNDED"
   }
 ];
 const PriceLineOverlay = ({ position, currentPrice }) => {
