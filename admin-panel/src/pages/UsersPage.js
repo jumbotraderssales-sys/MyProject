@@ -7,7 +7,7 @@ const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] useState(false);
+ const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
