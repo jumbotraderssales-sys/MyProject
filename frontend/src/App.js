@@ -107,13 +107,13 @@ const CHALLENGES = [
     id: 4,
     name: "💎 REAL Funded Account", // New challenge
     fee: "₹0", // No fee
-    paperBalance: 0, // No paper balance
-    realBalance: 100000, // Real money funded
-    profitTarget: 0, // No profit target, just prove skill
-    dailyLossLimit: 3, // 3% daily loss limit
-    maxLossLimit: 10, // 10% max loss limit
-    maxOrderSize: 20, // 20% of capital per trade
-    maxLeverage: 20, // Up to 20x leverage
+    paperBalance: 0, 
+    realBalance: 100000, 
+    profitTarget: 0, 
+    dailyLossLimit: 3, 
+    maxLossLimit: 10,
+    maxOrderSize: 20, 
+    maxLeverage: 20, 
     autoStopLossTarget: 10, // 10% auto SL
     autoTakeProfitTarget: 20, // 20% auto TP
     oneTradeAtTime: true,
