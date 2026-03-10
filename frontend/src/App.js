@@ -734,36 +734,7 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, []); // runs once on mount
 useEffect(() => {
-  // ===== STEP 1: ALWAYS USE SAVED VALUES FIRST =====
-  const savedUserStr = localStorage.getItem('userData');
-  if (savedUserStr) {
-    try {
-      const savedUser = JSON.parse(savedUserStr);
-      if (savedUser.challengeStats) {
-        console.log('Loading saved challenge stats:', savedUser.challengeStats);
-        
-        // ALWAYS use saved values first
-        setDailyLoss(savedUser.challengeStats.dailyLoss || 0);
-        setTotalLoss(savedUser.challengeStats.totalLoss || 0);
-        setChallengeProgress({
-          profit: savedUser.challengeStats.currentProfit || 0,
-          dailyLoss: savedUser.challengeStats.dailyLoss || 0,
-          totalLoss: savedUser.challengeStats.totalLoss || 0,
-          status: savedUser.challengeStats.status || 'not_started'
-        });
-        
-        // If no order history, keep saved values
-        if (orderHistory.length === 0) {
-          console.log('No order history, keeping saved values');
-          return;
-        }
-      }
-    } catch (e) {
-      console.error('Error parsing saved user data:', e);
-    }
-  }
-  
-  // ===== STEP 2: ONLY RECALCULATE IF WE HAVE ORDER HISTORY =====
+  // ===== STEP 1: ONLY RECALCULATE IF WE HAVE ORDER HISTORY =====
   if (orderHistory.length === 0 || !userAccount.currentChallenge || !userAccount.paperBalance) {
     return;
   }
@@ -772,7 +743,7 @@ useEffect(() => {
   if (!challenge) return;
 
   const today = new Date().toDateString();
-  const initialCapital = userAccount.paperBalance; // Initial capital for this challenge
+  const initialCapital = userAccount.paperBalance;
   
   // Get ALL closed trades
   const allClosedTrades = orderHistory.filter(order => 
@@ -780,11 +751,11 @@ useEffect(() => {
   );
   
   if (allClosedTrades.length === 0) {
-    console.log('No closed trades found, keeping saved values');
+    console.log('No closed trades found');
     return;
   }
   
-  // ===== STEP 3: CALCULATE DAILY LOSS =====
+  // ===== STEP 2: CALCULATE DAILY LOSS =====
   // Sum of ALL losing trades TODAY only
   const todayTrades = allClosedTrades.filter(order => {
     const orderDate = new Date(order.timestamp).toDateString();
@@ -798,7 +769,7 @@ useEffect(() => {
   const dailyLossINR = dailyLossUSD * dollarRate;
   const calculatedDailyLoss = initialCapital > 0 ? (dailyLossINR / initialCapital) * 100 : 0;
   
-  // ===== STEP 4: CALCULATE MAX LOSS =====
+  // ===== STEP 3: CALCULATE MAX LOSS =====
   // Sum of ALL losing trades SINCE CHALLENGE STARTED
   const maxLossUSD = allClosedTrades
     .filter(order => (order.pnl || 0) < 0)
@@ -807,7 +778,7 @@ useEffect(() => {
   const maxLossINR = maxLossUSD * dollarRate;
   const calculatedMaxLoss = initialCapital > 0 ? (maxLossINR / initialCapital) * 100 : 0;
   
-  // ===== STEP 5: CALCULATE PROFIT TARGET =====
+  // ===== STEP 4: CALCULATE PROFIT TARGET =====
   // Sum of ALL winning trades SINCE CHALLENGE STARTED
   const profitUSD = allClosedTrades
     .filter(order => (order.pnl || 0) > 0)
@@ -816,77 +787,46 @@ useEffect(() => {
   const profitINR = profitUSD * dollarRate;
   const calculatedProfit = initialCapital > 0 ? (profitINR / initialCapital) * 100 : 0;
   
-  // ===== STEP 6: GET SAVED VALUES =====
-  let savedDailyLoss = 0;
-  let savedMaxLoss = 0;
-  let savedProfit = 0;
-  
-  if (savedUserStr) {
-    try {
-      const savedUser = JSON.parse(savedUserStr);
-      if (savedUser.challengeStats) {
-        savedDailyLoss = savedUser.challengeStats.dailyLoss || 0;
-        savedMaxLoss = savedUser.challengeStats.totalLoss || 0;
-        savedProfit = savedUser.challengeStats.currentProfit || 0;
-      }
-    } catch (e) {}
-  }
-  
-  // ===== STEP 7: DECIDE FINAL VALUES =====
-  // Daily Loss: Use calculated if we have today trades, otherwise keep saved
-  const newDailyLoss = todayTrades.length > 0 && !isNaN(calculatedDailyLoss) && isFinite(calculatedDailyLoss)
-    ? calculatedDailyLoss 
-    : savedDailyLoss;
-
-  // Max Loss: Use calculated from ALL losing trades
-  const newMaxLoss = !isNaN(calculatedMaxLoss) && isFinite(calculatedMaxLoss)
-    ? calculatedMaxLoss
-    : savedMaxLoss;
-
-  // Profit: Use calculated from ALL winning trades
-  const newProfit = !isNaN(calculatedProfit) && isFinite(calculatedProfit)
-    ? calculatedProfit
-    : savedProfit;
-  
-  console.log('========== CHALLENGE STATS ==========');
+  console.log('========== CHALLENGE STATS (Calculated Only) ==========');
   console.log('Initial Capital:', `₹${initialCapital}`);
   console.log('Today Trades:', todayTrades.length);
   console.log('All Closed Trades:', allClosedTrades.length);
-  console.log('');
-  console.log('📉 DAILY LOSS (Today only):', `${newDailyLoss.toFixed(2)}%`);
-  console.log('📊 MAX LOSS (All time):', `${newMaxLoss.toFixed(2)}%`);
-  console.log('💰 PROFIT (All time):', `${newProfit.toFixed(2)}%`);
-  console.log('=====================================');
+  console.log('📉 DAILY LOSS:', `${calculatedDailyLoss.toFixed(2)}%`);
+  console.log('📊 MAX LOSS:', `${calculatedMaxLoss.toFixed(2)}%`);
+  console.log('💰 PROFIT:', `${calculatedProfit.toFixed(2)}%`);
+  console.log('=====================================================');
   
-  // ===== STEP 8: UPDATE ONLY IF VALUES CHANGED =====
-  if (newDailyLoss !== dailyLoss || newMaxLoss !== totalLoss || newProfit !== challengeProgress.profit) {
-    console.log('🔄 Updating challenge stats');
-    
-    setDailyLoss(newDailyLoss);
-    setTotalLoss(newMaxLoss);
-    setChallengeProgress({
-      profit: newProfit,
+  // ===== STEP 5: UPDATE WITH CALCULATED VALUES ONLY =====
+  // No saved values, always use calculated values
+  const newDailyLoss = !isNaN(calculatedDailyLoss) && isFinite(calculatedDailyLoss) ? calculatedDailyLoss : 0;
+  const newMaxLoss = !isNaN(calculatedMaxLoss) && isFinite(calculatedMaxLoss) ? calculatedMaxLoss : 0;
+  const newProfit = !isNaN(calculatedProfit) && isFinite(calculatedProfit) ? calculatedProfit : 0;
+  
+  // Update state with calculated values
+  setDailyLoss(newDailyLoss);
+  setTotalLoss(newMaxLoss);
+  setChallengeProgress({
+    profit: newProfit,
+    dailyLoss: newDailyLoss,
+    totalLoss: newMaxLoss,
+    status: userAccount.challengeStats?.status || 'active'
+  });
+  
+  // Check challenge rules
+  checkChallengeRules(newProfit, newDailyLoss, newMaxLoss);
+  
+  // Save to localStorage
+  const updatedUser = {
+    ...userAccount,
+    challengeStats: {
+      ...userAccount.challengeStats,
       dailyLoss: newDailyLoss,
       totalLoss: newMaxLoss,
+      currentProfit: newProfit,
       status: userAccount.challengeStats?.status || 'active'
-    });
-    
-    // Check challenge rules
-    checkChallengeRules(newProfit, newDailyLoss, newMaxLoss);
-    
-    // Save to localStorage
-    const updatedUser = {
-      ...userAccount,
-      challengeStats: {
-        ...userAccount.challengeStats,
-        dailyLoss: newDailyLoss,
-        totalLoss: newMaxLoss,
-        currentProfit: newProfit,
-        status: userAccount.challengeStats?.status || 'active'
-      }
-    };
-    localStorage.setItem('userData', JSON.stringify(updatedUser));
-  }
+    }
+  };
+  localStorage.setItem('userData', JSON.stringify(updatedUser));
   
 }, [orderHistory, userAccount.currentChallenge, userAccount.paperBalance, userAccount.challengeStats, dollarRate]);
   
