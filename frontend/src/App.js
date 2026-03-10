@@ -49,7 +49,7 @@ const CHALLENGES = [
   {
     id: 1,
     name: "🚀 Beginner Challenge",
-    fee: "₹1,000",
+    fee: "₹500",
     paperBalance: 20000,
     profitTarget: 30,
     dailyLossLimit: 5,
@@ -58,9 +58,9 @@ const CHALLENGES = [
     maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    feeRefund: 1000,        // Fee refund amount in rupees
+    feeRefund: 500,        // Fee refund amount in rupees
     skillReward: 1000,       // Skill reward amount in rupees
-    reward: "Fee Refund ₹1000 + Skill Reward ₹1000",
+    reward: "Fee Refund ₹500 + Skill Reward ₹1000",
     color: "#22c55e",
     icon: "🟢",
     description: "Perfect for beginners to learn trading with minimal risk"
@@ -68,7 +68,7 @@ const CHALLENGES = [
   {
     id: 2,
     name: "🟡 Intermediate Challenge",
-    fee: "₹2,500",
+    fee: "₹1,000",
     paperBalance: 50000,
     profitTarget: 30,
     dailyLossLimit: 5,
@@ -77,9 +77,9 @@ const CHALLENGES = [
     maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    feeRefund: 2500,        // Fee refund amount in rupees
+    feeRefund: 1000,        // Fee refund amount in rupees
     skillReward: 2500,       // Skill reward amount in rupees
-    reward: "Fee Refund ₹2500 + Skill Reward ₹2500",
+    reward: "Fee Refund ₹1000 + Skill Reward ₹2500",
     color: "#eab308",
     icon: "🟡",
     description: "For traders with some experience looking to grow"
@@ -87,7 +87,7 @@ const CHALLENGES = [
   {
     id: 3,
     name: "🔴 PRO Challenge",
-    fee: "₹5,000",
+    fee: "₹2,000",
     paperBalance: 100000,
     profitTarget: 30,
     dailyLossLimit: 5,
@@ -96,9 +96,9 @@ const CHALLENGES = [
     maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    feeRefund: 5000,        // Fee refund amount in rupees
+    feeRefund: 2000,        // Fee refund amount in rupees
     skillReward: 5000,       // Skill reward amount in rupees
-    reward: "Fee Refund ₹5000 + Skill Reward ₹5000",
+    reward: "Fee Refund ₹2000 + Skill Reward ₹5000",
     color: "#ef4444",
     icon: "🔴",
     description: "For advanced traders ready for maximum rewards"
