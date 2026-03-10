@@ -3310,19 +3310,95 @@ const calculateOrderPnL = (order) => {
       {!isFullScreen && (
         <>
           <div className="top-horizontal-nav">
- {/* Platform Branding - Left Corner with 3D Cube Logo */}
+{/* Platform Branding - Left Corner with P2R Cube + Trading Candles */}
 <div className="platform-brand">
   <div className="brand-logo-container">
-    <div className="logo-cube">
-      <div className="cube-face front"></div>
-      <div className="cube-face back"></div>
-      <div className="cube-face right"></div>
-      <div className="cube-face left"></div>
-      <div className="cube-face top"></div>
-      <div className="cube-face bottom"></div>
-      <div className="cube-glow"></div>
+    {/* Outer candle ring */}
+    <div className="candle-ring">
+      <div className="candle green" style={{ transform: 'rotate(0deg) translateY(-28px)' }}></div>
+      <div className="candle red" style={{ transform: 'rotate(45deg) translateY(-28px)' }}></div>
+      <div className="candle green" style={{ transform: 'rotate(90deg) translateY(-28px)' }}></div>
+      <div className="candle red" style={{ transform: 'rotate(135deg) translateY(-28px)' }}></div>
+      <div className="candle green" style={{ transform: 'rotate(180deg) translateY(-28px)' }}></div>
+      <div className="candle red" style={{ transform: 'rotate(225deg) translateY(-28px)' }}></div>
+      <div className="candle green" style={{ transform: 'rotate(270deg) translateY(-28px)' }}></div>
+      <div className="candle red" style={{ transform: 'rotate(315deg) translateY(-28px)' }}></div>
     </div>
+    
+    {/* Inner candle ring */}
+    <div className="candle-ring inner">
+      <div className="candle small green" style={{ transform: 'rotate(22.5deg) translateY(-20px)' }}></div>
+      <div className="candle small red" style={{ transform: 'rotate(67.5deg) translateY(-20px)' }}></div>
+      <div className="candle small green" style={{ transform: 'rotate(112.5deg) translateY(-20px)' }}></div>
+      <div className="candle small red" style={{ transform: 'rotate(157.5deg) translateY(-20px)' }}></div>
+      <div className="candle small green" style={{ transform: 'rotate(202.5deg) translateY(-20px)' }}></div>
+      <div className="candle small red" style={{ transform: 'rotate(247.5deg) translateY(-20px)' }}></div>
+      <div className="candle small green" style={{ transform: 'rotate(292.5deg) translateY(-20px)' }}></div>
+      <div className="candle small red" style={{ transform: 'rotate(337.5deg) translateY(-20px)' }}></div>
+    </div>
+
+    {/* Central P2R Cube */}
+    <div className="logo-cube-container">
+      <div className="cube-3d">
+        {/* Front face - P */}
+        <div className="cube-face front">
+          <span className="face-letter">P</span>
+        </div>
+        {/* Back face - 2 */}
+        <div className="cube-face back">
+          <span className="face-letter">2</span>
+        </div>
+        {/* Right face - R */}
+        <div className="cube-face right">
+          <span className="face-letter">R</span>
+        </div>
+        {/* Left face - P (alternate) */}
+        <div className="cube-face left">
+          <span className="face-letter">P</span>
+        </div>
+        {/* Top face - 2 */}
+        <div className="cube-face top">
+          <span className="face-letter">2</span>
+        </div>
+        {/* Bottom face - R */}
+        <div className="cube-face bottom">
+          <span className="face-letter">R</span>
+        </div>
+      </div>
+    </div>
+    
+    {/* Chart line that weaves through candles */}
+    <svg className="chart-line-svg" width="80" height="80" viewBox="0 0 80 80">
+      <path 
+        d="M20,40 Q30,30 40,40 T60,30 T70,45" 
+        stroke="url(#chartGradient)" 
+        strokeWidth="2" 
+        fill="none"
+        strokeDasharray="5,5"
+      >
+        <animate 
+          attributeName="stroke-dashoffset" 
+          values="0;100" 
+          dur="3s" 
+          repeatCount="indefinite" 
+        />
+      </path>
+      <defs>
+        <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3b82f6" />
+          <stop offset="50%" stopColor="#8b5cf6" />
+          <stop offset="100%" stopColor="#ec4899" />
+        </linearGradient>
+      </defs>
+    </svg>
+    
+    {/* Floating particles */}
+    <div className="particle p1"></div>
+    <div className="particle p2"></div>
+    <div className="particle p3"></div>
+    <div className="particle p4"></div>
   </div>
+  
   <div className="brand-text">
     <span className="brand-name">Paper2Real</span>
     <span className="brand-quote">Learn. Practice. Get Funded.</span>
