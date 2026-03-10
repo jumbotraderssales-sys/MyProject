@@ -196,6 +196,56 @@ app.options('*', cors());
 // ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// ========== USER AUTH MIDDLEWARE ==========
+// This checks if user exists and is active for all protected routes
+const requireValidUser = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+    
+    const userId = token.replace('token-', '');
+    const users = await readUsers();
+    const user = users.find(u => u.id === userId);
+    
+    // Check if user exists
+    if (!user) {
+      console.log(`🚫 Deleted user attempted access: ${userId}`);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'User account no longer exists',
+        code: 'USER_DELETED'
+      });
+    }
+    
+    // Check if user is active
+    if (user.accountStatus !== 'active') {
+      console.log(`🚫 Inactive user attempted access: ${userId} (status: ${user.accountStatus})`);
+      return res.status(403).json({ 
+        success: false, 
+        error: 'User account is inactive',
+        code: 'USER_INACTIVE'
+      });
+    }
+    
+    // Attach user to request for later use
+    req.user = user;
+    req.userId = userId;
+    next();
+    
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Authentication error' 
+    });
+  }
+};
 
 // ========== FILE PATHS ==========
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
@@ -836,6 +886,23 @@ app.post('/api/login', async (req, res) => {
       });
     }
     
+    // Check if user exists and is active
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Account not found' 
+      });
+    }
+    
+    // Check if user is active
+    if (user.accountStatus !== 'active') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Your account has been deactivated. Please contact support.',
+        code: 'ACCOUNT_INACTIVE'
+      });
+    }
+    
     // Update last login
     user.lastLogin = new Date().toISOString();
     user.updatedAt = new Date().toISOString();
@@ -876,29 +943,9 @@ app.get('/api/login', (req, res) => {
 });
 
 // Get user profile
-app.get('/api/user/profile', async (req, res) => {
+app.get('/api/user/profile', requireValidUser, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const users = await readUsers();
-    const user = users.find(u => u.id === userId);
-    
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
-    
-    const userResponse = { ...user };
+    const userResponse = { ...req.user };
     delete userResponse.password;
     
     res.json({
@@ -913,31 +960,10 @@ app.get('/api/user/profile', async (req, res) => {
     });
   }
 });
-
 // Alternative user endpoint
-app.get('/api/user', async (req, res) => {
+app.get('/api/user', requireValidUser, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const users = await readUsers();
-    const user = users.find(u => u.id === userId);
-    
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
-    
-    const userResponse = { ...user };
+    const userResponse = { ...req.user };
     delete userResponse.password;
     
     res.json({
@@ -952,7 +978,6 @@ app.get('/api/user', async (req, res) => {
     });
   }
 });
-
 // Update user profile
 app.put('/api/user/profile', async (req, res) => {
   try {
@@ -1014,29 +1039,13 @@ app.put('/api/user/profile', async (req, res) => {
 });
 
 // Update user bank account
-app.put('/api/user/bank-account', async (req, res) => {
+app.put('/api/user/bank-account', requireValidUser, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
     const { bankAccount } = req.body;
+    const userId = req.userId;
     
     const users = await readUsers();
     const userIndex = users.findIndex(u => u.id === userId);
-    
-    if (userIndex === -1) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
     
     users[userIndex].bankAccount = bankAccount;
     users[userIndex].updatedAt = new Date().toISOString();
@@ -1059,27 +1068,11 @@ app.put('/api/user/bank-account', async (req, res) => {
     });
   }
 });
-
 // ========== NEW USER REFERRAL INFO ENDPOINT ==========
-app.get('/api/user/referral', async (req, res) => {
+app.get('/api/user/referral', requireValidUser, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const users = await readUsers();
-    const user = users.find(u => u.id === userId);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
+    const userId = req.userId;
+    const user = req.user;
     
     const referrals = await readReferrals();
     const referredUsers = referrals
@@ -1113,7 +1106,6 @@ app.get('/api/user/referral', async (req, res) => {
     });
   }
 });
-
 // ========== CHALLENGE MANAGEMENT ROUTES ==========
 
 // Get available challenges
@@ -1132,29 +1124,13 @@ app.get('/api/challenges', (req, res) => {
 });
 
 // Update challenge status
-app.put('/api/challenge/status', async (req, res) => {
+app.put('/api/challenge/status', requireValidUser, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
+    const userId = req.userId;
     const { status, reason } = req.body;
     
     const users = await readUsers();
     const userIndex = users.findIndex(u => u.id === userId);
-    
-    if (userIndex === -1) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
     
     if (!users[userIndex].currentChallenge) {
       return res.status(400).json({ 
@@ -1187,7 +1163,6 @@ app.put('/api/challenge/status', async (req, res) => {
     });
   }
 });
-
 // ========== TRADING SYSTEM ROUTES ==========
 
 // Validate trade against challenge rules
@@ -1273,7 +1248,7 @@ const validateTrade = (user, tradeData) => {
 };
 
 // Create a new trade with challenge validation (POST)
-app.post('/api/trades', async (req, res) => {
+app.post('/api/trades', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1462,7 +1437,7 @@ app.get('/api/trades', async (req, res) => {
 });
 
 // Get user positions
-app.get('/api/trades/positions', async (req, res) => {
+app.get('/api/trades/positions', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1493,7 +1468,7 @@ app.get('/api/trades/positions', async (req, res) => {
 });
 
 // Close a position with challenge stats update
-app.post('/api/trades/:id/close', async (req, res) => {
+app.post('/api/trades/:id/close', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1630,7 +1605,7 @@ user.paperBalance += marginINR + pnlINR;
 });
 
 // Cancel an order
-app.post('/api/trades/:id/cancel', async (req, res) => {
+app.post('/api/trades/:id/cancel', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1708,7 +1683,7 @@ app.post('/api/trades/:id/cancel', async (req, res) => {
 });
 
 // Update SL/TP for a position
-app.put('/api/trades/:id/update-sltp', async (req, res) => {
+app.put('/api/trades/:id/update-sltp', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1771,7 +1746,7 @@ app.put('/api/trades/:id/update-sltp', async (req, res) => {
 });
 
 // Get user order history
-app.get('/api/trades/history', async (req, res) => {
+app.get('/api/trades/history', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1804,7 +1779,7 @@ app.get('/api/trades/history', async (req, res) => {
 // ========== PAYMENT SYSTEM ROUTES ==========
 
 // Submit payment request for challenge
-app.post('/api/payments/request', async (req, res) => {
+app.post('/api/payments/request', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -1900,7 +1875,7 @@ app.post('/api/payments/request', async (req, res) => {
 });
 
 // Get all payments for user
-app.get('/api/payments', async (req, res) => {
+app.get('/api/payments', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -2331,7 +2306,7 @@ app.post('/api/withdrawals/request', async (req, res) => {
 });
 
 // Get user withdrawal history
-app.get('/api/withdrawals/history', async (req, res) => {
+app.get('/api/withdrawals/history', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
