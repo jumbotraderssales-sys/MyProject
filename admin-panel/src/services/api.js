@@ -1,3 +1,23 @@
+// Add these at the top of your api.js file
+const API_URL = process.env.REACT_APP_API_URL || 'https://myproject1-d097.onrender.com';
+
+// Helper function to get headers
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+};
+
+// Helper function to handle responses
+const handleResponse = async (response) => {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'API request failed');
+  }
+  return response.json();
+};
 // admin-panel/src/services/api.js
 import axios from 'axios';
 
