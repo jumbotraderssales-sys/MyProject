@@ -7062,34 +7062,149 @@ html, body {
     justify-content: center;
   }
 }
-/* Quick fix for overlapping */
+/* Fix for navigation overlapping */
 .top-horizontal-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 10px;
+  gap: 15px;
+  padding: 0 15px;
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+  height: 70px;
+  flex-wrap: nowrap;
   overflow-x: auto;
-  white-space: nowrap;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 #1e293b;
 }
 
-.nav-tabs-container {
-  display: flex;
-  gap: 5px;
-  overflow-x: auto;
-  flex: 1;
+.top-horizontal-nav::-webkit-scrollbar {
+  height: 4px;
 }
 
-.nav-tab {
-  flex-shrink: 0;
+.top-horizontal-nav::-webkit-scrollbar-track {
+  background: #1e293b;
 }
 
+.top-horizontal-nav::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 4px;
+}
+
+/* Platform brand - fixed width */
 .platform-brand {
   flex-shrink: 0;
+  margin-right: 5px;
 }
 
+/* Nav tabs container - takes remaining space and scrolls if needed */
+.nav-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.nav-tabs-container::-webkit-scrollbar {
+  height: 3px;
+}
+
+.nav-tabs-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-tabs-container::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 3px;
+}
+
+/* Nav tabs - more compact */
+.nav-tab {
+  padding: 6px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+/* User info container - fixed width */
 .nav-user-info-container {
   flex-shrink: 0;
+  margin-left: auto;
+  padding: 5px 0;
+  max-width: 300px;
 }
 
+/* For smaller screens */
+@media (max-width: 1200px) {
+  .nav-tab {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .nav-user-info {
+    gap: 5px;
+  }
+  
+  .nav-balance-amount {
+    font-size: 0.85rem;
+  }
+  
+  .nav-balance-dollar {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .top-horizontal-nav {
+    padding: 0 10px;
+    gap: 10px;
+  }
+  
+  .platform-brand {
+    transform: scale(0.9);
+    transform-origin: left center;
+  }
+  
+  .nav-tab {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .nav-user-info-container {
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-horizontal-nav {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .platform-brand {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 5px;
+    transform: scale(1);
+  }
+  
+  .nav-tabs-container {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .nav-user-info-container {
+    width: 100%;
+    max-width: 100%;
+    justify-content: space-between;
+  }
+}
 /* End of CSS */
