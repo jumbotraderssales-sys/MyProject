@@ -7062,75 +7062,178 @@ html, body {
     justify-content: center;
   }
 }
-/* Fix for Trading page overlapping with menu bar */
-.advanced-main {
-  display: flex;
-  height: calc(100vh - 70px); /* Subtract header height */
-  margin-top: 0;
-  overflow: hidden;
+/* Desktop view - everything in one line */
+@media (min-width: 1025px) {
+  .top-horizontal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 70px;
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+    gap: 15px;
+  }
+
+  /* Left section - Logo */
+  .platform-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .brand-logo-container.compact {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand-name {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .brand-quote {
+    font-size: 0.6rem;
+  }
+
+  /* Center section - Navigation tabs */
+  .nav-tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .nav-tab {
+    padding: 8px 16px;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .nav-tab:hover {
+    background: #1e293b;
+  }
+
+  .nav-tab.active {
+    background: #3b82f6;
+    color: white;
+  }
+
+  /* Right section - User info */
+  .nav-user-info-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+  }
+
+  .nav-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-user-name {
+    font-size: 0.9rem;
+    color: #f1f5f9;
+    white-space: nowrap;
+  }
+
+  .nav-user-balance {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #1e293b;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #334155;
+  }
+
+  .nav-balance-amount {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4ade80;
+  }
+
+  .nav-balance-dollar {
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+
+  .refresh-balance-btn {
+    width: 24px;
+    height: 24px;
+    background: #334155;
+    border: none;
+    border-radius: 50%;
+    color: #f1f5f9;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+  }
+
+  .nav-challenge-status {
+    background: #1e293b;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    border: 1px solid #334155;
+  }
+
+  .nav-logout-btn {
+    padding: 6px 16px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .nav-logout-btn:hover {
+    background: #dc2626;
+  }
+
+  .nav-auth-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .nav-auth-btn {
+    padding: 6px 16px;
+    background: #1e293b;
+    color: #f1f5f9;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .nav-auth-btn.register-btn {
+    background: #3b82f6;
+    border: none;
+    color: white;
+  }
 }
 
-/* Adjust center panel for Trading view */
-.center-panel {
-  flex: 1;
-  overflow-y: auto;
-  height: 100%;
-  padding: 15px;
-}
-
-/* When in Trading dashboard, ensure proper spacing */
-.activeDashboard === 'Trading' .center-panel {
-  padding-top: 10px;
-}
-
-/* Trading controls should not overflow */
-.trading-controls {
-  margin-top: 10px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-/* Chart container should fit properly */
-.chart-container {
-  height: 500px;
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-/* Fullscreen trading adjustments */
-.fullscreen .advanced-main {
-  height: 100vh;
-}
-
-/* Ensure header doesn't overlap */
-.advanced-header {
-  height: 60px;
-  flex-shrink: 0;
-}
-
-.top-horizontal-nav {
-  height: 70px;
-  flex-shrink: 0;
-}
-
-/* Make sure content doesn't get hidden behind header */
-.below-price-alert-section {
-  margin-top: 5px;
-  padding: 10px;
-  background: #1e293b;
-  border-radius: 8px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .advanced-main {
-    height: calc(100vh - 120px);
-    flex-direction: column;
+/* For very large screens */
+@media (min-width: 1440px) {
+  .nav-tab {
+    padding: 8px 24px;
+    font-size: 1rem;
   }
   
-  .center-panel {
-    height: auto;
-    overflow-y: visible;
+  .nav-user-name {
+    font-size: 1rem;
   }
 }
 /* End of CSS */
