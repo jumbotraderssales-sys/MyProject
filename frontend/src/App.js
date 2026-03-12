@@ -266,6 +266,7 @@ function App() {
   const [totalPnl, setTotalPnl] = useState(0);
     const [orderHistory, setOrderHistory] = useState([]);
   const orderHistoryRef = useRef(orderHistory);
+  const [activeProfileTab, setActiveProfileTab] = useState('overview');
   const [chartType, setChartType] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
   const [watchlist, setWatchlist] = useState(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
@@ -4169,7 +4170,7 @@ const calculateOrderPnL = (order) => {
               </div>
             </div>
             
-          ) : activeDashboard === 'Profile' ? (
+         ) : activeDashboard === 'Profile' ? (
             <div className="profile-content">
               <div className="profile-header">
                 <h2>Your Profile</h2>
@@ -4179,524 +4180,538 @@ const calculateOrderPnL = (order) => {
                 </div>
               </div>
 
-              <div className="profile-grid">
-                <div className="profile-card main-card">
-                  <div className="profile-avatar">
-                    <div className="avatar-circle">
-                      {userAccount.name?.charAt(0) || 'U'}
-                    </div>
-                    <div className="profile-info">
-                      <h3>{isLoggedIn ? userAccount.name : 'Guest User'}</h3>
-                      <p>Status: {isLoggedIn ? (userAccount.currentChallenge ? 'Challenge Member' : 'Free Account') : 'Not Logged In'}</p>
-                      <p>Email: {isLoggedIn ? userAccount.email : 'guest@example.com'}</p>
-                      <p>User ID: {userAccount.id || 'Not Available'}</p>
-                    </div>
-                  </div>
-                  <div className="profile-stats">
-                    <div className="profile-stat">
-                      <span className="stat-label">Account Level</span>
-                      <span className="stat-value">{userAccount.currentChallenge ? 'Premium' : 'Basic'}</span>
-                    </div>
-                    <div className="profile-stat">
-                      <span className="stat-label">Trading Days</span>
-                      <span className="stat-value">{orderHistory.length > 0 ? Math.ceil(orderHistory.length / 5) : 0}</span>
-                    </div>
-                    <div className="profile-stat">
-                      <span className="stat-label">Total Trades</span>
-                      <span className="stat-value">{stats.total}</span>
-                    </div>
-                    <div className="profile-stat">
-                      <span className="stat-label">Win Rate</span>
-                      <span className="stat-value">{stats.winRate.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                </div>
+              {/* Profile Tabs */}
+              <div className="profile-tabs">
+                <button 
+                  className={`profile-tab ${activeProfileTab === 'overview' ? 'active' : ''}`}
+                  onClick={() => setActiveProfileTab('overview')}
+                >
+                  📊 Overview
+                </button>
+                <button 
+                  className={`profile-tab ${activeProfileTab === 'referrals' ? 'active' : ''}`}
+                  onClick={() => setActiveProfileTab('referrals')}
+                >
+                  👥 Referrals & Earnings
+                </button>
+                <button 
+                  className={`profile-tab ${activeProfileTab === 'withdrawals' ? 'active' : ''}`}
+                  onClick={() => setActiveProfileTab('withdrawals')}
+                >
+                  💰 Withdrawals
+                </button>
+                <button 
+                  className={`profile-tab ${activeProfileTab === 'payments' ? 'active' : ''}`}
+                  onClick={() => setActiveProfileTab('payments')}
+                >
+                  📜 Payment History
+                </button>
+              </div>
 
-                <div className="profile-card performance-card">
-                  <h3>Trading Performance</h3>
-                  <div className="performance-stats">
-                    <div className="performance-stat">
-                      <span className="performance-label">Paper Balance</span>
-                      <span className="performance-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+              {/* Tab Content */}
+              {activeProfileTab === 'overview' && (
+                <div className="profile-grid">
+                  <div className="profile-card main-card">
+                    <div className="profile-avatar">
+                      <div className="avatar-circle">
+                        {userAccount.name?.charAt(0) || 'U'}
+                      </div>
+                      <div className="profile-info">
+                        <h3>{isLoggedIn ? userAccount.name : 'Guest User'}</h3>
+                        <p>Status: {isLoggedIn ? (userAccount.currentChallenge ? 'Challenge Member' : 'Free Account') : 'Not Logged In'}</p>
+                        <p>Email: {isLoggedIn ? userAccount.email : 'guest@example.com'}</p>
+                        <p>User ID: {userAccount.id || 'Not Available'}</p>
+                      </div>
                     </div>
-                    <div className="performance-stat">
-                      <span className="performance-label">Total Profit</span>
-                      <span className="performance-value positive">+${orderHistory.filter(o => o.pnl > 0).reduce((sum, o) => sum + o.pnl, 0).toFixed(2)}</span>
-                    </div>
-                    <div className="performance-stat">
-                      <span className="performance-label">Total Loss</span>
-                      <span className="performance-value negative">-${Math.abs(orderHistory.filter(o => o.pnl < 0).reduce((sum, o) => sum + o.pnl, 0)).toFixed(2)}</span>
-                    </div>
-                    <div className="performance-stat">
-                      <span className="performance-label">Profit Factor</span>
-                      <span className="performance-value">{stats.profitFactor.toFixed(2)}</span>
+                    <div className="profile-stats">
+                      <div className="profile-stat">
+                        <span className="stat-label">Account Level</span>
+                        <span className="stat-value">{userAccount.currentChallenge ? 'Premium' : 'Basic'}</span>
+                      </div>
+                      <div className="profile-stat">
+                        <span className="stat-label">Trading Days</span>
+                        <span className="stat-value">{orderHistory.length > 0 ? Math.ceil(orderHistory.length / 5) : 0}</span>
+                      </div>
+                      <div className="profile-stat">
+                        <span className="stat-label">Total Trades</span>
+                        <span className="stat-value">{stats.total}</span>
+                      </div>
+                      <div className="profile-stat">
+                        <span className="stat-label">Win Rate</span>
+                        <span className="stat-value">{stats.winRate.toFixed(1)}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="profile-card settings-card">
-                  <h3>Account Settings</h3>
-                  <div className="settings-list">
-                    <div className="setting-item">
-                      <span className="setting-label">Current Challenge</span>
-                      <span className="setting-value">{userAccount.currentChallenge || 'None'}</span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Challenge Status</span>
-                      <span className={`setting-value challenge-status-${userAccount.challengeStats?.status || 'N/A'}`}>
-                        {userAccount.challengeStats?.status || 'N/A'.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Paper Balance</span>
-                      <span className="setting-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Real Balance</span>
-                      <span className="setting-value">₹{userAccount.realBalance?.toLocaleString() || '0'}</span>
-                    </div>
-                    <div className="setting-item">
-                      <span className="setting-label">Account Status</span>
-                      <span className="setting-value">{userAccount.accountStatus || 'pending'}</span>
+                  <div className="profile-card performance-card">
+                    <h3>Trading Performance</h3>
+                    <div className="performance-stats">
+                      <div className="performance-stat">
+                        <span className="performance-label">Paper Balance</span>
+                        <span className="performance-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                      </div>
+                      <div className="performance-stat">
+                        <span className="performance-label">Total Profit</span>
+                        <span className="performance-value positive">+${orderHistory.filter(o => o.pnl > 0).reduce((sum, o) => sum + o.pnl, 0).toFixed(2)}</span>
+                      </div>
+                      <div className="performance-stat">
+                        <span className="performance-label">Total Loss</span>
+                        <span className="performance-value negative">-${Math.abs(orderHistory.filter(o => o.pnl < 0).reduce((sum, o) => sum + o.pnl, 0)).toFixed(2)}</span>
+                      </div>
+                      <div className="performance-stat">
+                        <span className="performance-label">Profit Factor</span>
+                        <span className="performance-value">{stats.profitFactor.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="settings-buttons">
-                    {!userAccount.currentChallenge && (
-                      <button className="settings-btn upgrade-btn" onClick={() => setActiveDashboard('Challenges')}>
-                        Buy Trading Challenge
-                      </button>
-                    )}
-                    {userAccount.currentChallenge && userAccount?.challengeStats?.status === 'active' && (
-                      <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
-                        Start Trading
-                      </button>
-                    )}
-                  </div>
-                </div>
 
-                <div className="profile-card activity-card">
-                  <h3>Recent Activity</h3>
-                  <div className="activity-list">
-                    {orderHistory.slice(0, 5).map(order => {
-                      const currentPnl = calculateOrderPnL(order);
-                      return (
-                        <div key={order.id} className="activity-item">
-                          <div className="activity-info">
-                            <span className={`activity-side ${order.side?.toLowerCase()}`}>{order.side}</span>
-                            <span className="activity-symbol">{order.symbol}</span>
+                  <div className="profile-card settings-card">
+                    <h3>Account Settings</h3>
+                    <div className="settings-list">
+                      <div className="setting-item">
+                        <span className="setting-label">Current Challenge</span>
+                        <span className="setting-value">{userAccount.currentChallenge || 'None'}</span>
+                      </div>
+                      <div className="setting-item">
+                        <span className="setting-label">Challenge Status</span>
+                        <span className={`setting-value challenge-status-${userAccount.challengeStats?.status || 'N/A'}`}>
+                          {userAccount.challengeStats?.status || 'N/A'.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="setting-item">
+                        <span className="setting-label">Paper Balance</span>
+                        <span className="setting-value">₹{userAccount.paperBalance?.toLocaleString() || '0'} (${calculateDollarBalance(userAccount.paperBalance || 0)})</span>
+                      </div>
+                      <div className="setting-item">
+                        <span className="setting-label">Real Balance</span>
+                        <span className="setting-value">₹{userAccount.realBalance?.toLocaleString() || '0'}</span>
+                      </div>
+                      <div className="setting-item">
+                        <span className="setting-label">Account Status</span>
+                        <span className="setting-value">{userAccount.accountStatus || 'pending'}</span>
+                      </div>
+                    </div>
+                    <div className="settings-buttons">
+                      {!userAccount.currentChallenge && (
+                        <button className="settings-btn upgrade-btn" onClick={() => setActiveDashboard('Challenges')}>
+                          Buy Trading Challenge
+                        </button>
+                      )}
+                      {userAccount.currentChallenge && userAccount?.challengeStats?.status === 'active' && (
+                        <button className="settings-btn trade-btn" onClick={() => setActiveDashboard('Trading')}>
+                          Start Trading
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="profile-card activity-card">
+                    <h3>Recent Activity</h3>
+                    <div className="activity-list">
+                      {orderHistory.slice(0, 5).map(order => {
+                        const currentPnl = calculateOrderPnL(order);
+                        return (
+                          <div key={order.id} className="activity-item">
+                            <div className="activity-info">
+                              <span className={`activity-side ${order.side?.toLowerCase()}`}>{order.side}</span>
+                              <span className="activity-symbol">{order.symbol}</span>
+                            </div>
+                            <div className="activity-details">
+                              <span className="activity-time">{order.timestamp}</span>
+                              <span className={`activity-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
+                                {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
+                              </span>
+                            </div>
                           </div>
-                          <div className="activity-details">
-                            <span className="activity-time">{order.timestamp}</span>
-                            <span className={`activity-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
-                              {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
-                            </span>
-                          </div>
+                        );
+                      })}
+                      {orderHistory.length === 0 && (
+                        <div className="no-activity">No trading activity yet</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Challenge Progress Card */}
+                  {userAccount.currentChallenge && (
+                    <div className="profile-card challenge-card">
+                      <h3>Challenge Progress</h3>
+                      <div className="challenge-progress-details">
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Challenge:</span>
+                          <span className="progress-value">{userAccount.currentChallenge}</span>
                         </div>
-                      );
-                    })}
-                    {orderHistory.length === 0 && (
-                      <div className="no-activity">No trading activity yet</div>
-                    )}
-                  </div>
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Status:</span>
+                          <span className={`progress-value challenge-status-${userAccount.challengeStats.status}`}>
+                            {userAccount.challengeStats.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Profit Target:</span>
+                          <span className="progress-value">
+                            {challengeProgress.profit.toFixed(2)}% / 
+                            {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.profitTarget || 10}%
+                          </span>
+                        </div>
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Daily Loss:</span>
+                          <span className={`progress-value ${dailyLoss >= (CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.dailyLossLimit || 4) ? 'danger' : ''}`}>
+                            {dailyLoss.toFixed(2)}% / 
+                            {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.dailyLossLimit || 4}%
+                          </span>
+                        </div>
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Total Loss:</span>
+                          <span className={`progress-value ${totalLoss >= (CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.maxLossLimit || 10) ? 'danger' : ''}`}>
+                            {totalLoss.toFixed(2)}% / 
+                            {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.maxLossLimit || 10}%
+                          </span>
+                        </div>
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Trades Count:</span>
+                          <span className="progress-value">{userAccount.challengeStats.tradesCount}</span>
+                        </div>
+                        <div className="challenge-progress-item">
+                          <span className="progress-label">Win Rate:</span>
+                          <span className="progress-value">{userAccount.challengeStats.winRate.toFixed(1)}%</span>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="challenge-progress-visual">
+                        <div className="progress-bar">
+                          <div 
+                            className="progress-fill profit"
+                            style={{ width: `${Math.min(challengeProgress.profit, 100)}%` }}
+                            title={`Profit: ${challengeProgress.profit.toFixed(1)}%`}
+                          ></div>
+                          <div 
+                            className="progress-fill loss"
+                            style={{ width: `${Math.min(challengeProgress.totalLoss, 100)}%` }}
+                            title={`Loss: ${challengeProgress.totalLoss.toFixed(1)}%`}
+                          ></div>
+                        </div>
+                        <div className="progress-labels">
+                          <span className="profit-label">Profit: {challengeProgress.profit.toFixed(1)}%</span>
+                          <span className="loss-label">Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                
-                {/* Challenge Progress Card */}
-                {userAccount.currentChallenge && (
-                  <div className="profile-card challenge-card">
-                    <h3>Challenge Progress</h3>
-                    <div className="challenge-progress-details">
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Challenge:</span>
-                        <span className="progress-value">{userAccount.currentChallenge}</span>
+              )}
+
+              {activeProfileTab === 'referrals' && (
+                <ReferralDashboard />
+              )}
+
+              {activeProfileTab === 'withdrawals' && (
+                <div className="profile-card withdraw-card">
+                  <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
+                  
+                  {/* Show available reward if challenge passed and not withdrawn and no pending request */}
+                  {userAccount.challengeStats?.status === 'passed' && 
+                   userAccount.challengeStats?.withdrawalAvailable > 0 && 
+                   !userAccount.challengeStats?.withdrawalCompleted && 
+                   !userAccount.challengeStats?.withdrawalPending && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      padding: '20px',
+                      borderRadius: '10px',
+                      marginBottom: '25px',
+                      textAlign: 'center',
+                      animation: 'pulse 2s infinite',
+                      border: '2px solid #34d399'
+                    }}>
+                      <div style={{fontSize: '40px', marginBottom: '10px'}}>💰</div>
+                      <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
+                        FUNDS AVAILABLE FOR WITHDRAWAL!
+                      </h3>
+                      <p style={{
+                        color: 'white',
+                        fontSize: '36px',
+                        fontWeight: 'bold',
+                        marginBottom: '15px',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                      }}>
+                        ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
+                      </p>
+                      <div style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        marginBottom: '15px',
+                        textAlign: 'left'
+                      }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: 'white'}}>
+                          <span>Fee Refund:</span>
+                          <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.feeRefund?.toLocaleString() || '0'}</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', color: 'white'}}>
+                          <span>Skill Reward:</span>
+                          <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.skillReward?.toLocaleString() || '0'}</span>
+                        </div>
                       </div>
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Status:</span>
-                        <span className={`progress-value challenge-status-${userAccount.challengeStats.status}`}>
-                          {userAccount.challengeStats.status.toUpperCase()}
+                      <div style={{
+                        background: '#f59e0b',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        marginBottom: '15px',
+                        fontSize: '14px',
+                        color: 'white'
+                      }}>
+                        ⚡ Click "Request Withdrawal" below to claim your reward!
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!userBankAccount.accountNumber) {
+                            alert('⚠️ Please set up your bank account first');
+                            setShowAccountSetup(true);
+                          } else {
+                            setShowWithdrawalRequest(true);
+                          }
+                        }}
+                        style={{
+                          padding: '12px 24px',
+                          background: 'white',
+                          color: '#059669',
+                          border: 'none',
+                          borderRadius: '5px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          cursor: 'pointer',
+                          width: '100%',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                      >
+                        WITHDRAW ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()} NOW
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Show pending withdrawal message */}
+                  {userAccount.challengeStats?.withdrawalPending && (
+                    <div style={{
+                      background: '#f59e0b',
+                      padding: '20px',
+                      borderRadius: '10px',
+                      marginBottom: '25px',
+                      textAlign: 'center',
+                      border: '2px solid #fbbf24'
+                    }}>
+                      <div style={{fontSize: '40px', marginBottom: '10px'}}>⏳</div>
+                      <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
+                        WITHDRAWAL PENDING APPROVAL
+                      </h3>
+                      <p style={{
+                        color: 'white',
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        marginBottom: '15px'
+                      }}>
+                        ₹{userAccount.challengeStats.withdrawalAvailable?.toLocaleString()}
+                      </p>
+                      <div style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        padding: '15px',
+                        borderRadius: '8px',
+                        marginBottom: '15px'
+                      }}>
+                        <p style={{color: 'white', marginBottom: '5px'}}>
+                          Request ID: <strong>{userAccount.challengeStats.withdrawalRequestId}</strong>
+                        </p>
+                        <p style={{color: '#fde68a', fontSize: '14px'}}>
+                          Submitted: {userAccount.challengeStats.withdrawalRequestDate ? 
+                            new Date(userAccount.challengeStats.withdrawalRequestDate).toLocaleString() : 
+                            'N/A'}
+                        </p>
+                      </div>
+                      <div style={{
+                        background: 'rgba(0,0,0,0.2)',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        fontSize: '14px',
+                        color: 'white'
+                      }}>
+                        ⏳ Your withdrawal request is being processed by admin.<br/>
+                        You will be notified once approved (usually within 24-48 hours).
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show message if reward already withdrawn */}
+                  {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalCompleted && (
+                    <div style={{
+                      background: '#4b5563',
+                      padding: '20px',
+                      borderRadius: '10px',
+                      marginBottom: '25px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{fontSize: '40px', marginBottom: '10px'}}>✅</div>
+                      <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>Reward Withdrawn</h3>
+                      <p style={{color: '#d1d5db', fontSize: '16px', marginBottom: '5px'}}>
+                        You've successfully withdrawn ₹{userAccount.challengeStats.totalReward?.toLocaleString()}
+                      </p>
+                      <p style={{color: '#9ca3af', fontSize: '14px'}}>
+                        Complete another challenge to earn more rewards!
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="withdrawal-options-grid">
+                    <div className="withdrawal-card" onClick={() => {
+                      setShowAccountSetup(true);
+                      setShowWithdrawalRequest(false);
+                    }}>
+                      <div className="card-icon">🏦</div>
+                      <h3>Bank Account Setup</h3>
+                      <p>Add your bank details for withdrawals</p>
+                      {!userBankAccount.accountNumber && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#f59e0b',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          !
                         </span>
-                      </div>
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Profit Target:</span>
-                        <span className="progress-value">
-                          {challengeProgress.profit.toFixed(2)}% / 
-                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.profitTarget || 10}%
-                        </span>
-                      </div>
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Daily Loss:</span>
-                        <span className={`progress-value ${dailyLoss >= (CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.dailyLossLimit || 4) ? 'danger' : ''}`}>
-                          {dailyLoss.toFixed(2)}% / 
-                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.dailyLossLimit || 4}%
-                        </span>
-                      </div>
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Total Loss:</span>
-                        <span className={`progress-value ${totalLoss >= (CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.maxLossLimit || 10) ? 'danger' : ''}`}>
-                          {totalLoss.toFixed(2)}% / 
-                          {CHALLENGES.find(c => c.name === userAccount.currentChallenge)?.maxLossLimit || 10}%
-                        </span>
-                      </div>
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Trades Count:</span>
-                        <span className="progress-value">{userAccount.challengeStats.tradesCount}</span>
-                      </div>
-                      <div className="challenge-progress-item">
-                        <span className="progress-label">Win Rate:</span>
-                        <span className="progress-value">{userAccount.challengeStats.winRate.toFixed(1)}%</span>
-                      </div>
+                      )}
                     </div>
                     
-                    {/* Progress Bar */}
-                    <div className="challenge-progress-visual">
-                      <div className="progress-bar">
-                        <div 
-                          className="progress-fill profit"
-                          style={{ width: `${Math.min(challengeProgress.profit, 100)}%` }}
-                          title={`Profit: ${challengeProgress.profit.toFixed(1)}%`}
-                        ></div>
-                        <div 
-                          className="progress-fill loss"
-                          style={{ width: `${Math.min(challengeProgress.totalLoss, 100)}%` }}
-                          title={`Loss: ${challengeProgress.totalLoss.toFixed(1)}%`}
-                        ></div>
-                      </div>
-                      <div className="progress-labels">
-                        <span className="profit-label">Profit: {challengeProgress.profit.toFixed(1)}%</span>
-                        <span className="loss-label">Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
-                      </div>
+                    <div className="withdrawal-card" onClick={() => {
+                      if (!userBankAccount.accountNumber) {
+                        alert('⚠️ Please set up your bank account first');
+                        setShowAccountSetup(true);
+                      } else {
+                        setShowWithdrawalRequest(true);
+                        setShowAccountSetup(false);
+                      }
+                    }}>
+                      <div className="card-icon">💰</div>
+                      <h3>Request Withdrawal</h3>
+                      <p>Withdraw your real balance</p>
+                      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: '24px',
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          animation: 'pulse 2s infinite'
+                        }}>
+                          ₹
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="withdrawal-card" onClick={() => {
+                      if (withdrawalRequests.length > 0) {
+                        alert('📜 Withdrawal History:\n\n' + 
+                          withdrawalRequests.map(req => 
+                            `${req.date}: ₹${req.amount} - ${req.status}`
+                          ).join('\n'));
+                      } else {
+                        alert('No withdrawal requests yet');
+                      }
+                    }}>
+                      <div className="card-icon">📜</div>
+                      <h3>Withdrawal History</h3>
+                      <p>View past withdrawal requests</p>
+                      {withdrawalRequests.length > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          background: '#3b82f6',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          {withdrawalRequests.length}
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
 
-                {/* ========== REFERRAL CARD ========== */}
-                {referralInfo && (
-                  <div className="profile-card referral-card" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                    <h3 style={{ color: 'white', marginBottom: '1rem' }}>👥 Referral Program</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <div>
-                        <p style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>Your unique referral link:</p>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#2d3748', padding: '10px', borderRadius: '8px' }}>
-                          <code style={{ flex: 1, color: '#e2e8f0', fontSize: '0.9rem', wordBreak: 'break-all' }}>
-                           {`${window.location.origin}/?ref=${referralInfo.referralCode}`}
-                          </code>
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/?ref=${referralInfo.referralCode}`);
-                              alert('Referral link copied!');
-                            }}
-                            style={{ padding: '6px 12px', background: '#4f46e5', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer' }}
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '0.5rem' }}>
-                        <div style={{ background: 'rgba(30,41,59,0.5)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Your Referrals</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>{referralInfo.referralCount}</div>
-                        </div>
-                        <div style={{ background: 'rgba(30,41,59,0.5)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Target</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>{referralSettings.target}</div>
-                        </div>
-                        <div style={{ background: 'rgba(30,41,59,0.5)', padding: '0.75rem', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Reward</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4caf50' }}>{referralSettings.rewardName}</div>
-                        </div>
-                      </div>
-
-                      {referralInfo.referralCount >= referralSettings.target ? (
-                        referralInfo.rewardAwarded ? (
-                          <div style={{ background: '#10b981', color: 'white', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                            ✅ You have already received your reward: {referralSettings.rewardName}
-                          </div>
-                        ) : (
-                          <div style={{ background: '#f59e0b', color: 'white', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                            ⏳ Congratulations! You've reached the target. Your reward is pending admin approval.
-                          </div>
-                        )
-                      ) : (
-                        <p style={{ color: '#94a3b8' }}>
-                          {referralSettings.target - referralInfo.referralCount} more referrals needed to get a free {referralSettings.rewardName}!
-                        </p>
-                      )}
-
-                      {referralInfo.referredUsers?.length > 0 && (
-                        <details style={{ marginTop: '0.5rem' }}>
-                          <summary style={{ cursor: 'pointer', color: '#94a3b8' }}>View your referred users</summary>
-                          <ul style={{ marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
-                            {referralInfo.referredUsers.map((u, idx) => (
-                              <li key={idx} style={{ padding: '5px 0', borderBottom: '1px solid #334155' }}>
-                                {u.name} ({u.email}) – joined {new Date(u.joinedAt).toLocaleDateString()}
-                              </li>
+                  {/* Recent Withdrawal Requests Table */}
+                  <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
+                    <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
+                    
+                    {withdrawalRequests.length > 0 ? (
+                      <div style={{overflowX: 'auto'}}>
+                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                          <thead>
+                            <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
+                              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {withdrawalRequests.slice(0, 5).map(request => (
+                              <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                                <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
+                                <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
+                                <td style={{padding: '10px'}}>
+                                  <span style={{
+                                    padding: '5px 10px',
+                                    borderRadius: '20px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    background: request.status === 'pending' ? '#f59e0b' : 
+                                               request.status === 'approved' ? '#10b981' : 
+                                               request.status === 'rejected' ? '#ef4444' : '#6b7280',
+                                    color: 'white'
+                                  }}>
+                                    {request.status}
+                                  </span>
+                                </td>
+                                <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
+                              </tr>
                             ))}
-                          </ul>
-                        </details>
-                      )}
-                    </div>
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
+                    )}
                   </div>
-                )}
-                
-<div className="profile-card withdraw-card">
-  <h2 style={{color: 'white', marginBottom: '20px'}}>💰 Withdrawal Management</h2>
-  
-{/* Show available reward if challenge passed and not withdrawn and no pending request */}
-{userAccount.challengeStats?.status === 'passed' && 
- userAccount.challengeStats?.withdrawalAvailable > 0 && 
- !userAccount.challengeStats?.withdrawalCompleted && 
- !userAccount.challengeStats?.withdrawalPending && (
-  <div style={{
-    background: 'linear-gradient(135deg, #10b981, #059669)',
-    padding: '20px',
-    borderRadius: '10px',
-    marginBottom: '25px',
-    textAlign: 'center',
-    animation: 'pulse 2s infinite',
-    border: '2px solid #34d399'
-  }}>
-    <div style={{fontSize: '40px', marginBottom: '10px'}}>💰</div>
-    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
-      FUNDS AVAILABLE FOR WITHDRAWAL!
-    </h3>
-    <p style={{
-      color: 'white',
-      fontSize: '36px',
-      fontWeight: 'bold',
-      marginBottom: '15px',
-      textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-    }}>
-      ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
-    </p>
-    <div style={{
-      background: 'rgba(255,255,255,0.15)',
-      padding: '15px',
-      borderRadius: '8px',
-      marginBottom: '15px',
-      textAlign: 'left'
-    }}>
-      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: 'white'}}>
-        <span>Fee Refund:</span>
-        <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.feeRefund?.toLocaleString() || '0'}</span>
-      </div>
-      <div style={{display: 'flex', justifyContent: 'space-between', color: 'white'}}>
-        <span>Skill Reward:</span>
-        <span style={{fontWeight: 'bold'}}>₹{userAccount.challengeStats.skillReward?.toLocaleString() || '0'}</span>
-      </div>
-    </div>
-    <div style={{
-      background: '#f59e0b',
-      padding: '10px',
-      borderRadius: '5px',
-      marginBottom: '15px',
-      fontSize: '14px',
-      color: 'white'
-    }}>
-      ⚡ Click "Request Withdrawal" below to claim your reward!
-    </div>
-    <button
-      onClick={() => {
-        if (!userBankAccount.accountNumber) {
-          alert('⚠️ Please set up your bank account first');
-          setShowAccountSetup(true);
-        } else {
-          setShowWithdrawalRequest(true);
-        }
-      }}
-      style={{
-        padding: '12px 24px',
-        background: 'white',
-        color: '#059669',
-        border: 'none',
-        borderRadius: '5px',
-        fontWeight: 'bold',
-        fontSize: '16px',
-        cursor: 'pointer',
-        width: '100%',
-        transition: 'all 0.2s'
-      }}
-      onMouseOver={(e) => e.currentTarget.style.background = '#f3f4f6'}
-      onMouseOut={(e) => e.currentTarget.style.background = 'white'}
-    >
-      WITHDRAW ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()} NOW
-    </button>
-  </div>
-)}
 
-{/* Show pending withdrawal message */}
-{userAccount.challengeStats?.withdrawalPending && (
-  <div style={{
-    background: '#f59e0b',
-    padding: '20px',
-    borderRadius: '10px',
-    marginBottom: '25px',
-    textAlign: 'center',
-    border: '2px solid #fbbf24'
-  }}>
-    <div style={{fontSize: '40px', marginBottom: '10px'}}>⏳</div>
-    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '20px', fontWeight: 'bold'}}>
-      WITHDRAWAL PENDING APPROVAL
-    </h3>
-    <p style={{
-      color: 'white',
-      fontSize: '24px',
-      fontWeight: 'bold',
-      marginBottom: '15px'
-    }}>
-      ₹{userAccount.challengeStats.withdrawalAvailable?.toLocaleString()}
-    </p>
-    <div style={{
-      background: 'rgba(255,255,255,0.15)',
-      padding: '15px',
-      borderRadius: '8px',
-      marginBottom: '15px'
-    }}>
-      <p style={{color: 'white', marginBottom: '5px'}}>
-        Request ID: <strong>{userAccount.challengeStats.withdrawalRequestId}</strong>
-      </p>
-      <p style={{color: '#fde68a', fontSize: '14px'}}>
-        Submitted: {userAccount.challengeStats.withdrawalRequestDate ? 
-          new Date(userAccount.challengeStats.withdrawalRequestDate).toLocaleString() : 
-          'N/A'}
-      </p>
-    </div>
-    <div style={{
-      background: 'rgba(0,0,0,0.2)',
-      padding: '10px',
-      borderRadius: '5px',
-      fontSize: '14px',
-      color: 'white'
-    }}>
-      ⏳ Your withdrawal request is being processed by admin.<br/>
-      You will be notified once approved (usually within 24-48 hours).
-    </div>
-  </div>
-)}
-
-{/* Show message if reward already withdrawn */}
-{userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalCompleted && (
-  <div style={{
-    background: '#4b5563',
-    padding: '20px',
-    borderRadius: '10px',
-    marginBottom: '25px',
-    textAlign: 'center'
-  }}>
-    <div style={{fontSize: '40px', marginBottom: '10px'}}>✅</div>
-    <h3 style={{color: 'white', marginBottom: '10px', fontSize: '18px'}}>Reward Withdrawn</h3>
-    <p style={{color: '#d1d5db', fontSize: '16px', marginBottom: '5px'}}>
-      You've successfully withdrawn ₹{userAccount.challengeStats.totalReward?.toLocaleString()}
-    </p>
-    <p style={{color: '#9ca3af', fontSize: '14px'}}>
-      Complete another challenge to earn more rewards!
-    </p>
-  </div>
-)}
-  
-  <div className="withdrawal-options-grid">
-    <div className="withdrawal-card" onClick={() => {
-      setShowAccountSetup(true);
-      setShowWithdrawalRequest(false);
-    }}>
-      <div className="card-icon">🏦</div>
-      <h3>Bank Account Setup</h3>
-      <p>Add your bank details for withdrawals</p>
-      {!userBankAccount.accountNumber && (
-        <span style={{
-          position: 'absolute',
-          top: '-5px',
-          right: '-5px',
-          background: '#f59e0b',
-          color: 'white',
-          borderRadius: '50%',
-          width: '20px',
-          height: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 'bold'
-        }}>
-          !
-        </span>
-      )}
-    </div>
-    
-    <div className="withdrawal-card" onClick={() => {
-      if (!userBankAccount.accountNumber) {
-        alert('⚠️ Please set up your bank account first');
-        setShowAccountSetup(true);
-      } else {
-        setShowWithdrawalRequest(true);
-        setShowAccountSetup(false);
-      }
-    }}>
-      <div className="card-icon">💰</div>
-      <h3>Request Withdrawal</h3>
-      <p>Withdraw your real balance</p>
-      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
-        <span style={{
-          position: 'absolute',
-          top: '-5px',
-          right: '-5px',
-          background: '#10b981',
-          color: 'white',
-          borderRadius: '50%',
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          animation: 'pulse 2s infinite'
-        }}>
-          ₹
-        </span>
-      )}
-    </div>
-    
-    <div className="withdrawal-card" onClick={() => {
-      if (withdrawalRequests.length > 0) {
-        alert('📜 Withdrawal History:\n\n' + 
-          withdrawalRequests.map(req => 
-            `${req.date}: ₹${req.amount} - ${req.status}`
-          ).join('\n'));
-      } else {
-        alert('No withdrawal requests yet');
-      }
-    }}>
-      <div className="card-icon">📜</div>
-      <h3>Withdrawal History</h3>
-      <p>View past withdrawal requests</p>
-      {withdrawalRequests.length > 0 && (
-        <span style={{
-          position: 'absolute',
-          top: '-5px',
-          right: '-5px',
-          background: '#3b82f6',
-          color: 'white',
-          borderRadius: '50%',
-          width: '20px',
-          height: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 'bold'
-        }}>
-          {withdrawalRequests.length}
-        </span>
-      )}
-    </div>
-  </div>
-{showAccountSetup && (
-  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-    <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-        <h3 style={{color: 'white'}}>🏦 Bank Account Setup</h3>
-        <button onClick={() => setShowAccountSetup(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-      </div>
+                  {/* Bank Account Setup Modal */}
+                  {showAccountSetup && (
+                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                          <h3 style={{color: 'white'}}>🏦 Bank Account Setup</h3>
+                          <button onClick={() => setShowAccountSetup(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
+                        </div>
       
       <div style={{marginBottom: '20px'}}>
         <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Holder Name *</label>
@@ -4876,14 +4891,15 @@ const calculateOrderPnL = (order) => {
   </div>
 )}
 
-{showWithdrawalRequest && (
-  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-    <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-        <h3 style={{color: 'white'}}>Request Withdrawal</h3>
-        <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-      </div>
-      
+   {/* Withdrawal Request Modal */}
+                  {showWithdrawalRequest && (
+                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                          <h3 style={{color: 'white'}}>Request Withdrawal</h3>
+                          <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
+                        </div>
+
       {/* Show challenge reward info if available */}
       {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
         <div style={{
@@ -5120,6 +5136,7 @@ onClick={() => {
   </div>
 </div>
 
+                {activeProfileTab === 'payments' && (
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3>Payment History</h3>
