@@ -5,6 +5,7 @@ import AccountSetup from './components/AccountSetup';
 import WithdrawalRequest from './components/WithdrawalRequest';
 import AdminWithdrawalPanel from './components/AdminWithdrawalPanel';
 import WithdrawalHistory from './components/WithdrawalHistory';
+import ReferralDashboard from './components/ReferralDashboard';  
 import './App.css';
 import img7 from './data/7.png';
 import img6 from './data/6.png';
