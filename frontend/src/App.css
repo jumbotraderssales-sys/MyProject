@@ -7062,20 +7062,75 @@ html, body {
     justify-content: center;
   }
 }
-/* Force fix for Trading page overlap */
-body.trading-active .advanced-main {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+/* Fix for Trading page overlapping with menu bar */
+.advanced-main {
+  display: flex;
+  height: calc(100vh - 70px); /* Subtract header height */
+  margin-top: 0;
+  overflow: hidden;
 }
 
-.trading-active .center-panel {
-  margin-top: 0 !important;
-  padding-top: 10px !important;
+/* Adjust center panel for Trading view */
+.center-panel {
+  flex: 1;
+  overflow-y: auto;
+  height: 100%;
+  padding: 15px;
 }
 
-/* Ensure the chart has proper spacing */
-#tradingview-chart-container {
-  height: 100% !important;
-  min-height: 400px;
+/* When in Trading dashboard, ensure proper spacing */
+.activeDashboard === 'Trading' .center-panel {
+  padding-top: 10px;
+}
+
+/* Trading controls should not overflow */
+.trading-controls {
+  margin-top: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Chart container should fit properly */
+.chart-container {
+  height: 500px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Fullscreen trading adjustments */
+.fullscreen .advanced-main {
+  height: 100vh;
+}
+
+/* Ensure header doesn't overlap */
+.advanced-header {
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.top-horizontal-nav {
+  height: 70px;
+  flex-shrink: 0;
+}
+
+/* Make sure content doesn't get hidden behind header */
+.below-price-alert-section {
+  margin-top: 5px;
+  padding: 10px;
+  background: #1e293b;
+  border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .advanced-main {
+    height: calc(100vh - 120px);
+    flex-direction: column;
+  }
+  
+  .center-panel {
+    height: auto;
+    overflow-y: visible;
+  }
 }
 /* End of CSS */
