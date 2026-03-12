@@ -58,12 +58,14 @@ const CHALLENGES = [
     maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    feeRefund: 500,        // Fee refund amount in rupees
-    skillReward: 1000,       // Skill reward amount in rupees
+    feeRefund: 500,
+    skillReward: 1000,
     reward: "Fee Refund ₹500 + Skill Reward ₹1000",
     color: "#22c55e",
     icon: "🟢",
-    description: "Perfect for beginners to learn trading with minimal risk"
+    description: "Perfect for beginners to learn trading with minimal risk",
+    level: 1,
+    requiredChallenge: null
   },
   {
     id: 2,
@@ -77,12 +79,14 @@ const CHALLENGES = [
     maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    feeRefund: 1000,        // Fee refund amount in rupees
-    skillReward: 2500,       // Skill reward amount in rupees
+    feeRefund: 1000,
+    skillReward: 2500,
     reward: "Fee Refund ₹1000 + Skill Reward ₹2500",
     color: "#eab308",
     icon: "🟡",
-    description: "For traders with some experience looking to grow"
+    description: "For traders with some experience looking to grow",
+    level: 2,
+    requiredChallenge: "🚀 Beginner Challenge"
   },
   {
     id: 3,
@@ -96,18 +100,20 @@ const CHALLENGES = [
     maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    feeRefund: 2000,        // Fee refund amount in rupees
-    skillReward: 5000,       // Skill reward amount in rupees
+    feeRefund: 2000,
+    skillReward: 5000,
     reward: "Fee Refund ₹2000 + Skill Reward ₹5000",
     color: "#ef4444",
     icon: "🔴",
-    description: "For advanced traders ready for maximum rewards"
- },
-   {
+    description: "For advanced traders ready for maximum rewards",
+    level: 3,
+    requiredChallenge: "🟡 Intermediate Challenge"
+  },
+  {
     id: 4,
     name: "💎 REAL Funded Account",
-    fee: "No Fee", 
-    paperBalance: 100000, 
+    fee: "No Fee",
+    paperBalance: 100000,
     profitTarget: 0,
     dailyLossLimit: 3,
     maxLossLimit: 10,
@@ -116,12 +122,14 @@ const CHALLENGES = [
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
     feeRefund: 0,
-    skillReward: 0, // No skill reward, instead they get real funded account
-    reward: "Real cash 60% Profit Split-TAX T&C Apply",
+    skillReward: 0,
+    reward: "Real cash 60% Profit Split - TAX T&C Apply",
     color: "#8b5cf6",
     icon: "💎",
-    description: "Prove your skill and Pass PRO Challenge to get a real funded account with ₹1,00,000 capital",
-    profitSplit: "User-60%/Platform-40%"
+    description: "Prove your skill by passing PRO Challenge to get a real funded account with ₹1,00,000 capital",
+    profitSplit: "User-60%/Platform-40%",
+    level: 4,
+    requiredChallenge: "🔴 PRO Challenge"
   }
 ];
 const PriceLineOverlay = ({ position, currentPrice }) => {
@@ -193,13 +201,14 @@ const boxStyle = {
 
 
 function App() {
-  const [userAccount, setUserAccount] = useState({
+ const [userAccount, setUserAccount] = useState({
     id: null,
     name: "",
     email: "",
     realBalance: 0,
     paperBalance: 0,
     currentChallenge: null,
+    completedChallenges: [], // Add this line
     notifications: [],
     transactions: [],
     accountStatus: 'pending',
@@ -346,6 +355,42 @@ function App() {
     totalLoss: 0,
     status: 'active'
   });
+// Helper function to check if user can buy a challenge
+const canBuyChallenge = (challenge) => {
+  if (!isLoggedIn) return false;
+  if (!challenge.requiredChallenge) return true; // Beginner has no requirement
+  
+  // Check if user has passed the required challenge
+  const passedChallenges = userAccount.completedChallenges || [];
+  return passedChallenges.includes(challenge.requiredChallenge);
+};
+
+// Helper function to get button text
+const getButtonText = (challenge) => {
+  if (!isLoggedIn) return `Sign Up & Buy - ${challenge.fee}`;
+  
+  // Check if challenge is locked
+  if (challenge.requiredChallenge && !canBuyChallenge(challenge)) {
+    return `🔒 Complete ${challenge.requiredChallenge} First`;
+  }
+  
+  // Special text for funded account
+  if (challenge.name === "💎 REAL Funded Account") {
+    return canBuyChallenge(challenge) ? '🎯 Activate Funded Account' : '🔒 Complete PRO Challenge First';
+  }
+  
+  return `Buy Now - ${challenge.fee}`;
+};
+
+// Helper function to get locked message
+const getLockedMessage = (challenge) => {
+  if (challenge.name === "💎 REAL Funded Account") {
+    return `❌ REAL Funded Account Locked\n\nYou must pass the PRO Challenge first to unlock the real funded account.\n\nProgress: Complete PRO Challenge → Unlock Real Account`;
+  }
+  
+  return `❌ ${challenge.name} Locked\n\nYou must complete ${challenge.requiredChallenge} first before accessing this challenge.\n\nProgress: ${challenge.requiredChallenge} → ${challenge.name}`;
+};
+  
 // CRITICAL: Load saved challenge stats FIRST - before anything else
 useEffect(() => {
   const userDataStr = localStorage.getItem('userData');
@@ -3857,31 +3902,39 @@ const calculateOrderPnL = (order) => {
 </div>
 
 <button 
-  className="get-challenge-btn"
+  className={`get-challenge-btn ${!canBuyChallenge(challenge) ? 'disabled-btn' : ''}`}
   style={{ background: challenge.color }}
   onClick={() => {
+    if (!isLoggedIn) {
+      setPendingChallengePurchase(true);
+      setShowRegister(true);
+      return;
+    }
+    
+    // Check if challenge is locked
+    if (!canBuyChallenge(challenge)) {
+      alert(getLockedMessage(challenge));
+      return;
+    }
+    
+    // Handle based on challenge type
     if (challenge.name === "💎 REAL Funded Account") {
       alert(
-        '💎 REAL Funded Account\n\n' +
-        'This is our premium challenge that leads to a real funded account.\n\n' +
-        '💰 What you get:\n' +
-        '• Trade with ₹1,00,000 capital\n' +
+        '💎 REAL Funded Account UNLOCKED!\n\n' +
+        'Congratulations! You have proven your skills by passing the PRO Challenge.\n\n' +
+        '💰 You now qualify for:\n' +
+        '• Real Funded Account with ₹1,00,000 capital\n' +
         '• 60% Profit Split\n' +
-        '• Up to 20x Leverage\n' +
-        '• 3% Daily Loss Limit\n' +
-        '• 10% Max Loss Limit\n\n' +
-        '📝 Complete PRO Challenge first to unlock this!'
+        '• Up to 20x Leverage\n\n' +
+        '🎯 Click "Activate Now" to start trading with REAL money!'
       );
+      // Here you would activate the real funded account
     } else {
       handleChallengeBuy(challenge);
     }
   }}
 >
-  {isLoggedIn ? (
-    challenge.name === "💎 REAL Funded Account" 
-      ? '🎯 Unlock with PRO Challenge' 
-      : 'Buy Now'
-  ) : 'Sign Up & Buy'} - {challenge.fee}
+  {getButtonText(challenge)}
 </button>
                     </div>
                   ))}
