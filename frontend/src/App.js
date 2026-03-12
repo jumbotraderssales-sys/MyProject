@@ -4170,7 +4170,7 @@ const calculateOrderPnL = (order) => {
               </div>
             </div>
             
-         ) : activeDashboard === 'Profile' ? (
+          ) : activeDashboard === 'Profile' ? (
             <div className="profile-content">
               <div className="profile-header">
                 <h2>Your Profile</h2>
@@ -4659,6 +4659,393 @@ const calculateOrderPnL = (order) => {
                     </div>
                   </div>
 
+                  {/* Bank Account Setup Modal */}
+                  {showAccountSetup && (
+                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                          <h3 style={{color: 'white'}}>🏦 Bank Account Setup</h3>
+                          <button onClick={() => setShowAccountSetup(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Holder Name *</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.accountHolderName}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
+                            placeholder="Enter name as per bank records"
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              background: '#2d3748',
+                              border: '1px solid #4a5568',
+                              borderRadius: '5px',
+                              color: 'white',
+                              fontSize: '14px'
+                            }}
+                            required
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Number *</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.accountNumber}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
+                            placeholder="Enter your bank account number"
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              background: '#2d3748',
+                              border: '1px solid #4a5568',
+                              borderRadius: '5px',
+                              color: 'white',
+                              fontSize: '14px'
+                            }}
+                            required
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Bank Name *</label>
+                          <select
+                            value={userBankAccount.bankName}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              background: '#2d3748',
+                              border: '1px solid #4a5568',
+                              borderRadius: '5px',
+                              color: 'white',
+                              fontSize: '14px'
+                            }}
+                            required
+                          >
+                            <option value="">Select Bank</option>
+                            <option value="HDFC Bank">HDFC Bank</option>
+                            <option value="State Bank of India">State Bank of India</option>
+                            <option value="ICICI Bank">ICICI Bank</option>
+                            <option value="Axis Bank">Axis Bank</option>
+                            <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                            <option value="Yes Bank">Yes Bank</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>IFSC Code *</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.ifscCode}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
+                            placeholder="Enter IFSC code (e.g., HDFC0001234)"
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              background: '#2d3748',
+                              border: '1px solid #4a5568',
+                              borderRadius: '5px',
+                              color: 'white',
+                              fontSize: '14px'
+                            }}
+                            required
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>UPI ID (Optional)</label>
+                          <input
+                            type="text"
+                            value={userBankAccount.upiId || ''}
+                            onChange={(e) => setUserBankAccount({...userBankAccount, upiId: e.target.value})}
+                            placeholder="Enter your UPI ID (e.g., name@okhdfcbank)"
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              background: '#2d3748',
+                              border: '1px solid #4a5568',
+                              borderRadius: '5px',
+                              color: 'white',
+                              fontSize: '14px'
+                            }}
+                          />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px', background: '#2d3748', padding: '12px', borderRadius: '5px'}}>
+                          <p style={{color: '#f59e0b', fontSize: '13px', margin: 0}}>
+                            ⚠️ Please ensure all details are correct. Withdrawals can only be processed to verified bank accounts.
+                          </p>
+                        </div>
+                        
+                        <div style={{display: 'flex', gap: '10px'}}>
+                          <button
+                            onClick={() => {
+                              if (!userBankAccount.accountHolderName || !userBankAccount.accountNumber || !userBankAccount.bankName || !userBankAccount.ifscCode) {
+                                alert('Please fill all required fields');
+                                return;
+                              }
+                              
+                              if (userBankAccount.accountNumber.length < 9) {
+                                alert('Please enter a valid account number (minimum 9 digits)');
+                                return;
+                              }
+                              
+                              // Basic IFSC validation (4 letters + 0 + 6 alphanumeric)
+                              if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(userBankAccount.ifscCode.toUpperCase())) {
+                                alert('Please enter a valid IFSC code (e.g., HDFC0001234)');
+                                return;
+                              }
+                              
+                              // Save to localStorage
+                              localStorage.setItem('userBankAccount', JSON.stringify(userBankAccount));
+                              
+                              // Update userAccount
+                              setUserAccount(prev => ({
+                                ...prev,
+                                bankAccount: userBankAccount
+                              }));
+                              
+                              alert('✅ Bank account saved successfully! You can now request withdrawals.');
+                              setShowAccountSetup(false);
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '12px',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              fontSize: '14px'
+                            }}
+                          >
+                            Save Bank Account
+                          </button>
+                          
+                          <button
+                            onClick={() => setShowAccountSetup(false)}
+                            style={{
+                              padding: '12px 20px',
+                              background: '#4b5563',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              fontSize: '14px'
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Withdrawal Request Modal */}
+                  {showWithdrawalRequest && (
+                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
+                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+                          <h3 style={{color: 'white'}}>Request Withdrawal</h3>
+                          <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
+                        </div>
+                        
+                        {/* Show challenge reward info if available */}
+                        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+                          <div style={{
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            padding: '15px',
+                            borderRadius: '8px',
+                            marginBottom: '20px'
+                          }}>
+                            <h4 style={{color: 'white', marginBottom: '10px'}}>🎉 Challenge Reward Available!</h4>
+                            <p style={{color: 'white', fontSize: '24px', fontWeight: 'bold', marginBottom: '5px'}}>
+                              ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
+                            </p>
+                            <div style={{color: 'white', opacity: 0.9, fontSize: '14px'}}>
+                              <div>Fee Refund: ₹{userAccount.challengeStats.feeRefund?.toLocaleString()}</div>
+                              <div>Skill Reward: ₹{userAccount.challengeStats.skillReward?.toLocaleString()}</div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
+                          <p style={{color: '#a0aec0', marginBottom: '5px'}}>Available Real Balance:</p>
+                          <h3 style={{color: 'white'}}>₹{userAccount.realBalance?.toLocaleString() || '0'}</h3>
+                          {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+                            <p style={{color: '#10b981', marginTop: '5px', fontSize: '14px'}}>
+                              ⚡ This includes your challenge reward!
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                          <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Amount to Withdraw (₹)</label>
+                          <input
+                            type="number"
+                            value={withdrawalAmount}
+                            onChange={(e) => setWithdrawalAmount(e.target.value)}
+                            placeholder="Enter amount"
+                            max={userAccount.realBalance}
+                            style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
+                          />
+                          {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
+                            <button
+                              onClick={() => setWithdrawalAmount(userAccount.challengeStats.withdrawalAvailable)}
+                              style={{
+                                marginTop: '5px',
+                                padding: '5px 10px',
+                                background: '#4f46e5',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Set to Reward Amount (₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()})
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
+                          <h4 style={{color: 'white', marginBottom: '10px'}}>Bank Account Details:</h4>
+                          <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.accountHolderName || 'Not set'}</p>
+                          <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.bankName || 'Not set'}</p>
+                          <p style={{color: '#a0aec0'}}>Account: {userBankAccount.accountNumber ? `XXXX${userBankAccount.accountNumber.slice(-4)}` : 'Not set'}</p>
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            const amount = parseFloat(withdrawalAmount);
+                            const balance = userAccount.realBalance || 0;
+                            
+                            if (!amount || amount <= 0) {
+                              alert('Please enter a valid amount');
+                              return;
+                            }
+                            
+                            if (amount < 100) {
+                              alert('Minimum withdrawal amount is ₹100');
+                              return;
+                            }
+                            
+                            if (amount > balance) {
+                              alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
+                              return;
+                            }
+                            
+                            // Check if this is the full reward withdrawal
+                            const isFullRewardWithdrawal = 
+                              userAccount.challengeStats?.status === 'passed' && 
+                              amount === userAccount.challengeStats?.withdrawalAvailable;
+                            
+                            const newRequest = {
+                              id: `WD${Date.now()}`,
+                              amount: amount,
+                              status: 'pending',
+                              date: new Date().toLocaleString(),
+                              bankDetails: userBankAccount,
+                              isReward: isFullRewardWithdrawal,
+                              userName: userAccount.name,
+                              userEmail: userAccount.email,
+                              userId: userAccount.id
+                            };
+
+                            // Update withdrawal requests
+                            setWithdrawalRequests(prev => {
+                              const updated = [newRequest, ...prev];
+                              localStorage.setItem('withdrawalRequests', JSON.stringify(updated));
+                              return updated;
+                            });
+                            
+                            // IMPORTANT: Update user account - mark withdrawal as pending but DON'T deduct balance yet
+                            if (isFullRewardWithdrawal) {
+                              setUserAccount(prev => ({
+                                ...prev,
+                                // Keep realBalance the same until admin approves
+                                challengeStats: {
+                                  ...prev.challengeStats,
+                                  withdrawalPending: true,
+                                  withdrawalRequestId: newRequest.id,
+                                  withdrawalRequestDate: new Date().toISOString()
+                                }
+                              }));
+                              
+                              // Also update localStorage
+                              const userDataStr = localStorage.getItem('userData');
+                              if (userDataStr) {
+                                const userData = JSON.parse(userDataStr);
+                                const updatedUserData = {
+                                  ...userData,
+                                  // Don't change realBalance here
+                                  challengeStats: {
+                                    ...userData.challengeStats,
+                                    withdrawalPending: true,
+                                    withdrawalRequestId: newRequest.id,
+                                    withdrawalRequestDate: new Date().toISOString()
+                                  }
+                                };
+                                localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                              }
+                              
+                              // Show appropriate message for reward withdrawal
+                              alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
+                                    `Your challenge reward withdrawal request has been submitted for admin approval.\n` +
+                                    `You will be notified once it's processed (usually within 24-48 hours).\n\n` +
+                                    `Funds will be deducted from your real balance only after admin approval.`);
+                            } else {
+                              // For non-reward withdrawals
+                              const newRealBalance = balance - amount;
+                              
+                              setUserAccount(prev => ({
+                                ...prev,
+                                realBalance: newRealBalance
+                              }));
+                              
+                              alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
+                                    `It will be processed by admin within 24-48 hours.\n\n` +
+                                    `Remaining balance: ₹${newRealBalance.toLocaleString()}`);
+                            }
+                            
+                            setWithdrawalAmount('');
+                            setShowWithdrawalRequest(false);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            background: userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 ? '#10b981' : '#4f46e5',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 
+                            ? '💰 Withdraw Your Reward' 
+                            : 'Submit Withdrawal Request'}
+                        </button>
+                        
+                        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && (
+                          <p style={{
+                            color: '#94a3b8',
+                            fontSize: '12px',
+                            marginTop: '10px',
+                            textAlign: 'center'
+                          }}>
+                            ⚡ After withdrawal, your real balance will show ₹0 until you complete more challenges.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Recent Withdrawal Requests Table */}
                   <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
                     <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
@@ -4703,443 +5090,10 @@ const calculateOrderPnL = (order) => {
                       <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
                     )}
                   </div>
-
-                  {/* Bank Account Setup Modal */}
-                  {showAccountSetup && (
-                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-                          <h3 style={{color: 'white'}}>🏦 Bank Account Setup</h3>
-                          <button onClick={() => setShowAccountSetup(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-                        </div>
-      
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Holder Name *</label>
-        <input
-          type="text"
-          value={userBankAccount.accountHolderName}
-          onChange={(e) => setUserBankAccount({...userBankAccount, accountHolderName: e.target.value})}
-          placeholder="Enter name as per bank records"
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: '#2d3748',
-            border: '1px solid #4a5568',
-            borderRadius: '5px',
-            color: 'white',
-            fontSize: '14px'
-          }}
-          required
-        />
-      </div>
-      
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Account Number *</label>
-        <input
-          type="text"
-          value={userBankAccount.accountNumber}
-          onChange={(e) => setUserBankAccount({...userBankAccount, accountNumber: e.target.value})}
-          placeholder="Enter your bank account number"
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: '#2d3748',
-            border: '1px solid #4a5568',
-            borderRadius: '5px',
-            color: 'white',
-            fontSize: '14px'
-          }}
-          required
-        />
-      </div>
-      
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Bank Name *</label>
-        <select
-          value={userBankAccount.bankName}
-          onChange={(e) => setUserBankAccount({...userBankAccount, bankName: e.target.value})}
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: '#2d3748',
-            border: '1px solid #4a5568',
-            borderRadius: '5px',
-            color: 'white',
-            fontSize: '14px'
-          }}
-          required
-        >
-          <option value="">Select Bank</option>
-          <option value="HDFC Bank">HDFC Bank</option>
-          <option value="State Bank of India">State Bank of India</option>
-          <option value="ICICI Bank">ICICI Bank</option>
-          <option value="Axis Bank">Axis Bank</option>
-          <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-          <option value="Yes Bank">Yes Bank</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>IFSC Code *</label>
-        <input
-          type="text"
-          value={userBankAccount.ifscCode}
-          onChange={(e) => setUserBankAccount({...userBankAccount, ifscCode: e.target.value})}
-          placeholder="Enter IFSC code (e.g., HDFC0001234)"
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: '#2d3748',
-            border: '1px solid #4a5568',
-            borderRadius: '5px',
-            color: 'white',
-            fontSize: '14px'
-          }}
-          required
-        />
-      </div>
-      
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>UPI ID (Optional)</label>
-        <input
-          type="text"
-          value={userBankAccount.upiId || ''}
-          onChange={(e) => setUserBankAccount({...userBankAccount, upiId: e.target.value})}
-          placeholder="Enter your UPI ID (e.g., name@okhdfcbank)"
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: '#2d3748',
-            border: '1px solid #4a5568',
-            borderRadius: '5px',
-            color: 'white',
-            fontSize: '14px'
-          }}
-        />
-      </div>
-      
-      <div style={{marginBottom: '20px', background: '#2d3748', padding: '12px', borderRadius: '5px'}}>
-        <p style={{color: '#f59e0b', fontSize: '13px', margin: 0}}>
-          ⚠️ Please ensure all details are correct. Withdrawals can only be processed to verified bank accounts.
-        </p>
-      </div>
-      
-      <div style={{display: 'flex', gap: '10px'}}>
-        <button
-          onClick={() => {
-            if (!userBankAccount.accountHolderName || !userBankAccount.accountNumber || !userBankAccount.bankName || !userBankAccount.ifscCode) {
-              alert('Please fill all required fields');
-              return;
-            }
-            
-            if (userBankAccount.accountNumber.length < 9) {
-              alert('Please enter a valid account number (minimum 9 digits)');
-              return;
-            }
-            
-            // Basic IFSC validation (4 letters + 0 + 6 alphanumeric)
-            if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(userBankAccount.ifscCode.toUpperCase())) {
-              alert('Please enter a valid IFSC code (e.g., HDFC0001234)');
-              return;
-            }
-            
-            // Save to localStorage
-            localStorage.setItem('userBankAccount', JSON.stringify(userBankAccount));
-            
-            // Update userAccount
-            setUserAccount(prev => ({
-              ...prev,
-              bankAccount: userBankAccount
-            }));
-            
-            alert('✅ Bank account saved successfully! You can now request withdrawals.');
-            setShowAccountSetup(false);
-          }}
-          style={{
-            flex: 1,
-            padding: '12px',
-            background: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}
-        >
-          Save Bank Account
-        </button>
-        
-        <button
-          onClick={() => setShowAccountSetup(false)}
-          style={{
-            padding: '12px 20px',
-            background: '#4b5563',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-   {/* Withdrawal Request Modal */}
-                  {showWithdrawalRequest && (
-                    <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000}}>
-                      <div className="modal-content" style={{background: '#1e293b', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-                          <h3 style={{color: 'white'}}>Request Withdrawal</h3>
-                          <button onClick={() => setShowWithdrawalRequest(false)} style={{background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer'}}>×</button>
-                        </div>
-
-      {/* Show challenge reward info if available */}
-      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981, #059669)',
-          padding: '15px',
-          borderRadius: '8px',
-          marginBottom: '20px'
-        }}>
-          <h4 style={{color: 'white', marginBottom: '10px'}}>🎉 Challenge Reward Available!</h4>
-          <p style={{color: 'white', fontSize: '24px', fontWeight: 'bold', marginBottom: '5px'}}>
-            ₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()}
-          </p>
-          <div style={{color: 'white', opacity: 0.9, fontSize: '14px'}}>
-            <div>Fee Refund: ₹{userAccount.challengeStats.feeRefund?.toLocaleString()}</div>
-            <div>Skill Reward: ₹{userAccount.challengeStats.skillReward?.toLocaleString()}</div>
-          </div>
-        </div>
-      )}
-      
-      <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
-        <p style={{color: '#a0aec0', marginBottom: '5px'}}>Available Real Balance:</p>
-        <h3 style={{color: 'white'}}>₹{userAccount.realBalance?.toLocaleString() || '0'}</h3>
-        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
-          <p style={{color: '#10b981', marginTop: '5px', fontSize: '14px'}}>
-            ⚡ This includes your challenge reward!
-          </p>
-        )}
-      </div>
-      
-      <div style={{marginBottom: '20px'}}>
-        <label style={{display: 'block', color: '#a0aec0', marginBottom: '5px'}}>Amount to Withdraw (₹)</label>
-        <input
-          type="number"
-          value={withdrawalAmount}
-          onChange={(e) => setWithdrawalAmount(e.target.value)}
-          placeholder="Enter amount"
-          max={userAccount.realBalance}
-          style={{width: '100%', padding: '10px', background: '#2d3748', border: '1px solid #4a5568', borderRadius: '5px', color: 'white'}}
-        />
-        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && !userAccount.challengeStats?.withdrawalCompleted && (
-          <button
-            onClick={() => setWithdrawalAmount(userAccount.challengeStats.withdrawalAvailable)}
-            style={{
-              marginTop: '5px',
-              padding: '5px 10px',
-              background: '#4f46e5',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}
-          >
-            Set to Reward Amount (₹{userAccount.challengeStats.withdrawalAvailable.toLocaleString()})
-          </button>
-        )}
-      </div>
-      
-      <div style={{marginBottom: '20px', background: '#2d3748', padding: '15px', borderRadius: '5px'}}>
-        <h4 style={{color: 'white', marginBottom: '10px'}}>Bank Account Details:</h4>
-        <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.accountHolderName || 'Not set'}</p>
-        <p style={{color: '#a0aec0', marginBottom: '5px'}}>{userBankAccount.bankName || 'Not set'}</p>
-        <p style={{color: '#a0aec0'}}>Account: {userBankAccount.accountNumber ? `XXXX${userBankAccount.accountNumber.slice(-4)}` : 'Not set'}</p>
-      </div>
-      
-      <button
-onClick={() => {
-  const amount = parseFloat(withdrawalAmount);
-  const balance = userAccount.realBalance || 0;
-  
-  if (!amount || amount <= 0) {
-    alert('Please enter a valid amount');
-    return;
-  }
-  
-  if (amount < 100) {
-    alert('Minimum withdrawal amount is ₹100');
-    return;
-  }
-  
-  if (amount > balance) {
-    alert(`Insufficient balance. Maximum you can withdraw is ₹${balance.toLocaleString()}`);
-    return;
-  }
-  
-  // Check if this is the full reward withdrawal
-  const isFullRewardWithdrawal = 
-    userAccount.challengeStats?.status === 'passed' && 
-    amount === userAccount.challengeStats?.withdrawalAvailable;
-  
-  const newRequest = {
-    id: `WD${Date.now()}`,
-    amount: amount,
-    status: 'pending',
-    date: new Date().toLocaleString(),
-    bankDetails: userBankAccount,
-    isReward: isFullRewardWithdrawal,
-    userName: userAccount.name,
-    userEmail: userAccount.email,
-    userId: userAccount.id
-  };
-
-  // Update withdrawal requests
-  setWithdrawalRequests(prev => {
-    const updated = [newRequest, ...prev];
-    localStorage.setItem('withdrawalRequests', JSON.stringify(updated));
-    return updated;
-  });
-  
-  // IMPORTANT: Update user account - mark withdrawal as pending but DON'T deduct balance yet
-  if (isFullRewardWithdrawal) {
-    setUserAccount(prev => ({
-      ...prev,
-      // Keep realBalance the same until admin approves
-      challengeStats: {
-        ...prev.challengeStats,
-        withdrawalPending: true,
-        withdrawalRequestId: newRequest.id,
-        withdrawalRequestDate: new Date().toISOString()
-      }
-    }));
-    
-    // Also update localStorage
-    const userDataStr = localStorage.getItem('userData');
-    if (userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      const updatedUserData = {
-        ...userData,
-        // Don't change realBalance here
-        challengeStats: {
-          ...userData.challengeStats,
-          withdrawalPending: true,
-          withdrawalRequestId: newRequest.id,
-          withdrawalRequestDate: new Date().toISOString()
-        }
-      };
-      localStorage.setItem('userData', JSON.stringify(updatedUserData));
-    }
-    
-    // Show appropriate message for reward withdrawal
-    alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
-          `Your challenge reward withdrawal request has been submitted for admin approval.\n` +
-          `You will be notified once it's processed (usually within 24-48 hours).\n\n` +
-          `Funds will be deducted from your real balance only after admin approval.`);
-  } else {
-    // For non-reward withdrawals, you can either deduct immediately or also require approval
-    // Option 1: Deduct immediately (as in original)
-    const newRealBalance = balance - amount;
-    
-    setUserAccount(prev => ({
-      ...prev,
-      realBalance: newRealBalance
-    }));
-    
-    alert(`✅ Withdrawal request submitted for ₹${amount.toLocaleString()}!\n\n` +
-          `It will be processed by admin within 24-48 hours.\n\n` +
-          `Remaining balance: ₹${newRealBalance.toLocaleString()}`);
-  }
-  
-  setWithdrawalAmount('');
-  setShowWithdrawalRequest(false);
-}}
-        style={{
-          width: '100%',
-          padding: '12px',
-          background: userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 ? '#10b981' : '#4f46e5',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-      >
-        {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 
-          ? '💰 Withdraw Your Reward' 
-          : 'Submit Withdrawal Request'}
-      </button>
-      
-      {userAccount.challengeStats?.status === 'passed' && userAccount.challengeStats?.withdrawalAvailable > 0 && (
-        <p style={{
-          color: '#94a3b8',
-          fontSize: '12px',
-          marginTop: '10px',
-          textAlign: 'center'
-        }}>
-          ⚡ After withdrawal, your real balance will show ₹0 until you complete more challenges.
-        </p>
-      )}
-    </div>
-  </div>
-)}
- <div style={{marginTop: '40px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '10px'}}>
-    <h3 style={{color: 'white', marginBottom: '20px'}}>Recent Withdrawal Requests</h3>
-    
-    {withdrawalRequests.length > 0 ? (
-      <div style={{overflowX: 'auto'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse'}}>
-          <thead>
-            <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>ID</th>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Amount</th>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Status</th>
-              <th style={{padding: '10px', color: '#a0aec0', textAlign: 'left'}}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {withdrawalRequests.slice(0, 5).map(request => (
-              <tr key={request.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                <td style={{padding: '10px', color: 'white'}}>{request.id}</td>
-                <td style={{padding: '10px', color: 'white'}}>₹{request.amount?.toLocaleString()}</td>
-                <td style={{padding: '10px'}}>
-                  <span style={{
-                    padding: '5px 10px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    background: request.status === 'pending' ? '#f59e0b' : 
-                               request.status === 'approved' ? '#10b981' : 
-                               request.status === 'rejected' ? '#ef4444' : '#6b7280',
-                    color: 'white'
-                  }}>
-                    {request.status}
-                  </span>
-                </td>
-                <td style={{padding: '10px', color: '#a0aec0'}}>{request.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <p style={{color: '#a0aec0', textAlign: 'center', padding: '20px'}}>No withdrawal requests yet</p>
-    )}
-  </div>
-</div>
-  )}
                 </div>
               )}
 
-                {activeProfileTab === 'payments' && (
+              {activeProfileTab === 'payments' && (
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3>Payment History</h3>
@@ -5298,8 +5252,9 @@ onClick={() => {
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
+
           ) : activeDashboard === 'AdminPanel' ? (
   <div className="admin-panel-content">
     <h2 style={{color: 'white', marginBottom: '20px'}}>👑 Admin Withdrawal Panel</h2>
