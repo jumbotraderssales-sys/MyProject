@@ -6993,4 +6993,26 @@ html, body {
     margin-right: -10px; /* Compensate for scaling space */
   }
 }
+/* Disabled button styles */
+.disabled-btn {
+  opacity: 0.6;
+  cursor: not-allowed;
+  position: relative;
+  overflow: hidden;
+}
+
+.disabled-btn::after {
+  content: '🔒';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+}
+
+.challenge-card.locked {
+  border-color: #64748b !important;
+  filter: grayscale(0.5);
+}
+
 /* End of CSS */
