@@ -7062,20 +7062,20 @@ html, body {
     justify-content: center;
   }
 }
-/* Simple desktop fix - make everything slightly smaller */
-@media (min-width: 1025px) {
-  .platform-brand {
-    transform: scale(0.8);
-    transform-origin: left center;
-  }
-  
-  .nav-tab {
-    padding: 5px 8px;
-    font-size: 0.8rem;
-  }
-  
-  .nav-user-name, .nav-balance-amount {
-    font-size: 0.8rem;
-  }
+/* Force fix for Trading page overlap */
+body.trading-active .advanced-main {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.trading-active .center-panel {
+  margin-top: 0 !important;
+  padding-top: 10px !important;
+}
+
+/* Ensure the chart has proper spacing */
+#tradingview-chart-container {
+  height: 100% !important;
+  min-height: 400px;
 }
 /* End of CSS */
