@@ -7062,5 +7062,34 @@ html, body {
     justify-content: center;
   }
 }
+/* Quick fix for overlapping */
+.top-horizontal-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nav-tabs-container {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.nav-tab {
+  flex-shrink: 0;
+}
+
+.platform-brand {
+  flex-shrink: 0;
+}
+
+.nav-user-info-container {
+  flex-shrink: 0;
+}
 
 /* End of CSS */
