@@ -1068,324 +1068,38 @@ app.put('/api/user/bank-account', requireValidUser, async (req, res) => {
     });
   }
 });
-// ========== ENHANCED REFERRAL SYSTEM WITH COMMISSIONS ==========
-
-// Get user referral dashboard data
-app.get('/api/user/referral-dashboard', async (req, res) => {
+// ========== NEW USER REFERRAL INFO ENDPOINT ==========
+app.get('/api/user/referral', requireValidUser, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const users = await readUsers();
-    const user = users.find(u => u.id === userId);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
+    const userId = req.userId;
+    const user = req.user;
     
     const referrals = await readReferrals();
-    const payments = await readPayments();
-    const withdrawals = await readWithdrawals();
-    const settings = await readSettings();
-    
-    // Get referred users with their transaction details
-    const referredUsers = await Promise.all(referrals
+    const referredUsers = referrals
       .filter(r => r.referrerId === userId)
-      .map(async (r) => {
-        const referredUser = users.find(u => u.id === r.referredId) || {};
-        
-        // Get user's challenge purchases
-        const userPayments = payments.filter(p => 
-          p.userId === r.referredId && p.status === 'approved'
-        );
-        
-        // Calculate commission from challenge fees (10%)
-        const challengeCommission = userPayments.reduce((sum, p) => {
-          return sum + (p.amount * 0.10); // 10% commission
-        }, 0);
-        
-        // Check if user has funded account and withdrawals
-        const userWithdrawals = withdrawals.filter(w => 
-          w.userId === r.referredId && w.status === 'approved' && w.isFundedWithdrawal
-        );
-        
-        // Calculate commission from funded withdrawals (10%)
-        const fundedCommission = userWithdrawals.reduce((sum, w) => {
-          return sum + (w.amount * 0.10); // 10% commission
-        }, 0);
-        
-        return {
-          id: r.referredId,
-          name: referredUser.name || 'Unknown',
-          email: referredUser.email || 'No email',
-          joinedAt: r.createdAt,
-          challengePurchases: userPayments.length,
-          challengeCommission,
-          fundedWithdrawals: userWithdrawals.length,
-          fundedCommission,
-          totalCommission: challengeCommission + fundedCommission,
-          lastActivity: userPayments[0]?.submittedAt || userWithdrawals[0]?.requestedAt || r.createdAt
-        };
+      .map(r => ({
+        id: r.referredId,
+        name: r.referredName,
+        email: r.referredEmail,
+        joinedAt: r.createdAt
       }));
     
-    // Calculate total commissions
-    const totalChallengeCommission = referredUsers.reduce((sum, u) => sum + u.challengeCommission, 0);
-    const totalFundedCommission = referredUsers.reduce((sum, u) => sum + u.fundedCommission, 0);
-    const totalEarned = totalChallengeCommission + totalFundedCommission;
-    
-    // Get withdrawal history for this user's commissions
-    const commissionWithdrawals = withdrawals.filter(w => 
-      w.userId === userId && w.type === 'commission' && w.status === 'approved'
-    );
-    
-    const totalWithdrawn = commissionWithdrawals.reduce((sum, w) => sum + w.amount, 0);
-    const pendingWithdrawals = withdrawals.filter(w => 
-      w.userId === userId && w.type === 'commission' && w.status === 'pending'
-    ).length;
-    
-    // Calculate available balance
-    const availableBalance = totalEarned - totalWithdrawn;
-    
-    // Get pending commissions (users who haven't triggered commission yet)
-    const pendingCommissions = referredUsers.filter(u => u.totalCommission === 0).length;
-    
-    // Calculate monthly stats
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    
-    const monthlyEarnings = referredUsers.reduce((sum, u) => {
-      const joinDate = new Date(u.joinedAt);
-      if (joinDate.getMonth() === thisMonth && joinDate.getFullYear() === thisYear) {
-        return sum + u.totalCommission;
-      }
-      return sum;
-    }, 0);
+    const settings = await readSettings();
     
     res.json({
       success: true,
       referralCode: user.referralCode,
-      referralLink: `${process.env.FRONTEND_URL || 'https://paper2real.com'}/?ref=${user.referralCode}`,
-      stats: {
-        totalReferrals: referredUsers.length,
-        activeReferrals: referredUsers.filter(u => u.totalCommission > 0).length,
-        pendingReferrals: pendingCommissions,
-        totalEarned,
-        totalChallengeCommission,
-        totalFundedCommission,
-        availableBalance,
-        totalWithdrawn,
-        pendingWithdrawals,
-        monthlyEarnings,
-        commissionRate: 10 // 10% on all transactions
-      },
+      referralCount: user.referralCount || 0,
       referredUsers,
-      commissionWithdrawals: commissionWithdrawals.map(w => ({
-        id: w.id,
-        amount: w.amount,
-        status: w.status,
-        requestedAt: w.requestedAt,
-        processedAt: w.processedAt,
-        transactionId: w.transactionId,
-        rejectionReason: w.rejectionReason
-      })),
-      settings: {
-        target: settings.referralTarget || 20,
-        rewardName: settings.referralRewardName || 'Beginner Challenge',
-        rewardAmount: settings.referralRewardAmount || 20000,
-        commissionRate: 10
-      }
+      rewardAwarded: user.referralReward?.awarded || false,
+      rewardAwardedAt: user.referralReward?.awardedAt || null,
+      target: settings.referralTarget || 20,
+      rewardName: settings.referralRewardName || 'Beginner Challenge',
+      rewardAmount: settings.referralRewardAmount || 20000
     });
     
   } catch (error) {
-    console.error('Error fetching referral dashboard:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Request commission withdrawal
-app.post('/api/user/referral/withdraw', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-    
-    const userId = token.replace('token-', '');
-    const { amount, bankDetails } = req.body;
-    
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Valid amount is required' 
-      });
-    }
-    
-    if (amount < 500) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Minimum withdrawal amount is ₹500' 
-      });
-    }
-    
-    const users = await readUsers();
-    const withdrawals = await readWithdrawals();
-    const referrals = await readReferrals();
-    const payments = await readPayments();
-    
-    const user = users.find(u => u.id === userId);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
-    
-    // Calculate available balance
-    const referredUsers = referrals.filter(r => r.referrerId === userId);
-    
-    let totalEarned = 0;
-    for (const ref of referredUsers) {
-      const userPayments = payments.filter(p => 
-        p.userId === ref.referredId && p.status === 'approved'
-      );
-      totalEarned += userPayments.reduce((sum, p) => sum + (p.amount * 0.10), 0);
-    }
-    
-    const approvedWithdrawals = withdrawals.filter(w => 
-      w.userId === userId && w.type === 'commission' && w.status === 'approved'
-    );
-    const totalWithdrawn = approvedWithdrawals.reduce((sum, w) => sum + w.amount, 0);
-    const availableBalance = totalEarned - totalWithdrawn;
-    
-    if (amount > availableBalance) {
-      return res.status(400).json({ 
-        success: false, 
-        error: `Insufficient balance. Available: ₹${availableBalance}` 
-      });
-    }
-    
-    // Create withdrawal request
-    const newWithdrawal = {
-      id: `WD${Date.now()}${Math.floor(Math.random() * 1000)}`,
-      userId,
-      userName: user.name,
-      userEmail: user.email,
-      amount: parseFloat(amount),
-      type: 'commission',
-      status: 'pending',
-      bankDetails: bankDetails || user.bankAccount,
-      requestedAt: new Date().toISOString(),
-      processedAt: null,
-      processedBy: null,
-      transactionId: null,
-      rejectionReason: null
-    };
-    
-    withdrawals.push(newWithdrawal);
-    await writeWithdrawals(withdrawals);
-    
-    res.json({
-      success: true,
-      message: 'Commission withdrawal request submitted successfully',
-      withdrawal: newWithdrawal,
-      remainingBalance: availableBalance - amount
-    });
-    
-  } catch (error) {
-    console.error('Error processing commission withdrawal:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Admin: Get all referral commissions
-app.get('/api/admin/referral-commissions', requireAdmin, async (req, res) => {
-  try {
-    const users = await readUsers();
-    const referrals = await readReferrals();
-    const payments = await readPayments();
-    const withdrawals = await readWithdrawals();
-    
-    const commissionData = await Promise.all(users.map(async (user) => {
-      const userReferrals = referrals.filter(r => r.referrerId === user.id);
-      
-      let totalEarned = 0;
-      let pendingCommission = 0;
-      let paidCommission = 0;
-      
-      for (const ref of userReferrals) {
-        const userPayments = payments.filter(p => 
-          p.userId === ref.referredId && p.status === 'approved'
-        );
-        const commission = userPayments.reduce((sum, p) => sum + (p.amount * 0.10), 0);
-        totalEarned += commission;
-      }
-      
-      const userWithdrawals = withdrawals.filter(w => 
-        w.userId === user.id && w.type === 'commission'
-      );
-      
-      paidCommission = userWithdrawals
-        .filter(w => w.status === 'approved')
-        .reduce((sum, w) => sum + w.amount, 0);
-      
-      pendingCommission = userWithdrawals
-        .filter(w => w.status === 'pending')
-        .reduce((sum, w) => sum + w.amount, 0);
-      
-      return {
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        referralCount: userReferrals.length,
-        activeReferrals: userReferrals.filter(r => {
-          const hasPayment = payments.some(p => 
-            p.userId === r.referredId && p.status === 'approved'
-          );
-          return hasPayment;
-        }).length,
-        totalEarned,
-        paidCommission,
-        pendingCommission,
-        availableBalance: totalEarned - paidCommission,
-        lastWithdrawal: userWithdrawals[0]?.requestedAt || null
-      };
-    }));
-    
-    // Sort by total earned
-    commissionData.sort((a, b) => b.totalEarned - a.totalEarned);
-    
-    res.json({
-      success: true,
-      commissions: commissionData,
-      summary: {
-        totalUsers: users.length,
-        usersWithReferrals: commissionData.filter(c => c.referralCount > 0).length,
-        totalEarnedAll: commissionData.reduce((sum, c) => sum + c.totalEarned, 0),
-        totalPaidAll: commissionData.reduce((sum, c) => sum + c.paidCommission, 0),
-        totalPendingAll: commissionData.reduce((sum, c) => sum + c.pendingCommission, 0)
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error fetching referral commissions:', error);
+    console.error('Error fetching referral info:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
