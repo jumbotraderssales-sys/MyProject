@@ -5135,6 +5135,9 @@ onClick={() => {
     )}
   </div>
 </div>
+  )}
+                </div>
+              )}
 
                 {activeProfileTab === 'payments' && (
                 <div className="profile-card" style={{ gridColumn: '1 / -1' }}>
