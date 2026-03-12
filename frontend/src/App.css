@@ -7014,5 +7014,53 @@ html, body {
   border-color: #64748b !important;
   filter: grayscale(0.5);
 }
+/* Profile Tabs */
+.profile-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  padding: 10px;
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  flex-wrap: wrap;
+}
+
+.profile-tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-tab:hover {
+  background: #2d3748;
+  color: #f1f5f9;
+}
+
+.profile-tab.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+@media (max-width: 768px) {
+  .profile-tabs {
+    flex-direction: column;
+  }
+  
+  .profile-tab {
+    width: 100%;
+    justify-content: center;
+  }
+}
 
 /* End of CSS */
