@@ -392,6 +392,20 @@ const getLockedMessage = (challenge) => {
   
   return `❌ ${challenge.name} Locked\n\nYou must complete ${challenge.requiredChallenge} first before accessing this challenge.\n\nProgress: ${challenge.requiredChallenge} → ${challenge.name}`;
 };
+
+  // Add this effect near your other useEffect hooks
+useEffect(() => {
+  if (activeDashboard === 'Trading') {
+    document.body.classList.add('trading-mode');
+  } else {
+    document.body.classList.remove('trading-mode');
+  }
+  
+  // Cleanup when component unmounts
+  return () => {
+    document.body.classList.remove('trading-mode');
+  };
+}, [activeDashboard]);
   
 // CRITICAL: Load saved challenge stats FIRST - before anything else
 useEffect(() => {
