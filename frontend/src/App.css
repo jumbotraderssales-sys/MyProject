@@ -7324,4 +7324,197 @@ html, body {
     overflow-y: auto;
   }
 }
+/* Universal chart header - works on both mobile and desktop */
+.chart-header-universal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1e293b;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #334155;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Symbol row */
+.symbol-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.universal-symbol-btn {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  min-width: 50px;
+}
+
+.universal-symbol-btn:hover {
+  background: #4a5568;
+  color: #f1f5f9;
+}
+
+.universal-symbol-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* Controls row */
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Universal buttons */
+.universal-indicators-btn,
+.universal-theme-btn,
+.universal-fullscreen-btn {
+  height: 36px;
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.universal-indicators-btn {
+  padding: 0 10px;
+  gap: 5px;
+}
+
+.universal-indicators-btn:hover,
+.universal-theme-btn:hover,
+.universal-fullscreen-btn:hover {
+  background: #4a5568;
+  border-color: #3b82f6;
+}
+
+.universal-theme-btn,
+.universal-fullscreen-btn {
+  width: 36px;
+  font-size: 1rem;
+}
+
+/* Indicator text - shows on desktop, hides on mobile */
+.indicator-text {
+  display: inline;
+  font-size: 0.85rem;
+}
+
+.indicator-icon {
+  display: none;
+  font-size: 1rem;
+}
+
+/* Universal PnL */
+.universal-pnl {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 20px;
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: center;
+}
+
+.universal-pnl.positive {
+  color: #4ade80;
+}
+
+.universal-pnl.negative {
+  color: #f87171;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .chart-header-universal {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .universal-symbol-btn {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    min-width: 40px;
+  }
+
+  .controls-row {
+    gap: 4px;
+  }
+
+  .universal-indicators-btn {
+    padding: 0 6px;
+  }
+
+  .indicator-text {
+    display: none; /* Hide text on mobile */
+  }
+
+  .indicator-icon {
+    display: inline; /* Show only icon on mobile */
+  }
+
+  .universal-theme-btn,
+  .universal-fullscreen-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .universal-pnl {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    min-width: 60px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .universal-symbol-btn {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+    min-width: 35px;
+  }
+
+  .universal-pnl {
+    min-width: 50px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Increase chart height since we saved space */
+.chart-container {
+  height: 550px;
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #334155;
+}
+
+@media (max-width: 768px) {
+  .chart-container {
+    height: 400px;
+  }
+}
 /* End of CSS */
