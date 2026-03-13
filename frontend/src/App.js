@@ -5601,48 +5601,56 @@ const calculateOrderPnL = (order) => {
     >
       ← Back to Challenges
     </button>
-              <div className="chart-header-simplified">
-                <div className="chart-controls-left">
-                  <div className="symbol-selector">
-                    {SYMBOLS.slice(0, 8).map(symbol => (
-                      <button
-                        key={symbol}
-                        className={`symbol-btn ${selectedSymbol === symbol ? 'active' : ''}`}
-                        onClick={() => setSelectedSymbol(symbol)}
-                      >
-                        {symbol}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <button 
-                    className="indicators-btn-shifted"
-                    onClick={() => setShowIndicatorsPanel(!showIndicatorsPanel)}
-                  >
-                    📈 Indicators ({activeIndicators.length})
-                  </button>
-                  
-                  <button 
-                    className="theme-toggle-btn"
-                    onClick={() => setChartTheme(chartTheme === 'dark' ? 'light' : 'dark')}
-                    title={`Switch to ${chartTheme === 'dark' ? 'Light' : 'Dark'} theme`}
-                  >
-                    {chartTheme === 'dark' ? '☀️' : '🌙'}
-                  </button>
-                  
-                  <button 
-                    className="fullscreen-btn"
-                    onClick={toggleFullScreen}
-                  >
-                    {isFullScreen ? '↩ Exit Full' : '⛶ Full'}
-                  </button>
-                </div>
-               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
-  <span className={`pnl-indicator ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
-    PnL: {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
-  </span>
-</div>     
-              </div>
+            <div className="chart-header-universal">
+  {/* Symbol buttons - BTC, ETH, SOL only */}
+  <div className="symbol-row">
+    {['BTCUSDT', 'ETHUSDT', 'SOLUSDT'].map(symbol => (
+      <button
+        key={symbol}
+        className={`universal-symbol-btn ${selectedSymbol === symbol ? 'active' : ''}`}
+        onClick={() => setSelectedSymbol(symbol)}
+      >
+        {symbol.replace('USDT', '')}
+      </button>
+    ))}
+  </div>
+
+  {/* Controls row */}
+  <div className="controls-row">
+    {/* Indicators button - hidden text on mobile, shows icon */}
+    <button 
+      className="universal-indicators-btn"
+      onClick={() => setShowIndicatorsPanel(!showIndicatorsPanel)}
+      title="Indicators"
+    >
+      <span className="indicator-icon">📊</span>
+      <span className="indicator-text">Indicators ({activeIndicators.length})</span>
+    </button>
+
+    {/* Day/Night toggle */}
+    <button 
+      className="universal-theme-btn"
+      onClick={() => setChartTheme(chartTheme === 'dark' ? 'light' : 'dark')}
+      title={`Switch to ${chartTheme === 'dark' ? 'Light' : 'Dark'} theme`}
+    >
+      {chartTheme === 'dark' ? '☀️' : '🌙'}
+    </button>
+
+    {/* Fullscreen button */}
+    <button 
+      className="universal-fullscreen-btn"
+      onClick={toggleFullScreen}
+      title={isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+    >
+      {isFullScreen ? '↩' : '⛶'}
+    </button>
+
+    {/* PnL indicator */}
+    <span className={`universal-pnl ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
+      {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
+    </span>
+  </div>
+</div>
 
               {showIndicatorsPanel && (
                 <div className="indicators-panel">
