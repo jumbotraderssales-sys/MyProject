@@ -1,229 +1,444 @@
+/* Navbar Container - Desktop stays exactly the same */
+.navbar-container {
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  width: 100%;
+}
+
+/* Top Row - Desktop stays same */
+.navbar-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #334155;
+}
+
+/* Platform Branding - Desktop stays same */
+.platform-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-container.compact {
+  position: relative;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Candle ring - Desktop stays same */
+.candle-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  animation: rotateRing 15s linear infinite;
+}
+
+.candle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 9px;
+  margin-left: -1.5px;
+  margin-top: -4.5px;
+  border-radius: 1px 1px 0 0;
+  transform-origin: center;
+  animation: candleFlicker 2s ease-in-out infinite;
+}
+
+.candle.green {
+  background: linear-gradient(180deg, #10b981, #059669);
+  box-shadow: 0 0 5px #10b981;
+}
+
+.candle.red {
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+  box-shadow: 0 0 5px #ef4444;
+}
+
+.candle::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -0.5px;
+  width: 4px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 1px;
+  animation: wickMove 1s ease-in-out infinite;
+}
+
+@keyframes rotateRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes candleFlicker {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.9; transform: scaleY(1.05); }
+}
+
+@keyframes wickMove {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-0.5px); }
+  75% { transform: translateX(0.5px); }
+}
+
+/* Cube - Desktop stays same */
+.logo-cube-container.compact {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  perspective: 400px;
+  z-index: 10;
+}
+
+.cube-3d.compact {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  transform-style: preserve-3d;
+  animation: cubeSpin 8s ease-in-out infinite;
+}
+
+@keyframes cubeSpin {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  25% { transform: rotateX(180deg) rotateY(0deg); }
+  50% { transform: rotateX(180deg) rotateY(180deg); }
+  75% { transform: rotateX(0deg) rotateY(180deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+.cube-face {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.cube-face .face-letter {
+  font-size: 13px;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 0 8px currentColor;
+}
+
+.cube-face.front { transform: translateZ(12px); background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.cube-face.back { transform: rotateY(180deg) translateZ(12px); background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.cube-face.right { transform: rotateY(90deg) translateZ(12px); background: linear-gradient(135deg, #ec4899, #db2777); }
+.cube-face.left { transform: rotateY(-90deg) translateZ(12px); background: linear-gradient(135deg, #f59e0b, #d97706); }
+.cube-face.top { transform: rotateX(90deg) translateZ(12px); background: linear-gradient(135deg, #10b981, #059669); }
+.cube-face.bottom { transform: rotateX(-90deg) translateZ(12px); background: linear-gradient(135deg, #6366f1, #4f46e5); }
+
+.mini-chart-line {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 1px dashed rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+  animation: rotateChart 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotateChart {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-quote {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Right side - Wallet section - Desktop stays same */
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.wallet-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #1e293b;
+  padding: 8px 16px;
+  border-radius: 40px;
+  border: 1px solid #334155;
+}
+
+.balance-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.balance-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.balance-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.dollar-amount {
+  font-size: 0.9rem;
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 50%;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #4a5568;
+  color: #f1f5f9;
+  border-color: #3b82f6;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #ef4444;
+  border: none;
+  border-radius: 30px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.logout-icon {
+  font-size: 1rem;
+}
+
+/* Bottom Row - Navigation - Desktop stays same */
+.navbar-bottom-row {
+  padding: 8px 20px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.nav-tab {
+  padding: 6px 0;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-tab:hover {
+  color: #f1f5f9;
+}
+
+.nav-tab.active {
+  color: #3b82f6;
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
 /* ========== MOBILE ONLY CHANGES ========== */
+/* These ONLY apply to screens 768px and below */
+/* Desktop view remains EXACTLY the same */
 @media (max-width: 768px) {
-  /* Make navbar container more compact */
-  .navbar-container {
-    padding: 0;
-  }
-
-  /* Top row - compact and one line */
+  /* Make top row more compact */
   .navbar-top-row {
-    padding: 6px 10px !important;
-    height: 50px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    flex-wrap: nowrap !important;
+    padding: 8px 12px;
   }
 
-  /* Make logo very compact */
+  /* Make logo smaller */
   .platform-brand {
-    gap: 4px !important;
-    flex-shrink: 0 !important;
-    transform: scale(0.7) !important;
-    transform-origin: left center !important;
+    gap: 6px;
   }
 
   .brand-logo-container.compact {
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
+    width: 35px;
+    height: 35px;
   }
 
   .logo-cube-container.compact {
-    width: 20px !important;
-    height: 20px !important;
+    width: 24px;
+    height: 24px;
   }
 
   .cube-3d.compact {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px;
+    height: 20px;
   }
 
   .cube-face {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px;
+    height: 20px;
   }
 
   .cube-face .face-letter {
-    font-size: 9px !important;
+    font-size: 11px;
   }
 
   .brand-name {
-    font-size: 0.8rem !important;
-    white-space: nowrap !important;
+    font-size: 1rem;
   }
 
   /* Hide quote on mobile */
   .brand-quote {
-    display: none !important;
+    display: none;
   }
 
-  /* Right side - wallet section - force one line */
-  .navbar-right {
-    flex-shrink: 0 !important;
-    max-width: 60% !important;
-  }
-
+  /* Make wallet section more compact */
   .wallet-section {
-    padding: 3px 8px !important;
-    gap: 4px !important;
-    background: #1e293b;
-    border-radius: 30px !important;
-    display: flex !important;
-    align-items: center !important;
-    flex-wrap: nowrap !important;
-    height: 36px !important;
+    padding: 4px 10px;
+    gap: 8px;
   }
 
   /* Hide balance label on mobile */
   .balance-label {
-    display: none !important;
-  }
-
-  .balance-display {
-    display: flex !important;
-    align-items: center !important;
-    gap: 3px !important;
-    flex-wrap: nowrap !important;
+    display: none;
   }
 
   .balance-amount {
-    font-size: 0.8rem !important;
-    font-weight: 600 !important;
-    color: #4ade80 !important;
-    white-space: nowrap !important;
+    font-size: 0.9rem;
   }
 
   .dollar-amount {
-    font-size: 0.7rem !important;
-    color: #60a5fa !important;
-    white-space: nowrap !important;
-  }
-
-  .action-buttons {
-    display: flex !important;
-    align-items: center !important;
-    gap: 3px !important;
-    flex-wrap: nowrap !important;
+    font-size: 0.8rem;
   }
 
   .action-btn {
-    width: 26px !important;
-    height: 26px !important;
-    font-size: 0.8rem !important;
-    background: #2d3748;
-    border: 1px solid #4a5568;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
   }
 
-  /* Logout button - icon only */
+  /* Hide logout text, show only icon on mobile */
   .logout-btn {
-    padding: 0 !important;
-    width: 36px !important;
-    height: 26px !important;
-    background: #ef4444;
-    border: none;
-    border-radius: 20px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    padding: 4px 10px;
   }
 
   .logout-text {
-    display: none !important;
+    display: none;
   }
 
   .logout-icon {
-    font-size: 0.9rem !important;
-    margin: 0 !important;
+    font-size: 1.1rem;
   }
 
-  /* Bottom navigation - make it scrollable */
+  /* Make bottom navigation scrollable horizontally on mobile */
   .navbar-bottom-row {
-    padding: 4px 10px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    border-top: 1px solid #334155;
+    padding: 6px 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar-bottom-row::-webkit-scrollbar {
-    display: none !important;
+    display: none;
   }
 
   .nav-tabs {
-    display: flex !important;
-    gap: 15px !important;
-    width: max-content !important;
-    padding: 2px 0 !important;
+    gap: 12px;
+    padding-bottom: 2px;
+    width: max-content;
   }
 
   .nav-tab {
-    font-size: 0.75rem !important;
-    padding: 4px 0 !important;
-    white-space: nowrap !important;
-    color: #94a3b8;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .nav-tab.active {
-    color: #3b82f6 !important;
-  }
-
-  .nav-tab.active::after {
-    bottom: -2px !important;
-    height: 2px !important;
+    font-size: 0.8rem;
+    white-space: nowrap;
   }
 }
 
 /* Extra small devices */
 @media (max-width: 480px) {
-  .navbar-top-row {
-    padding: 4px 8px !important;
-  }
-
-  .platform-brand {
-    transform: scale(0.65) !important;
-  }
-
   .wallet-section {
-    padding: 2px 6px !important;
-    height: 32px !important;
+    padding: 4px 8px;
   }
 
   .balance-amount {
-    font-size: 0.7rem !important;
+    font-size: 0.8rem;
   }
 
   .dollar-amount {
-    font-size: 0.6rem !important;
-  }
-
-  .action-btn {
-    width: 24px !important;
-    height: 24px !important;
-    font-size: 0.7rem !important;
-  }
-
-  .logout-btn {
-    width: 32px !important;
-    height: 24px !important;
-  }
-
-  .logout-icon {
-    font-size: 0.8rem !important;
+    font-size: 0.7rem;
   }
 
   .nav-tabs {
-    gap: 12px !important;
+    gap: 8px;
   }
 
   .nav-tab {
-    font-size: 0.7rem !important;
+    font-size: 0.7rem;
   }
 }
