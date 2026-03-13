@@ -3513,7 +3513,7 @@ const calculateOrderPnL = (order) => {
     🔄
   </button>
 </div>
-                      </div>
+                  
                       {userAccount.currentChallenge && (
                         <div className="nav-challenge-status">
                           <span className={`challenge-badge ${userAccount.challengeStats.status}`}>
