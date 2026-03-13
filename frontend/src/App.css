@@ -7517,221 +7517,101 @@ html, body {
     height: 400px;
   }
 }
-/* Mobile view optimizations */
+/* Mobile view - only essential changes */
 @media (max-width: 768px) {
-  /* Make top bar more compact */
+  /* Keep top bar visible but compact */
   .top-horizontal-nav {
-    height: 50px !important;
-    padding: 0 8px !important;
-    gap: 5px !important;
+    height: 55px !important;
+    padding: 0 10px !important;
   }
 
-  /* Make logo more compact */
+  /* Make logo smaller */
   .platform-brand {
-    transform: scale(0.75) !important;
-    transform-origin: left center !important;
-    margin-right: -5px !important;
+    transform: scale(0.8);
+    transform-origin: left center;
   }
 
-  .brand-logo-container.compact {
-    width: 30px !important;
-    height: 30px !important;
-  }
-
-  .brand-name {
-    font-size: 0.7rem !important;
-  }
-
+  /* Hide quote on mobile */
   .brand-quote {
     display: none !important;
   }
 
-  /* Hide nav tabs on mobile */
-  .nav-tabs-container {
-    display: none !important;
-  }
-
-  /* Hide user name on mobile */
-  .nav-user-name {
-    display: none !important;
-  }
-
-  /* Hide challenge status on mobile */
-  .nav-challenge-status {
-    display: none !important;
-  }
-
-  /* Make user info more compact */
-  .nav-user-info-container {
-    margin-left: auto !important;
+  /* Make balance area compact */
+  .nav-user-balance {
+    padding: 4px 8px !important;
     gap: 5px !important;
   }
 
-  .nav-user-info {
-    gap: 3px !important;
-  }
-
-  /* Wallet/balance styling */
-  .nav-user-balance {
-    display: flex !important;
-    align-items: center !important;
-    gap: 3px !important;
-    padding: 3px 6px !important;
-    background: #1e293b;
-    border-radius: 16px;
-    border: 1px solid #334155;
-  }
-
   .nav-balance-amount {
-    font-size: 0.7rem !important;
-    font-weight: 600;
-    color: #4ade80;
+    font-size: 0.8rem !important;
   }
 
-  /* Eye button for toggling dollar balance */
+  /* Eye button styling */
   .eye-toggle-btn {
-    width: 22px !important;
-    height: 22px !important;
+    width: 24px !important;
+    height: 24px !important;
     background: #334155;
     border: 1px solid #4a5568;
     border-radius: 50%;
     color: #94a3b8;
-    font-size: 0.8rem !important;
+    font-size: 0.8rem;
     cursor: pointer;
-    display: flex;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    margin-left: 2px;
-    transition: all 0.2s;
-  }
-
-  .eye-toggle-btn:hover {
-    background: #4a5568;
-    color: #f1f5f9;
+    margin: 0 2px;
   }
 
   .eye-toggle-btn.active {
     background: #3b82f6;
     color: white;
-    border-color: #3b82f6;
   }
 
   /* Dollar balance - hidden by default */
   .nav-balance-dollar {
     display: none !important;
-    font-size: 0.65rem !important;
-    color: #94a3b8;
   }
 
-  /* When visible class is added, show dollar balance */
   .nav-balance-dollar.visible {
     display: inline !important;
   }
 
+  /* Keep everything else visible */
+  .nav-user-name,
+  .nav-challenge-status,
+  .nav-tabs-container {
+    display: flex !important; /* Keep them visible */
+  }
+
+  /* Make nav tabs smaller to fit */
+  .nav-tab {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .tab-text {
+    font-size: 0.75rem !important;
+  }
+
+  .nav-user-name {
+    font-size: 0.75rem !important;
+  }
+
+  .nav-challenge-status {
+    padding: 2px 6px !important;
+    font-size: 0.65rem !important;
+  }
+
   .refresh-balance-btn {
-    width: 20px !important;
-    height: 20px !important;
-    font-size: 0.6rem !important;
-    background: #334155;
-    border-radius: 50%;
-    margin-left: 2px;
-  }
-
-  /* Logout button styling */
-  .nav-logout-btn {
-    padding: 4px 10px !important;
+    width: 22px !important;
+    height: 22px !important;
     font-size: 0.7rem !important;
-    background: #ef4444;
-    border-radius: 16px;
-    font-weight: 600;
   }
 
-  /* Login/Register buttons */
-  .nav-auth-buttons {
-    gap: 4px !important;
-  }
-
+  .nav-logout-btn,
   .nav-auth-btn {
     padding: 4px 10px !important;
     font-size: 0.7rem !important;
-    border-radius: 16px;
-  }
-
-  .nav-auth-btn.register-btn {
-    background: #3b82f6;
-    color: white;
-    border: none;
-  }
-
-  /* Bottom navigation */
-  .mobile-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: #0f172a;
-    border-top: 1px solid #334155;
-    z-index: 1000;
-    justify-content: space-around;
-    align-items: center;
-    padding: 0 10px;
-  }
-
-  .mobile-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #94a3b8;
-    font-size: 0.7rem;
-    padding: 5px;
-    flex: 1;
-  }
-
-  .mobile-nav-item.active {
-    color: #3b82f6;
-  }
-
-  .mobile-nav-item i {
-    font-size: 1.2rem;
-    margin-bottom: 2px;
-  }
-
-  /* Adjust main content for bottom nav */
-  .advanced-main {
-    padding-bottom: 60px !important;
-  }
-
-  /* Make chart header more compact */
-  .chart-header-universal {
-    padding: 4px 6px !important;
-    margin-top: 5px !important;
-  }
-
-  .universal-symbol-btn {
-    padding: 3px 6px !important;
-    font-size: 0.7rem !important;
-    min-width: 35px !important;
-  }
-
-  .universal-indicators-btn {
-    padding: 0 4px !important;
-    height: 30px !important;
-  }
-
-  .universal-theme-btn,
-  .universal-fullscreen-btn {
-    width: 30px !important;
-    height: 30px !important;
-    font-size: 0.8rem !important;
-  }
-
-  .universal-pnl {
-    padding: 3px 6px !important;
-    font-size: 0.7rem !important;
-    min-width: 50px !important;
   }
 }
 /* End of CSS */
