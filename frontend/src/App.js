@@ -3367,179 +3367,18 @@ const calculateOrderPnL = (order) => {
 
 
 // ========== MAIN RETURN STARTS HERE ==========
-  return (
+return (
     <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
       {!isFullScreen && (
         <>
-          <div className="top-horizontal-nav">
-{/* Platform Branding - Left Corner with Compact P2R Cube + Candles */}
-<div className="platform-brand">
-  <div className="brand-logo-container compact">
-    {/* Outer candle ring - smaller */}
-    <div className="candle-ring">
-      <div className="candle green" style={{ transform: 'rotate(0deg) translateY(-20px)' }}></div>
-      <div className="candle red" style={{ transform: 'rotate(60deg) translateY(-20px)' }}></div>
-      <div className="candle green" style={{ transform: 'rotate(120deg) translateY(-20px)' }}></div>
-      <div className="candle red" style={{ transform: 'rotate(180deg) translateY(-20px)' }}></div>
-      <div className="candle green" style={{ transform: 'rotate(240deg) translateY(-20px)' }}></div>
-      <div className="candle red" style={{ transform: 'rotate(300deg) translateY(-20px)' }}></div>
-    </div>
-
-    {/* Central P2R Cube - with correct letters */}
-    <div className="logo-cube-container compact">
-      <div className="cube-3d compact">
-        {/* Front face - P */}
-        <div className="cube-face front">
-          <span className="face-letter">P</span>
-        </div>
-        {/* Back face - 2 */}
-        <div className="cube-face back">
-          <span className="face-letter">2</span>
-        </div>
-        {/* Right face - R */}
-        <div className="cube-face right">
-          <span className="face-letter">R</span>
-        </div>
-        {/* Left face - 2 (was P, now 2 for balance) */}
-        <div className="cube-face left">
-          <span className="face-letter">2</span>
-        </div>
-        {/* Top face - R */}
-        <div className="cube-face top">
-          <span className="face-letter">R</span>
-        </div>
-        {/* Bottom face - P */}
-        <div className="cube-face bottom">
-          <span className="face-letter">P</span>
-        </div>
-      </div>
-    </div>
-    
-    {/* Simple chart line */}
-    <div className="mini-chart-line"></div>
-  </div>
-  
-  {/* Brand text - now beside logo, not below */}
-  <div className="brand-text compact">
-    <span className="brand-name">Paper2Real</span>
-    <span className="brand-quote">Learn. Practice. Get Funded.</span>
-  </div>
-</div>
-
-  <div className="nav-tabs-container">
-    <div className={`nav-tab ${activeDashboard === 'Challenges' ? 'active' : ''}`} onClick={() => setActiveDashboard('Challenges')}>
-      <span className="tab-text">CHALLENGES</span>
-    </div>
-
-              <div className={`nav-tab ${activeDashboard === 'Market' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to view market');
-                  setShowLogin(true);
-                } else {
-                  setActiveDashboard('Market');
-                }
-              }}>
-                <span className="tab-text">MARKET</span>
-              </div>
-
-              <div className={`nav-tab ${activeDashboard === 'Trading' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to trade');
-                  setShowLogin(true);
-                } else if (!canTrade) {
-                  alert('Please purchase a challenge to start trading');
-                  setActiveDashboard('Challenges');
-                } else {
-                  setActiveDashboard('Trading');
-                }
-              }}>
-                <span className="tab-text">TRADING</span>
-              </div>
-
-              <div className={`nav-tab ${activeDashboard === 'Profile' ? 'active' : ''}`} onClick={() => {
-                if (!isLoggedIn) {
-                  alert('Please login to view profile');
-                  setShowLogin(true);
-                } else {
-                  setActiveDashboard('Profile');
-                }
-              }}>
-                <span className="tab-text">PROFILE</span>
-              </div>
-
-              {userAccount.role === 'admin' && (
-                <div className={`nav-tab ${activeDashboard === 'AdminPanel' ? 'active' : ''}`} onClick={() => {
-                  if (!isLoggedIn) {
-                    alert('Please login as admin');
-                    setShowLogin(true);
-                  } else if (userAccount.role !== 'admin') {
-                    alert('Admin access only');
-                  } else {
-                    setActiveDashboard('AdminPanel');
-                  }
-                }}>
-                  <span className="tab-text">ADMIN</span>
-                </div>
-              )}
-
-              <div className="nav-user-info-container">
-                {isLoggedIn ? (
-                  <>
-                    <div className="nav-user-info">
-                      <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
-                   <div className="nav-user-balance">
-  <span className="nav-balance-amount">₹{equity.toFixed(2)}</span>
-  <span className={`nav-balance-dollar ${showDollarBalance ? 'visible' : ''}`}>
-    (${calculateDollarBalance(equity)})
-  </span>
-  
-  {/* Eye button to toggle dollar balance on mobile */}
-  {window.innerWidth <= 768 && (
-    <button 
-      className={`eye-toggle-btn ${showDollarBalance ? 'active' : ''}`}
-      onClick={() => setShowDollarBalance(!showDollarBalance)}
-      title={showDollarBalance ? 'Hide USD' : 'Show USD'}
-    >
-      {showDollarBalance ? '👁️' : '👁️‍🗨️'}
-    </button>
-  )}
-
-  {/* Refresh button */}
-  <button 
-    className="refresh-balance-btn" 
-    onClick={syncUserWallet} 
-    title="Refresh balance"
-  >
-    🔄
-  </button>
-</div>
-                  
-                      {userAccount.currentChallenge && (
-                        <div className="nav-challenge-status">
-                          <span className={`challenge-badge ${userAccount.challengeStats.status}`}>
-                            {userAccount.currentChallenge.split(' ')[0]} - {userAccount.challengeStats.status.toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <button className="nav-logout-btn" onClick={handleLogout}>
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <div className="nav-auth-buttons">
-                    <button className="nav-auth-btn" onClick={() => setShowLogin(true)}>Login</button>
-                    <button className="nav-auth-btn register-btn" onClick={() => {
-                      setPendingChallengePurchase(false);
-                      setShowRegister(true);
-                    }}>
-                      Register
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Use the Navbar component instead of inline navigation */}
+          <Navbar 
+            equity={equity}
+            dollarRate={dollarRate}
+            userAccount={userAccount}
+            onRefresh={syncUserWallet}
+            onLogout={handleLogout}
+          />
 
           <header className="advanced-header">
             <div className="connection-info">
