@@ -7222,4 +7222,55 @@ html, body {
     }
   }
 }
+/* Back button styling */
+.back-to-challenges-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+  margin-right: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.back-to-challenges-btn:hover {
+  transform: translateX(-3px);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.back-to-challenges-btn:active {
+  transform: translateX(0);
+}
+
+/* Desktop view adjustments */
+@media (min-width: 1025px) {
+  .back-to-challenges-btn {
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    margin-right: 8px;
+  }
+}
+
+/* Mobile view */
+@media (max-width: 768px) {
+  .back-to-challenges-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    padding: 10px 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+}
 /* End of CSS */
