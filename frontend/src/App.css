@@ -7214,12 +7214,6 @@ html, body {
     }
   }
 
-  /* Hide dollar balance on smaller screens if needed */
-  @media (max-width: 1300px) {
-    .nav-balance-dollar {
-      display: none !important;
-    }
-  }
 
   /* Hide challenge status on smaller screens if needed */
   @media (max-width: 1400px) {
