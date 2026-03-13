@@ -1,18 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
-const Navbar = () => {
+const Navbar = ({ equity, dollarRate, userAccount, onRefresh, onLogout }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const isAdmin = localStorage.getItem('role') === 'admin';
+    const [showDollarBalance, setShowDollarBalance] = useState(false);
 
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const username = userData.username || localStorage.getItem('username') || 'User';
-    const paperBalance = userData.paperBalance || 0;
-    const usdBalance = userData.usdBalance || 0;
+    const calculateDollarBalance = (balance) => {
+        return (balance / dollarRate).toFixed(2);
+    };
 
     const handleLogout = () => {
+        if (onLogout) onLogout();
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('userData');
@@ -20,58 +20,97 @@ const Navbar = () => {
         navigate('/login');
     };
 
-    const formatBalance = (balance) => {
-        return parseFloat(balance).toFixed(3);
-    };
-
     return (
         <div className="top-static-user-bar">
-            {/* Left side - Navigation tabs */}
-            <div className="nav-tabs-container-static">
-                <Link 
-                    to="/" 
-                    className={`nav-tab-static ${location.pathname === '/' ? 'active' : ''}`}
-                >
-                    HOME
-                </Link>
-                
-                <Link 
-                    to="/market" 
-                    className={`nav-tab-static ${location.pathname === '/market' ? 'active' : ''}`}
-                >
-                    MARKET
-                </Link>
-                
-                <Link 
-                    to="/trading" 
-                    className={`nav-tab-static ${location.pathname === '/trading' ? 'active' : ''}`}
-                >
-                    TRADING
-                </Link>
-                
-                <Link 
-                    to="/profile" 
-                    className={`nav-tab-static ${location.pathname === '/profile' ? 'active' : ''}`}
-                >
-                    PROFILE
-                </Link>
+            {/* Left side - Logo with P2R Cube */}
+            <div className="platform-brand">
+                <div className="brand-logo-container compact">
+                    <div className="candle-ring">
+                        <div className="candle green" style={{ transform: 'rotate(0deg) translateY(-20px)' }}></div>
+                        <div className="candle red" style={{ transform: 'rotate(60deg) translateY(-20px)' }}></div>
+                        <div className="candle green" style={{ transform: 'rotate(120deg) translateY(-20px)' }}></div>
+                        <div className="candle red" style={{ transform: 'rotate(180deg) translateY(-20px)' }}></div>
+                        <div className="candle green" style={{ transform: 'rotate(240deg) translateY(-20px)' }}></div>
+                        <div className="candle red" style={{ transform: 'rotate(300deg) translateY(-20px)' }}></div>
+                    </div>
+
+                    <div className="logo-cube-container compact">
+                        <div className="cube-3d compact">
+                            <div className="cube-face front"><span className="face-letter">P</span></div>
+                            <div className="cube-face back"><span className="face-letter">2</span></div>
+                            <div className="cube-face right"><span className="face-letter">R</span></div>
+                            <div className="cube-face left"><span className="face-letter">2</span></div>
+                            <div className="cube-face top"><span className="face-letter">R</span></div>
+                            <div className="cube-face bottom"><span className="face-letter">P</span></div>
+                        </div>
+                    </div>
+                    <div className="mini-chart-line"></div>
+                </div>
+                <div className="brand-text compact">
+                    <span className="brand-name">Paper2Real</span>
+                    <span className="brand-quote">Learn. Practice. Get Funded.</span>
+                </div>
             </div>
 
-            {/* Right side - User info, balance, and logout */}
+            {/* Center - Navigation tabs */}
+            <div className="nav-tabs-container-static">
+                <Link to="/" className={`nav-tab-static ${location.pathname === '/' ? 'active' : ''}`}>
+                    CHALLENGES
+                </Link>
+                <Link to="/market" className={`nav-tab-static ${location.pathname === '/market' ? 'active' : ''}`}>
+                    MARKET
+                </Link>
+                <Link to="/trading" className={`nav-tab-static ${location.pathname === '/trading' ? 'active' : ''}`}>
+                    TRADING
+                </Link>
+                <Link to="/profile" className={`nav-tab-static ${location.pathname === '/profile' ? 'active' : ''}`}>
+                    PROFILE
+                </Link>
+                {userAccount?.role === 'admin' && (
+                    <Link to="/admin" className={`nav-tab-static ${location.pathname === '/admin' ? 'active' : ''}`}>
+                        ADMIN
+                    </Link>
+                )}
+            </div>
+
+            {/* Right side - User info */}
             <div className="static-user-info">
                 <div className="static-user-name">
                     <i className="fas fa-user"></i>
-                    <span>{username}</span>
+                    <span>{userAccount?.name || 'User'}</span>
                 </div>
                 
                 <div className="static-user-balance">
                     <div className="static-balance-currency">
                         <div className="static-balance-label">Paper Balance</div>
                         <div className="static-balance-amount">
-                            {formatBalance(paperBalance)} <span className="balance-separator">|</span> 
-                            <span className="usd-balance">(${formatBalance(usdBalance)})</span>
+                            ₹{equity?.toFixed(2) || '0'}
+                            {showDollarBalance && (
+                                <>
+                                    <span className="balance-separator">|</span>
+                                    <span className="usd-balance">(${calculateDollarBalance(equity || 0)})</span>
+                                </>
+                            )}
                         </div>
                     </div>
+                    
+                    {/* Eye button for mobile */}
+                    <button 
+                        className="eye-toggle-btn"
+                        onClick={() => setShowDollarBalance(!showDollarBalance)}
+                        title={showDollarBalance ? 'Hide USD' : 'Show USD'}
+                    >
+                        {showDollarBalance ? '👁️' : '👁️‍🗨️'}
+                    </button>
+
+                    {/* Refresh button */}
+                    <button 
+                        className="refresh-balance-btn"
+                        onClick={onRefresh}
+                        title="Refresh balance"
+                    >
+                        🔄
+                    </button>
                 </div>
                 
                 <button onClick={handleLogout} className="static-logout-btn">
