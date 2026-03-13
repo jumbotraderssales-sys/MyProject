@@ -5580,6 +5580,13 @@ const calculateOrderPnL = (order) => {
   
 ) : (
             <>
+    {/* Mobile Back Button - Only visible on mobile */}
+    <button 
+      className="mobile-back-btn"
+      onClick={() => setActiveDashboard('Challenges')}
+    >
+      ← Back to Challenges
+    </button>
               <div className="chart-header-simplified">
                 <div className="chart-controls-left">
                   <div className="symbol-selector">
