@@ -256,6 +256,7 @@ function App() {
   const [showAccountSetup, setShowAccountSetup] = useState(false);
   const [showWithdrawalRequest, setShowWithdrawalRequest] = useState(false);
   const [timeframe, setTimeframe] = useState('60');
+  const [showDollarBalance, setShowDollarBalance] = useState(false);
   const [activeIndicators, setActiveIndicators] = useState([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showIndicatorsPanel, setShowIndicatorsPanel] = useState(false);
@@ -3486,19 +3487,32 @@ const calculateOrderPnL = (order) => {
                   <>
                     <div className="nav-user-info">
                       <span className="nav-user-name">👤 {userAccount.name || 'User'}</span>
-                      <div className="nav-user-balance">
-                       <span className="nav-balance-amount">₹{equity.toFixed(2)}</span>
-<span className="nav-balance-dollar">
-  (${calculateDollarBalance(equity)})   {/* ← use equity, not paperBalance */}
-</span>
-                 {/* Refresh button added here */}
-        <button 
-          className="refresh-balance-btn" 
-          onClick={syncUserWallet} 
-          title="Refresh balance"
-        >
-          🔄
-        </button>
+                   <div className="nav-user-balance">
+  <span className="nav-balance-amount">₹{equity.toFixed(2)}</span>
+  <span className={`nav-balance-dollar ${showDollarBalance ? 'visible' : ''}`}>
+    (${calculateDollarBalance(equity)})
+  </span>
+  
+  {/* Eye button to toggle dollar balance on mobile */}
+  {window.innerWidth <= 768 && (
+    <button 
+      className={`eye-toggle-btn ${showDollarBalance ? 'active' : ''}`}
+      onClick={() => setShowDollarBalance(!showDollarBalance)}
+      title={showDollarBalance ? 'Hide USD' : 'Show USD'}
+    >
+      {showDollarBalance ? '👁️' : '👁️‍🗨️'}
+    </button>
+  )}
+
+  {/* Refresh button */}
+  <button 
+    className="refresh-balance-btn" 
+    onClick={syncUserWallet} 
+    title="Refresh balance"
+  >
+    🔄
+  </button>
+</div>
                       </div>
                       {userAccount.currentChallenge && (
                         <div className="nav-challenge-status">
