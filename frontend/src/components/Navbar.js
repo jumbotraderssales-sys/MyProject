@@ -1,23 +1,19 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
-const Navbar = ({ equity, dollarRate, userAccount, onRefresh, onLogout }) => {
-    const location = useLocation();
-    const navigate = useNavigate();
+const Navbar = ({ 
+  equity, 
+  dollarRate, 
+  userAccount, 
+  onRefresh, 
+  onLogout,
+  activeDashboard,
+  onTabChange 
+}) => {
     const [showDollarBalance, setShowDollarBalance] = useState(false);
 
     const calculateDollarBalance = (balance) => {
         return (balance / dollarRate).toFixed(2);
-    };
-
-    const handleLogout = () => {
-        if (onLogout) onLogout();
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userData');
-        localStorage.removeItem('username');
-        navigate('/login');
     };
 
     return (
@@ -54,22 +50,37 @@ const Navbar = ({ equity, dollarRate, userAccount, onRefresh, onLogout }) => {
 
             {/* Center - Navigation tabs */}
             <div className="nav-tabs-container-static">
-                <Link to="/" className={`nav-tab-static ${location.pathname === '/' ? 'active' : ''}`}>
+                <button 
+                    className={`nav-tab-static ${activeDashboard === 'Challenges' ? 'active' : ''}`}
+                    onClick={() => onTabChange('Challenges')}
+                >
                     CHALLENGES
-                </Link>
-                <Link to="/market" className={`nav-tab-static ${location.pathname === '/market' ? 'active' : ''}`}>
+                </button>
+                <button 
+                    className={`nav-tab-static ${activeDashboard === 'Market' ? 'active' : ''}`}
+                    onClick={() => onTabChange('Market')}
+                >
                     MARKET
-                </Link>
-                <Link to="/trading" className={`nav-tab-static ${location.pathname === '/trading' ? 'active' : ''}`}>
+                </button>
+                <button 
+                    className={`nav-tab-static ${activeDashboard === 'Trading' ? 'active' : ''}`}
+                    onClick={() => onTabChange('Trading')}
+                >
                     TRADING
-                </Link>
-                <Link to="/profile" className={`nav-tab-static ${location.pathname === '/profile' ? 'active' : ''}`}>
+                </button>
+                <button 
+                    className={`nav-tab-static ${activeDashboard === 'Profile' ? 'active' : ''}`}
+                    onClick={() => onTabChange('Profile')}
+                >
                     PROFILE
-                </Link>
+                </button>
                 {userAccount?.role === 'admin' && (
-                    <Link to="/admin" className={`nav-tab-static ${location.pathname === '/admin' ? 'active' : ''}`}>
+                    <button 
+                        className={`nav-tab-static ${activeDashboard === 'AdminPanel' ? 'active' : ''}`}
+                        onClick={() => onTabChange('AdminPanel')}
+                    >
                         ADMIN
-                    </Link>
+                    </button>
                 )}
             </div>
 
@@ -94,7 +105,7 @@ const Navbar = ({ equity, dollarRate, userAccount, onRefresh, onLogout }) => {
                         </div>
                     </div>
                     
-                    {/* Eye button for mobile */}
+                    {/* Eye button */}
                     <button 
                         className="eye-toggle-btn"
                         onClick={() => setShowDollarBalance(!showDollarBalance)}
@@ -113,7 +124,7 @@ const Navbar = ({ equity, dollarRate, userAccount, onRefresh, onLogout }) => {
                     </button>
                 </div>
                 
-                <button onClick={handleLogout} className="static-logout-btn">
+                <button onClick={onLogout} className="static-logout-btn">
                     <i className="fas fa-sign-out-alt"></i>
                     Logout
                 </button>
