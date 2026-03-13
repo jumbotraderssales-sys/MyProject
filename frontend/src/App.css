@@ -7258,4 +7258,70 @@ html, body {
     color: #60a5fa;
   }
 }
+/* Hide navigation when in Trading mode on mobile */
+@media (max-width: 768px) {
+  /* Hide the entire top navigation bar when in Trading mode */
+  body.trading-mode .top-horizontal-nav,
+  .trading-mode .top-horizontal-nav {
+    display: none !important;
+  }
+  
+  /* Hide the advanced header when in Trading mode */
+  body.trading-mode .advanced-header,
+  .trading-mode .advanced-header {
+    display: none !important;
+  }
+  
+  /* Hide the below price alert section when in Trading mode */
+  body.trading-mode .below-price-alert-section,
+  .trading-mode .below-price-alert-section {
+    display: none !important;
+  }
+  
+  /* Make the chart container take full height */
+  body.trading-mode .center-panel,
+  .trading-mode .center-panel {
+    padding-top: 10px !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Make chart bigger */
+  body.trading-mode .chart-container,
+  .trading-mode .chart-container {
+    height: 70vh !important;
+    min-height: 500px !important;
+  }
+  
+  /* Position back button at the top */
+  .mobile-back-btn {
+    position: sticky;
+    top: 10px;
+    z-index: 1000;
+    margin: 10px;
+    width: calc(100% - 20px);
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  /* Make trading controls more compact */
+  body.trading-mode .trading-controls,
+  .trading-mode .trading-controls {
+    margin-top: 10px;
+    padding: 10px;
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+}
 /* End of CSS */
