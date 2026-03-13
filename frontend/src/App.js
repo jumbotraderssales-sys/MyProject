@@ -5449,14 +5449,7 @@ return (
   </div>
   
 ) : (
-            <>
-    {/* Mobile Back Button - Only visible on mobile */}
-    <button 
-      className="mobile-back-btn"
-      onClick={() => setActiveDashboard('Challenges')}
-    >
-      ← Back to Challenges
-    </button>
+    
             <div className="chart-header-universal">
   {/* Symbol buttons - BTC, ETH, SOL only */}
   <div className="symbol-row">
