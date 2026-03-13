@@ -5449,7 +5449,7 @@ return (
   </div>
   
 ) : (
-    
+    <>
             <div className="chart-header-universal">
   {/* Symbol buttons - BTC, ETH, SOL only */}
   <div className="symbol-row">
