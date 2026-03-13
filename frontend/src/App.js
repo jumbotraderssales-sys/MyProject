@@ -3373,13 +3373,15 @@ return (
       {!isFullScreen && (
         <>
           {/* Use the Navbar component instead of inline navigation */}
-          <Navbar 
-            equity={equity}
-            dollarRate={dollarRate}
-            userAccount={userAccount}
-            onRefresh={syncUserWallet}
-            onLogout={handleLogout}
-          />
+         <Navbar 
+  equity={equity}
+  dollarRate={dollarRate}
+  userAccount={userAccount}
+  onRefresh={syncUserWallet}
+  onLogout={handleLogout}
+  activeDashboard={activeDashboard}
+  onTabChange={setActiveDashboard}
+/>
 
           <header className="advanced-header">
             <div className="connection-info">
