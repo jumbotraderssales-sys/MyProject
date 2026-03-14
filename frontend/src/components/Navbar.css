@@ -1,3 +1,136 @@
+/* ========== DESKTOP STYLES (min-width: 1025px) ========== */
+@media (min-width: 1025px) {
+  .mobile-nav {
+    display: none !important;
+  }
+
+  .desktop-nav {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    padding: 0 20px;
+  }
+
+  .desktop-logo {
+    flex-shrink: 0;
+  }
+
+  .desktop-nav-tabs {
+    display: flex;
+    gap: 5px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .desktop-nav-tab {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .desktop-nav-tab:hover {
+    color: #f1f5f9;
+  }
+
+  .desktop-nav-tab.active {
+    color: #3b82f6;
+  }
+
+  .desktop-nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: #3b82f6;
+    border-radius: 2px;
+  }
+
+  .desktop-user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  .desktop-user-name {
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .desktop-balance {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1e293b;
+    padding: 6px 16px;
+    border-radius: 30px;
+    border: 1px solid #334155;
+  }
+
+  .desktop-balance-amount {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #4ade80;
+  }
+
+  .desktop-usd {
+    color: #60a5fa;
+    font-size: 0.85rem;
+  }
+
+  .desktop-eye-btn,
+  .desktop-refresh-btn {
+    width: 30px;
+    height: 30px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 50%;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .desktop-eye-btn:hover,
+  .desktop-refresh-btn:hover {
+    background: #4a5568;
+    color: #f1f5f9;
+    border-color: #3b82f6;
+  }
+
+  .desktop-logout-btn {
+    padding: 6px 20px;
+    background: #ef4444;
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .desktop-logout-btn:hover {
+    background: #dc2626;
+  }
+}
 /* Navbar Container */
 .navbar-container {
   background: #0f172a;
