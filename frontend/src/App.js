@@ -3373,14 +3373,17 @@ return (
       {!isFullScreen && (
         <>
           {/* Use the Navbar component instead of inline navigation */}
-         <Navbar 
+<Navbar 
   equity={equity}
   dollarRate={dollarRate}
   userAccount={userAccount}
   onRefresh={syncUserWallet}
   onLogout={handleLogout}
+  onLogin={() => setShowLogin(true)}
+  onRegister={() => setShowRegister(true)}
   activeDashboard={activeDashboard}
   onTabChange={setActiveDashboard}
+  isLoggedIn={isLoggedIn}
 />
 
           <header className="advanced-header">
