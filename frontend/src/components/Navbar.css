@@ -626,3 +626,86 @@
     font-size: 0.7rem !important;
   }
 }
+/* Desktop Auth Buttons */
+.desktop-auth-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.desktop-login-btn {
+  padding: 6px 20px;
+  background: transparent;
+  border: 1px solid #3b82f6;
+  border-radius: 30px;
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.desktop-login-btn:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+.desktop-register-btn {
+  padding: 6px 20px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 30px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.desktop-register-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Mobile Auth Buttons */
+.mobile-auth-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.mobile-login-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #3b82f6;
+  border-radius: 20px;
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.mobile-register-btn {
+  padding: 4px 12px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Update your existing mobile styles */
+@media (max-width: 768px) {
+  /* ... your existing mobile styles ... */
+  
+  .mobile-auth-buttons {
+    height: 34px;
+    align-items: center;
+  }
+  
+  .mobile-login-btn,
+  .mobile-register-btn {
+    white-space: nowrap;
+  }
+}
