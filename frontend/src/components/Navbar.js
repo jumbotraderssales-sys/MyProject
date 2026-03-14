@@ -7,8 +7,11 @@ const Navbar = ({
   userAccount, 
   onRefresh, 
   onLogout,
+  onLogin,
+  onRegister,
   activeDashboard,
-  onTabChange 
+  onTabChange,
+  isLoggedIn 
 }) => {
     const [showDollarBalance, setShowDollarBalance] = useState(false);
 
@@ -89,36 +92,49 @@ const Navbar = ({
 
                 {/* User Info - Right side */}
                 <div className="desktop-user-info">
-                    <span className="desktop-user-name">👤 {userAccount?.name || 'User'}</span>
-                    <div className="desktop-balance">
-                        <span className="desktop-balance-amount">₹{equity?.toFixed(2) || '0'}</span>
-                        {showDollarBalance && (
-                            <span className="desktop-usd">(${calculateDollarBalance(equity || 0)})</span>
-                        )}
-                        <button 
-                            className="desktop-eye-btn"
-                            onClick={() => setShowDollarBalance(!showDollarBalance)}
-                            title={showDollarBalance ? 'Hide USD' : 'Show USD'}
-                        >
-                            {showDollarBalance ? '👁️' : '👁️‍🗨️'}
-                        </button>
-                        <button 
-                            className="desktop-refresh-btn"
-                            onClick={onRefresh}
-                            title="Refresh balance"
-                        >
-                            🔄
-                        </button>
-                    </div>
-                    <button onClick={onLogout} className="desktop-logout-btn">
-                        Logout
-                    </button>
+                    {isLoggedIn ? (
+                        <>
+                            <span className="desktop-user-name">👤 {userAccount?.name || 'User'}</span>
+                            <div className="desktop-balance">
+                                <span className="desktop-balance-amount">₹{equity?.toFixed(2) || '0'}</span>
+                                {showDollarBalance && (
+                                    <span className="desktop-usd">(${calculateDollarBalance(equity || 0)})</span>
+                                )}
+                                <button 
+                                    className="desktop-eye-btn"
+                                    onClick={() => setShowDollarBalance(!showDollarBalance)}
+                                    title={showDollarBalance ? 'Hide USD' : 'Show USD'}
+                                >
+                                    {showDollarBalance ? '👁️' : '👁️‍🗨️'}
+                                </button>
+                                <button 
+                                    className="desktop-refresh-btn"
+                                    onClick={onRefresh}
+                                    title="Refresh balance"
+                                >
+                                    🔄
+                                </button>
+                            </div>
+                            <button onClick={onLogout} className="desktop-logout-btn">
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <div className="desktop-auth-buttons">
+                            <button onClick={onLogin} className="desktop-login-btn">
+                                Login
+                            </button>
+                            <button onClick={onRegister} className="desktop-register-btn">
+                                Register
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* MOBILE VIEW - Two lines (keep existing mobile layout) */}
+            {/* MOBILE VIEW - Two lines */}
             <div className="mobile-nav">
-                {/* Top row - Logo and Wallet */}
+                {/* Top row - Logo and Wallet/Auth */}
                 <div className="navbar-top-row">
                     <div className="navbar-left">
                         <div className="platform-brand">
@@ -151,42 +167,53 @@ const Navbar = ({
                     </div>
 
                     <div className="navbar-right">
-                        <div className="wallet-section">
-                            <div className="balance-display">
-                                <span className="balance-label">Balance</span>
-                                <span className="balance-amount">₹{equity?.toFixed(2) || '0'}</span>
-                                {showDollarBalance && (
-                                    <span className="dollar-amount">(${calculateDollarBalance(equity || 0)})</span>
-                                )}
-                            </div>
-                            
-                            <div className="action-buttons">
-                                <button 
-                                    className="action-btn eye-btn"
-                                    onClick={() => setShowDollarBalance(!showDollarBalance)}
-                                    title={showDollarBalance ? 'Hide USD' : 'Show USD'}
-                                >
-                                    {showDollarBalance ? '👁️' : '👁️‍🗨️'}
-                                </button>
+                        {isLoggedIn ? (
+                            <div className="wallet-section">
+                                <div className="balance-display">
+                                    <span className="balance-label">Balance</span>
+                                    <span className="balance-amount">₹{equity?.toFixed(2) || '0'}</span>
+                                    {showDollarBalance && (
+                                        <span className="dollar-amount">(${calculateDollarBalance(equity || 0)})</span>
+                                    )}
+                                </div>
                                 
-                                <button 
-                                    className="action-btn refresh-btn"
-                                    onClick={onRefresh}
-                                    title="Refresh balance"
-                                >
-                                    🔄
+                                <div className="action-buttons">
+                                    <button 
+                                        className="action-btn eye-btn"
+                                        onClick={() => setShowDollarBalance(!showDollarBalance)}
+                                        title={showDollarBalance ? 'Hide USD' : 'Show USD'}
+                                    >
+                                        {showDollarBalance ? '👁️' : '👁️‍🗨️'}
+                                    </button>
+                                    
+                                    <button 
+                                        className="action-btn refresh-btn"
+                                        onClick={onRefresh}
+                                        title="Refresh balance"
+                                    >
+                                        🔄
+                                    </button>
+                                    
+                                    <button onClick={onLogout} className="logout-btn">
+                                        <span className="logout-icon">🚪</span>
+                                        <span className="logout-text">Logout</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="mobile-auth-buttons">
+                                <button onClick={onLogin} className="mobile-login-btn">
+                                    Login
                                 </button>
-                                
-                                <button onClick={onLogout} className="logout-btn">
-                                    <span className="logout-icon">🚪</span>
-                                    <span className="logout-text">Logout</span>
+                                <button onClick={onRegister} className="mobile-register-btn">
+                                    Register
                                 </button>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Bottom row - Navigation tabs */}
+                {/* Bottom row - Navigation tabs (always visible) */}
                 <div className="navbar-bottom-row">
                     <div className="nav-tabs">
                         <button 
