@@ -1,3 +1,24 @@
+/* Hide desktop navigation on mobile */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-nav {
+    display: block !important;
+  }
+}
+
+/* Hide mobile navigation on desktop */
+@media (min-width: 1025px) {
+  .mobile-nav {
+    display: none !important;
+  }
+  
+  .desktop-nav {
+    display: flex !important;
+  }
+}
 /* Reset & Base Styles */
 * {
   margin: 0;
