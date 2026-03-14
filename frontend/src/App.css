@@ -7538,5 +7538,267 @@ html, body {
     height: 400px;
   }
 }
+/* ========== DESKTOP STYLES (min-width: 1025px) ========== */
+@media (min-width: 1025px) {
+  .mobile-nav {
+    display: none !important;
+  }
+
+  .desktop-nav {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    height: 80px; /* Slightly increased height */
+    padding: 0 25px;
+  }
+
+  .desktop-logo {
+    flex-shrink: 0;
+  }
+
+  /* Make logo bigger */
+  .platform-brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .brand-logo-container.compact {
+    position: relative;
+    width: 55px !important; /* Increased from 45px */
+    height: 55px !important; /* Increased from 45px */
+  }
+
+  .logo-cube-container.compact {
+    width: 38px !important; /* Increased from 30px */
+    height: 38px !important; /* Increased from 30px */
+  }
+
+  .cube-3d.compact {
+    width: 32px !important; /* Increased from 24px */
+    height: 32px !important; /* Increased from 24px */
+  }
+
+  .cube-face {
+    width: 32px !important; /* Increased from 24px */
+    height: 32px !important; /* Increased from 24px */
+  }
+
+  .cube-face .face-letter {
+    font-size: 18px !important; /* Increased from 13px */
+    font-weight: 900;
+  }
+
+  .brand-name {
+    font-size: 1.8rem !important; /* Increased from 1.3rem */
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-quote {
+    font-size: 0.9rem !important; /* Increased from 0.7rem */
+    color: #94a3b8;
+    font-style: italic;
+  }
+
+  .desktop-nav-tabs {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .desktop-nav-tab {
+    padding: 10px 20px; /* Increased padding */
+    font-size: 1.1rem !important; /* Increased from 0.95rem */
+    font-weight: 600;
+  }
+
+  .desktop-user-info {
+    gap: 25px; /* Increased gap */
+  }
+
+  .desktop-user-name {
+    font-size: 1.1rem !important; /* Increased from 0.95rem */
+  }
+
+  .desktop-balance {
+    padding: 8px 20px !important; /* Increased padding */
+  }
+
+  .desktop-balance-amount {
+    font-size: 1.2rem !important; /* Increased from 1rem */
+  }
+
+  .desktop-eye-btn,
+  .desktop-refresh-btn {
+    width: 36px !important; /* Increased from 30px */
+    height: 36px !important; /* Increased from 30px */
+    font-size: 1rem !important; /* Increased from 0.9rem */
+  }
+
+  .desktop-logout-btn,
+  .desktop-login-btn,
+  .desktop-register-btn {
+    padding: 8px 24px !important; /* Increased padding */
+    font-size: 1rem !important; /* Increased from 0.9rem */
+  }
+}
+
+/* ========== MOBILE STYLES ========== */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+
+  .mobile-nav {
+    display: block !important;
+  }
+
+  /* Make mobile logo bigger */
+  .navbar-top-row {
+    padding: 10px 12px !important;
+    height: 60px !important; /* Increased from 50px */
+  }
+
+  .platform-brand {
+    gap: 8px !important;
+    transform: scale(0.9) !important; /* Increased from 0.75 */
+  }
+
+  .brand-logo-container.compact {
+    width: 42px !important; /* Increased from 35px */
+    height: 42px !important; /* Increased from 35px */
+  }
+
+  .logo-cube-container.compact {
+    width: 30px !important; /* Increased from 24px */
+    height: 30px !important; /* Increased from 24px */
+  }
+
+  .cube-3d.compact {
+    width: 26px !important; /* Increased from 20px */
+    height: 26px !important; /* Increased from 20px */
+  }
+
+  .cube-face {
+    width: 26px !important; /* Increased from 20px */
+    height: 26px !important; /* Increased from 20px */
+  }
+
+  .cube-face .face-letter {
+    font-size: 14px !important; /* Increased from 11px */
+  }
+
+  .brand-name {
+    font-size: 1.2rem !important; /* Increased from 0.9rem */
+  }
+
+  /* Hide quote on mobile */
+  .brand-quote {
+    display: none !important;
+  }
+
+  /* Make wallet section bigger */
+  .wallet-section {
+    padding: 6px 12px !important; /* Increased padding */
+    height: 42px !important; /* Increased from 38px */
+    gap: 8px !important;
+  }
+
+  .balance-amount {
+    font-size: 0.95rem !important; /* Increased from 0.85rem */
+  }
+
+  .dollar-amount {
+    font-size: 0.85rem !important; /* Increased from 0.75rem */
+  }
+
+  .action-btn {
+    width: 32px !important; /* Increased from 28px */
+    height: 32px !important; /* Increased from 28px */
+    font-size: 0.95rem !important; /* Increased from 0.85rem */
+  }
+
+  .logout-btn {
+    width: 44px !important; /* Increased from 40px */
+    height: 32px !important; /* Increased from 28px */
+  }
+
+  .logout-icon {
+    font-size: 1.1rem !important; /* Increased from 1rem */
+  }
+
+  /* Mobile auth buttons */
+  .mobile-login-btn,
+  .mobile-register-btn {
+    padding: 6px 14px !important; /* Increased padding */
+    font-size: 0.9rem !important; /* Increased from 0.8rem */
+    height: 36px !important;
+  }
+
+  /* Bottom navigation */
+  .navbar-bottom-row {
+    padding: 8px 12px !important;
+  }
+
+  .nav-tab {
+    font-size: 0.9rem !important; /* Increased from 0.8rem */
+    padding: 6px 0 !important;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .navbar-top-row {
+    padding: 8px 10px !important;
+    height: 55px !important;
+  }
+
+  .platform-brand {
+    transform: scale(0.85) !important; /* Increased from 0.7 */
+  }
+
+  .brand-name {
+    font-size: 1rem !important; /* Increased from 0.8rem */
+  }
+
+  .wallet-section {
+    padding: 4px 10px !important;
+    height: 38px !important;
+  }
+
+  .balance-amount {
+    font-size: 0.85rem !important;
+  }
+
+  .dollar-amount {
+    font-size: 0.75rem !important;
+  }
+
+  .action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .logout-btn {
+    width: 40px !important;
+    height: 28px !important;
+  }
+
+  .mobile-login-btn,
+  .mobile-register-btn {
+    padding: 4px 10px !important;
+    font-size: 0.8rem !important;
+    height: 32px !important;
+  }
+
+  .nav-tab {
+    font-size: 0.8rem !important;
+  }
+}
 
 /* End of CSS */
