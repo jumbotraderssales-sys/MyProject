@@ -723,6 +723,123 @@ useEffect(() => {
 
   loadChallengeStats();
 }, []);
+    // Sync positions with backend to get updated status (SL/TP hits)
+const syncPositionsWithBackend = async () => {
+  if (!isLoggedIn) return;
+  
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        // Check if any positions were closed on backend
+        const previousPositions = positionsRef.current;
+        const currentPositions = data.positions;
+        
+        // Find positions that are no longer open (were closed by SL/TP on backend)
+        const closedPositions = previousPositions.filter(
+          prevPos => !currentPositions.some(currPos => currPos.id === prevPos.id)
+        );
+        
+        // Show notifications for closed positions
+        closedPositions.forEach(async (closedPos) => {
+          // Fetch the closed order details to get reason
+          const orderResponse = await fetch(`https://myproject1-d097.onrender.com/api/trades/${closedPos.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (orderResponse.ok) {
+            const orderData = await orderResponse.json();
+            if (orderData.success) {
+              const reason = orderData.order.closeReason;
+              const pnl = orderData.order.pnl;
+              
+              let title = '';
+              let message = '';
+              let emoji = '';
+              
+              if (reason === 'STOP_LOSS') {
+                emoji = '🛑';
+                title = `${emoji} STOP LOSS HIT (Offline)`;
+                message = 
+`While you were away, your ${closedPos.side} position for ${closedPos.symbol} hit stop loss.
+
+📉 Entry: $${closedPos.entryPrice.toFixed(2)}
+🎯 Stop Loss: $${closedPos.stopLoss?.toFixed(2)}
+💵 Loss: $${Math.abs(pnl).toFixed(2)}
+
+💡 Tip: Review your strategy when you're back!`;
+              } 
+              else if (reason === 'TAKE_PROFIT') {
+                emoji = '🎯';
+                title = `${emoji} TAKE PROFIT HIT! (Offline) 🎉`;
+                message = 
+`Great news! While you were away, your ${closedPos.side} position hit take profit!
+
+📈 Entry: $${closedPos.entryPrice.toFixed(2)}
+💰 Take Profit: $${closedPos.takeProfit?.toFixed(2)}
+✅ Profit: $${pnl.toFixed(2)}
+
+🎊 Congratulations on the automated win!`;
+              }
+              
+              if (title) {
+                setTimeout(() => {
+                  alert(`${title}\n\n${message}`);
+                }, 500);
+              }
+            }
+          }
+        });
+        
+        // Update positions state
+        setPositions(currentPositions);
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing positions:', error);
+  }
+};
+  // Sync positions with backend periodically and when app becomes active
+useEffect(() => {
+  if (!isLoggedIn) return;
+  
+  // Initial sync
+  syncPositionsWithBackend();
+  
+  // Periodic sync every 10 seconds
+  const interval = setInterval(() => {
+    syncPositionsWithBackend();
+  }, 10000);
+  
+  // Sync when app becomes visible (user returns to tab)
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      console.log('App became visible - syncing positions');
+      syncPositionsWithBackend();
+    }
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // Sync before user leaves/unloads (optional)
+  const handleBeforeUnload = () => {
+    // You could do a final sync here, but it's not guaranteed
+    navigator.sendBeacon('https://myproject1-d097.onrender.com/api/trades/sync', '');
+  };
+  
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  
+  return () => {
+    clearInterval(interval);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+  };
+}, [isLoggedIn]);
   
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
@@ -771,42 +888,7 @@ useEffect(() => {
     }
   }, [selectedSymbol, prices, positions, userAccount.paperBalance, userAccount.currentChallenge, isLoggedIn, orderSize, leverage, dollarRate]);
   
-// Sync positions with backend periodically and when app becomes active
-useEffect(() => {
-  if (!isLoggedIn) return;
-  
-  // Initial sync
-  syncPositionsWithBackend();
-  
-  // Periodic sync every 10 seconds
-  const interval = setInterval(() => {
-    syncPositionsWithBackend();
-  }, 10000);
-  
-  // Sync when app becomes visible (user returns to tab)
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') {
-      console.log('App became visible - syncing positions');
-      syncPositionsWithBackend();
-    }
-  };
-  
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  
-  // Sync before user leaves/unloads (optional)
-  const handleBeforeUnload = () => {
-    // You could do a final sync here, but it's not guaranteed
-    navigator.sendBeacon('https://myproject1-d097.onrender.com/api/trades/sync', '');
-  };
-  
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  
-  return () => {
-    clearInterval(interval);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-  };
-}, [isLoggedIn]);
+
   
   // Fetch real-time price for the selected symbol every 3 seconds
   useEffect(() => {
@@ -1715,87 +1797,7 @@ const syncUserWallet = async () => {
         }
       }
     }
-    // Sync positions with backend to get updated status (SL/TP hits)
-const syncPositionsWithBackend = async () => {
-  if (!isLoggedIn) return;
-  
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        // Check if any positions were closed on backend
-        const previousPositions = positionsRef.current;
-        const currentPositions = data.positions;
-        
-        // Find positions that are no longer open (were closed by SL/TP on backend)
-        const closedPositions = previousPositions.filter(
-          prevPos => !currentPositions.some(currPos => currPos.id === prevPos.id)
-        );
-        
-        // Show notifications for closed positions
-        closedPositions.forEach(async (closedPos) => {
-          // Fetch the closed order details to get reason
-          const orderResponse = await fetch(`https://myproject1-d097.onrender.com/api/trades/${closedPos.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (orderResponse.ok) {
-            const orderData = await orderResponse.json();
-            if (orderData.success) {
-              const reason = orderData.order.closeReason;
-              const pnl = orderData.order.pnl;
-              
-              let title = '';
-              let message = '';
-              let emoji = '';
-              
-              if (reason === 'STOP_LOSS') {
-                emoji = '🛑';
-                title = `${emoji} STOP LOSS HIT (Offline)`;
-                message = 
-`While you were away, your ${closedPos.side} position for ${closedPos.symbol} hit stop loss.
 
-📉 Entry: $${closedPos.entryPrice.toFixed(2)}
-🎯 Stop Loss: $${closedPos.stopLoss?.toFixed(2)}
-💵 Loss: $${Math.abs(pnl).toFixed(2)}
-
-💡 Tip: Review your strategy when you're back!`;
-              } 
-              else if (reason === 'TAKE_PROFIT') {
-                emoji = '🎯';
-                title = `${emoji} TAKE PROFIT HIT! (Offline) 🎉`;
-                message = 
-`Great news! While you were away, your ${closedPos.side} position hit take profit!
-
-📈 Entry: $${closedPos.entryPrice.toFixed(2)}
-💰 Take Profit: $${closedPos.takeProfit?.toFixed(2)}
-✅ Profit: $${pnl.toFixed(2)}
-
-🎊 Congratulations on the automated win!`;
-              }
-              
-              if (title) {
-                setTimeout(() => {
-                  alert(`${title}\n\n${message}`);
-                }, 500);
-              }
-            }
-          }
-        });
-        
-        // Update positions state
-        setPositions(currentPositions);
-      }
-    }
-  } catch (error) {
-    console.error('Error syncing positions:', error);
-  }
-};
     
     // Load positions
     const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
