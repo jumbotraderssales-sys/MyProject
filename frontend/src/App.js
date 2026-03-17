@@ -396,6 +396,30 @@ const getLockedMessage = (challenge) => {
   return `❌ ${challenge.name} Locked\n\nYou must complete ${challenge.requiredChallenge} first before accessing this challenge.\n\nProgress: ${challenge.requiredChallenge} → ${challenge.name}`;
 };
 
+  // Rate limiting helper
+const rateLimit = (() => {
+  const timestamps = {};
+  return (key, limitMs = 2000) => {
+    const now = Date.now();
+    if (timestamps[key] && now - timestamps[key] < limitMs) {
+      return false;
+    }
+    timestamps[key] = now;
+    return true;
+  };
+})();
+
+// Token validation function
+const validateToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Session expired. Please login again.');
+    handleLogout();
+    setShowLogin(true);
+    return false;
+  }
+  return true;
+};
   // Add this effect near your other useEffect hooks
 useEffect(() => {
   if (activeDashboard === 'Trading') {
@@ -2200,6 +2224,16 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
   // Prevent multiple simultaneous trades
   if (isProcessingTrade) {
     console.log('Trade already in progress, please wait...');
+    return;
+  }
+     // Rate limit trades to prevent double-clicks
+  if (!rateLimit('trade', 2000)) {
+    alert('Please wait a moment before placing another trade');
+    return;
+  }
+
+  // Validate token before proceeding
+  if (!validateToken()) {
     return;
   }
  
