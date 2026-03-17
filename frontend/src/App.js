@@ -2465,17 +2465,79 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
     const data = await response.json();
 
     if (data.success) {
-      // 1. Determine new balance (INR) – prefer backend, else calculate correctly
+      // Show appropriate message based on close reason
+      let title = '';
+      let message = '';
+      let emoji = '';
+      
+      switch(reason) {
+        case 'STOP_LOSS':
+          emoji = '🛑';
+          title = `${emoji} STOP LOSS HIT`;
+          message = 
+`Your ${position.side} position for ${position.symbol} was closed.
+
+📉 Entry: $${position.entryPrice.toFixed(2)}
+🎯 Stop Loss: $${position.stopLoss?.toFixed(2)}
+💵 Loss: $${Math.abs(pnl).toFixed(2)}
+
+💡 Tip: Review your strategy. Every loss is a learning opportunity!`;
+          break;
+          
+        case 'TAKE_PROFIT':
+          emoji = '🎯';
+          title = `${emoji} TAKE PROFIT HIT! 🎉`;
+          message = 
+`Congratulations! Your ${position.side} position hit its target!
+
+📈 Entry: $${position.entryPrice.toFixed(2)}
+💰 Take Profit: $${position.takeProfit?.toFixed(2)}
+✅ Profit: $${pnl.toFixed(2)}
+
+🌟 Great trading! Keep up the excellent work!`;
+          break;
+          
+        case 'CHALLENGE_FAILED':
+          emoji = '❌';
+          title = `${emoji} Position Closed - Challenge Failed`;
+          message = `Your position was closed because the maximum loss limit was reached.`;
+          break;
+          
+        case 'CHALLENGE_PASSED':
+          emoji = '🏆';
+          title = `${emoji} Position Closed - Challenge Passed!`;
+          message = `Your position was closed as you successfully completed the challenge!`;
+          break;
+          
+        case 'MANUAL':
+        case 'MANUAL_CHART':
+        default:
+          emoji = '👋';
+          title = `${emoji} Position Closed Manually`;
+          message = 
+`Your ${position.side} position for ${position.symbol} has been closed.
+
+📊 Entry: $${position.entryPrice.toFixed(2)}
+💵 P&L: $${pnl.toFixed(2)}
+
+Ready for your next trade!`;
+          break;
+      }
+      
+      // Show the popup message
+      setTimeout(() => {
+        alert(`${title}\n\n${message}`);
+      }, 100);
+
+      // Rest of your existing closePosition code...
+      // 1. Determine new balance
       let newBalance;
       if (data.user?.paperBalance !== undefined) {
         newBalance = data.user.paperBalance;
       } else {
-        // Fallback: convert USD values to INR using current dollarRate
         const pnlINR = pnl * dollarRate;
-        // Margin used in USD = (entryPrice * size) / leverage
         const marginUsedUSD = (position.entryPrice * position.size) / position.leverage;
         const marginUsedINR = marginUsedUSD * dollarRate;
-        // Current balance (INR) already has margin deducted; add back margin + PnL
         newBalance = balance + pnlINR + marginUsedINR;
       }
 
@@ -2483,7 +2545,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
       setBalance(newBalance);
       setPositions(prev => prev.filter(p => p.id !== positionId));
 
-      // 3. Update user account if backend returned it, otherwise use our calculation
+      // 3. Update user account
       if (data.user) {
         setUserAccount(prev => ({
           ...prev,
@@ -2527,18 +2589,17 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
           ...prev,
           challengeStats: updatedStats
         }));
-        // Save updated stats to localStorage immediately
-  const userDataStr = localStorage.getItem('userData');
-  if (userDataStr) {
-    const userData = JSON.parse(userDataStr);
-    userData.challengeStats = updatedStats;
-    localStorage.setItem('userData', JSON.stringify(userData));
-  }
+        
+        const userDataStr = localStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          userData.challengeStats = updatedStats;
+          localStorage.setItem('userData', JSON.stringify(userData));
+        }
 
-  setTimeout(() => checkChallengeRules(), 100);
-}
+        setTimeout(() => checkChallengeRules(), 100);
+      }
 
-      // 6. (Optional) Sync with backend to ensure consistency – may be skipped due to cooldown
       await syncUserWallet();
 
     } else {
