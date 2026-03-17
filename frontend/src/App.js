@@ -2465,7 +2465,7 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
   
   setStopLoss('');
   setTakeProfit('');
-      } else {
+      }: else {
         alert(data.error || 'Trade failed');
       }
     } catch (error) {
