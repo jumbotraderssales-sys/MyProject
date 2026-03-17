@@ -2202,17 +2202,7 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
     console.log('Trade already in progress, please wait...');
     return;
   }
-     // Rate limit trades to prevent double-clicks
-  if (!rateLimit('trade', 2000)) {
-    alert('Please wait a moment before placing another trade');
-    return;
-  }
-
-  // Validate token before proceeding
-  if (!validateToken()) {
-    return;
-  }
-
+ 
   const validation = validateTrade();
   if (!validation.valid) {
     alert(validation.message);
