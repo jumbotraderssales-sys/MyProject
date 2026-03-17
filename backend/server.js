@@ -666,6 +666,200 @@ const writeReferrals = async (referrals) => {
     return false;
   }
 };
+// ========== AUTOMATIC SL/TP CHECKING SERVICE (RUNS 24/7) ==========
+// This runs on the server and checks all open positions every few seconds
+
+// Function to get current price from Binance
+const getCurrentPrice = async (symbol) => {
+  try {
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+    const data = await response.json();
+    return parseFloat(data.price);
+  } catch (error) {
+    console.error(`❌ Failed to fetch price for ${symbol}:`, error.message);
+    return null;
+  }
+};
+
+// Main SL/TP checking function
+const checkAllPositionsSLTP = async () => {
+  try {
+    console.log('🔍 Checking positions for SL/TP triggers...');
+    
+    // Read current data
+    const trades = await readTrades();
+    const users = await readUsers();
+    const orders = await readOrders();
+    
+    // Get all open positions
+    const openPositions = trades.filter(t => t.status === 'open');
+    
+    if (openPositions.length === 0) {
+      // console.log('No open positions to check');
+      return;
+    }
+    
+    console.log(`📊 Checking ${openPositions.length} open positions`);
+    
+    let positionsClosed = 0;
+    
+    // Check each position
+    for (const position of openPositions) {
+      // Get current price
+      const currentPrice = await getCurrentPrice(position.symbol);
+      
+      if (!currentPrice) {
+        console.log(`⚠️ Skipping ${position.symbol} - price fetch failed`);
+        continue;
+      }
+      
+      // Update current price in trade
+      const tradeIndex = trades.findIndex(t => t.id === position.id);
+      if (tradeIndex !== -1) {
+        trades[tradeIndex].currentPrice = currentPrice;
+      }
+      
+      // Check SL/TP conditions
+      let shouldClose = false;
+      let closeReason = '';
+      
+      if (position.side === 'long' || position.side === 'LONG') {
+        // LONG position
+        if (position.stopLoss && currentPrice <= parseFloat(position.stopLoss)) {
+          shouldClose = true;
+          closeReason = 'STOP_LOSS';
+          console.log(`🔴 STOP LOSS TRIGGERED: ${position.symbol} at $${currentPrice} (SL: $${position.stopLoss})`);
+        }
+        if (position.takeProfit && currentPrice >= parseFloat(position.takeProfit)) {
+          shouldClose = true;
+          closeReason = 'TAKE_PROFIT';
+          console.log(`🟢 TAKE PROFIT TRIGGERED: ${position.symbol} at $${currentPrice} (TP: $${position.takeProfit})`);
+        }
+      } else {
+        // SHORT position
+        if (position.stopLoss && currentPrice >= parseFloat(position.stopLoss)) {
+          shouldClose = true;
+          closeReason = 'STOP_LOSS';
+          console.log(`🔴 STOP LOSS TRIGGERED: ${position.symbol} at $${currentPrice} (SL: $${position.stopLoss})`);
+        }
+        if (position.takeProfit && currentPrice <= parseFloat(position.takeProfit)) {
+          shouldClose = true;
+          closeReason = 'TAKE_PROFIT';
+          console.log(`🟢 TAKE PROFIT TRIGGERED: ${position.symbol} at $${currentPrice} (TP: $${position.takeProfit})`);
+        }
+      }
+      
+      // Close position if triggered
+      if (shouldClose) {
+        positionsClosed++;
+        
+        // Calculate PnL
+        const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
+                    (position.side === 'long' || position.side === 'LONG' ? 1 : -1);
+        
+        console.log(`💰 PnL for ${position.id}: $${pnl.toFixed(2)}`);
+        
+        // Find user
+        const userIndex = users.findIndex(u => u.id === position.userId);
+        if (userIndex !== -1) {
+          const user = users[userIndex];
+          
+          // Return margin and add PnL to paper balance
+          const marginINR = position.marginUsed * DOLLAR_RATE;
+          const pnlINR = pnl * DOLLAR_RATE;
+          user.paperBalance += marginINR + pnlINR;
+          
+          // Update challenge stats
+          if (user.challengeStats) {
+            if (pnl > 0) {
+              user.challengeStats.totalProfit += pnl;
+              user.challengeStats.currentProfit += pnl;
+            } else {
+              user.challengeStats.totalLoss += Math.abs(pnl);
+            }
+            
+            // Calculate win rate
+            const closedTrades = trades.filter(t => t.userId === user.id && t.status === 'closed').length + 1;
+            const winningTrades = trades.filter(t => 
+              t.userId === user.id && t.status === 'closed' && t.pnl > 0
+            ).length + (pnl > 0 ? 1 : 0);
+            
+            user.challengeStats.winRate = (winningTrades / closedTrades) * 100;
+          }
+          
+          user.updatedAt = new Date().toISOString();
+        }
+        
+        // Update trade status
+        trades[tradeIndex].status = 'closed';
+        trades[tradeIndex].exitPrice = currentPrice;
+        trades[tradeIndex].pnl = pnl;
+        trades[tradeIndex].closeReason = closeReason;
+        trades[tradeIndex].closedAt = new Date().toISOString();
+        trades[tradeIndex].updatedAt = new Date().toISOString();
+        
+        // Update order if exists
+        const orderIndex = orders.findIndex(o => o.id === position.id);
+        if (orderIndex !== -1) {
+          orders[orderIndex].status = 'closed';
+          orders[orderIndex].exitPrice = currentPrice;
+          orders[orderIndex].pnl = pnl;
+          orders[orderIndex].exitTime = new Date().toISOString();
+          orders[orderIndex].closeReason = closeReason;
+          orders[orderIndex].updatedAt = new Date().toISOString();
+        }
+      }
+    }
+    
+    // Save all changes if any positions were closed
+    if (positionsClosed > 0) {
+      console.log(`✅ Closed ${positionsClosed} positions`);
+      await writeTrades(trades);
+      await writeUsers(users);
+      await writeOrders(orders);
+      
+      // Also update MongoDB if connected
+      if (isMongoConnected) {
+        try {
+          for (const trade of trades) {
+            await TradeModel.updateOne({ id: trade.id }, trade);
+          }
+          for (const user of users) {
+            await UserModel.updateOne({ id: user.id }, user);
+          }
+          for (const order of orders) {
+            await OrderModel.updateOne({ id: order.id }, order);
+          }
+        } catch (mongoError) {
+          console.error('MongoDB update error:', mongoError.message);
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in SL/TP checking service:', error);
+  }
+};
+
+// Start the automatic SL/TP checking service
+const startSLTPService = () => {
+  console.log('🚀 Starting automatic SL/TP checking service...');
+  
+  // Run immediately on startup
+  setTimeout(() => {
+    checkAllPositionsSLTP();
+  }, 5000); // Wait 5 seconds for server to fully start
+  
+  // Then run every 3 seconds
+  setInterval(() => {
+    checkAllPositionsSLTP();
+  }, 3000);
+  
+  console.log('✅ SL/TP service will check positions every 3 seconds');
+};
+
+// Call this after server starts
+setTimeout(startSLTPService, 2000);
 
 // ========== ALL YOUR EXISTING ROUTES – UNCHANGED ==========
 // (they all use the helpers above, so they now transparently use MongoDB when connected)
@@ -1332,7 +1526,6 @@ user.paperBalance -= marginINR;
     user.challengeStats.tradesCount += 1;
     user.updatedAt = new Date().toISOString();
     
-    // Create new trade
     const newTrade = {
       id: Date.now().toString(),
       userId,
@@ -1342,8 +1535,8 @@ user.paperBalance -= marginINR;
       size: tradeData.size,
       leverage: tradeData.leverage,
       entryPrice: tradeData.entryPrice,
-      stopLoss: tradeData.stopLoss,
-      takeProfit: tradeData.takeProfit,
+      stopLoss: tradeData.stopLoss,      // ← THIS MUST BE SAVED
+      takeProfit: tradeData.takeProfit,  // ← THIS MUST BE SAVED
       status: 'open',
       positionValue,
       marginUsed: marginRequired,
