@@ -3200,19 +3200,21 @@ const calculateOrderPnL = (order) => {
         {/* Trade Actions */}
         <div className="trade-actions-top">
           <button 
-            className="trade-btn-top buy-btn-top"
-            onClick={() => handleTrade('LONG')}
-            disabled={!canTrade}
-          >
-            {canTrade ? 'BUY/LONG' : 'BUY CHALLENGE'}
-          </button>
-          <button 
-            className="trade-btn-top sell-btn-top"
-            onClick={() => handleTrade('SHORT')}
-            disabled={!canTrade}
-          >
-            {canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE'}
-          </button>
+  className="trade-btn-top buy-btn-top"
+  onClick={() => handleTrade('LONG')}
+  disabled={!canTrade || isProcessingTrade}
+  style={{ opacity: isProcessingTrade ? 0.5 : 1 }}
+>
+  {isProcessingTrade ? 'Processing...' : (canTrade ? 'BUY/LONG' : 'BUY CHALLENGE')}
+</button>
+<button 
+  className="trade-btn-top sell-btn-top"
+  onClick={() => handleTrade('SHORT')}
+  disabled={!canTrade || isProcessingTrade}
+  style={{ opacity: isProcessingTrade ? 0.5 : 1 }}
+>
+  {isProcessingTrade ? 'Processing...' : (canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE')}
+</button>
         </div>
 
         {/* Funds Information - Removed Max Margin display */}
