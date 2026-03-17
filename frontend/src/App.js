@@ -5717,36 +5717,44 @@ return (
                               </span>
                               <span>${order.entryPrice?.toFixed(2)}</span>
                               <span>
-                                {isOpenOrder && editingOrderId === order.id ? (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <input
-                                      type="number"
-                                      value={editSL}
-                                      onChange={(e) => setEditSL(e.target.value)}
-                                      placeholder="SL"
-                                      style={{ width: '60px', fontSize: '0.7rem' }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="sl-info">
-                                    <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
-                                    <div className="sl-amount">{slAmount}</div>
-                                    {isOpenOrder && (
-                                      <button
-                                        className="edit-sltp-btn"
-                                        onClick={() => {
-                                          setEditingOrderId(order.id);
-                                          setEditSL(order.stopLoss?.toString() || '');
-                                          setEditTP(order.takeProfit?.toString() || '');
-                                        }}
-                                        style={{ marginLeft: '5px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                                        title="Edit SL/TP"
-                                      >
-                                        ✎
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
+                               {isOpenOrder && editingOrderId === order.id ? (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+    <input
+      type="number"
+      value={editSL}
+      onChange={(e) => setEditSL(e.target.value)}
+      placeholder="SL"
+      style={{ width: '60px', fontSize: '0.7rem' }}
+    />
+  </div>
+) : (
+  <div className="sl-info">
+    <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
+    <div className="sl-amount">{slAmount}</div>
+    {isOpenOrder && (
+      <button
+        className="edit-sltp-btn"
+        onClick={() => {
+          setEditingOrderId(order.id);
+          setEditSL(order.stopLoss?.toString() || '');
+          setEditTP(order.takeProfit?.toString() || '');
+        }}
+        style={{ 
+          marginLeft: '5px', 
+          background: 'none', 
+          border: 'none', 
+          cursor: 'pointer',
+          fontWeight: 'bold',
+          color: '#4f46e5',
+          fontSize: '0.8rem'
+        }}
+        title="Edit SL/TP"
+      >
+        <span style={{ fontWeight: 'bold' }}>EDIT</span> <span style={{ fontSize: '0.9rem' }}>✎</span>
+      </button>
+    )}
+  </div>
+)}
                               </span>
                               <span>
                                 {isOpenOrder && editingOrderId === order.id ? (
