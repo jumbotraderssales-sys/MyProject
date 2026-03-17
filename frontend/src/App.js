@@ -2468,26 +2468,24 @@ const handleTrade = async (side) => {
   setStopLoss('');
   setTakeProfit('');
 };
+
+const handleChallengeBuy = async (challenge) => {
+  setSelectedChallenge(challenge);
+  
+  if (!isLoggedIn) {
+    setPendingChallengePurchase(true);
+    setShowRegister(true);
+  } else {
+    initiateUPIPayment(challenge.fee.replace('₹', ''));
     
-  const handleChallengeBuy = async (challenge) => {
-    setSelectedChallenge(challenge);
-    
-    if (!isLoggedIn) {
-      setPendingChallengePurchase(true);
-      setShowRegister(true);
-    } else {
-      initiateUPIPayment(challenge.fee.replace('₹', ''));
-      
-      setTimeout(() => {
-        alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${challenge.paperBalance.toLocaleString()} paper money once admin approves your payment.`);
-      }, 500);
-    }
-  };
+    setTimeout(() => {
+      alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${challenge.paperBalance.toLocaleString()} paper money once admin approves your payment.`);
+    }, 500);
+  }
+};
+
 const handleInstallClick = async () => {
   if (!deferredPrompt) return;
-  
-  // Show the install prompt
-  deferredPrompt.prompt();
   
   // Wait for the user to respond to the prompt
   const { outcome } = await deferredPrompt.userChoice;
