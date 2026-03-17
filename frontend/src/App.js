@@ -1412,17 +1412,17 @@ useEffect(() => {
 
       if (position.side === 'LONG') {
         if (sl !== null && currentPrice <= sl) {
-          closePosition(position.id, 'STOP_LOSS');
+          closePosition(position.id, 'STOP_LOSS');  // ← Passes correct reason
         }
         if (tp !== null && currentPrice >= tp) {
-          closePosition(position.id, 'TAKE_PROFIT');
+          closePosition(position.id, 'TAKE_PROFIT'); // ← Passes correct reason
         }
       } else if (position.side === 'SHORT') {
         if (sl !== null && currentPrice >= sl) {
-          closePosition(position.id, 'STOP_LOSS');
+          closePosition(position.id, 'STOP_LOSS');  // ← Passes correct reason
         }
         if (tp !== null && currentPrice <= tp) {
-          closePosition(position.id, 'TAKE_PROFIT');
+          closePosition(position.id, 'TAKE_PROFIT'); // ← Passes correct reason
         }
       }
     });
