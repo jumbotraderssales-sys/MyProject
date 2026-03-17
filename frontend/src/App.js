@@ -278,107 +278,6 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // ========== OFFLINE MODE DETECTION ==========
-const [isOnline, setIsOnline] = useState(navigator.onLine);
-const [offlineQueue, setOfflineQueue] = useState([]);
-const [syncInProgress, setSyncInProgress] = useState(false);
-const offlineQueueRef = useRef([]);
-
-// Monitor online/offline status
-useEffect(() => {
-  const handleOnline = () => {
-    setIsOnline(true);
-    syncOfflineQueue();
-  };
-  const handleOffline = () => setIsOnline(false);
-
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
-
-  return () => {
-    window.removeEventListener('online', handleOnline);
-    window.removeEventListener('offline', handleOffline);
-  };
-}, []);
-
-// Load offline queue from localStorage
-useEffect(() => {
-  const savedQueue = localStorage.getItem('offlineQueue');
-  if (savedQueue) {
-    try {
-      const queue = JSON.parse(savedQueue);
-      setOfflineQueue(queue);
-      offlineQueueRef.current = queue;
-    } catch (e) {
-      console.error('Error loading offline queue:', e);
-    }
-  }
-}, []);
-
-// Save offline queue to localStorage
-useEffect(() => {
-  localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
-  offlineQueueRef.current = offlineQueue;
-}, [offlineQueue]);
-
-// Sync offline queue when back online
-const syncOfflineQueue = async () => {
-  if (syncInProgress || offlineQueueRef.current.length === 0) return;
-  
-  setSyncInProgress(true);
-  console.log('🔄 Syncing offline queue...', offlineQueueRef.current.length, 'items');
-  
-  const queue = [...offlineQueueRef.current];
-  const failedItems = [];
-  
-  for (const item of queue) {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) continue;
-      
-      const response = await fetch(item.url, {
-        method: item.method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: item.data ? JSON.stringify(item.data) : undefined
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Synced ${item.type}:`, data);
-        
-        // Handle specific sync actions
-        if (item.type === 'TRADE') {
-          // Update local state with server response
-          if (data.trade) {
-            setPositions(prev => prev.filter(p => p.id !== item.localId));
-            setPositions(prev => [data.trade, ...prev]);
-          }
-        } else if (item.type === 'CLOSE_POSITION') {
-          // Remove from local positions
-          setPositions(prev => prev.filter(p => p.id !== item.positionId));
-        }
-      } else {
-        failedItems.push(item);
-      }
-    } catch (error) {
-      console.error('Sync failed for item:', item, error);
-      failedItems.push(item);
-    }
-  }
-  
-  setOfflineQueue(failedItems);
-  setSyncInProgress(false);
-  
-  if (failedItems.length === 0) {
-    console.log('✅ All offline items synced successfully');
-    alert('✅ All offline trades synced with server!');
-  } else {
-    console.log(`⚠️ ${failedItems.length} items failed to sync`);
-  }
-};
   const [userData, setUserData] = useState({
     name: '',
     email: '',
@@ -2296,114 +2195,64 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
   return { valid: true, message: '' };
 };
 
-const handleTrade = async (side) => {
-  const validation = validateTrade();
-  if (!validation.valid) {
-    alert(validation.message);
-    return;
-  }
-  
-  // Get current price (use local price if offline)
-  let currentPrice;
-  if (isOnline) {
-    try {
-      currentPrice = await fetchRealPrice(selectedSymbol);
-    } catch (error) {
-      console.warn('Failed to fetch live price, using cached price');
+  const handleTrade = async (side) => {
+    const validation = validateTrade();
+    if (!validation.valid) {
+      alert(validation.message);
+      return;
+    }
+    
+    // Get the latest real price from Binance
+    let currentPrice = await fetchRealPrice(selectedSymbol);
+    
+    // Fallback if API fails
+    if (!currentPrice) {
       currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
+      console.warn('Using fallback price for order');
     }
-  } else {
-    // Use cached price when offline
-    currentPrice = prices[selectedSymbol] || cryptoData.find(c => c.symbol === selectedSymbol)?.price || 91391.5;
-  }
 
-  // Update local price
-  setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
+    // Update local price for consistency
+    setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
 
-  const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-  
-  // Calculate SL/TP
-  let sl = null;
-  let tp = null;
-  const slAmount = marginRequired * 0.10;
-  const tpAmount = marginRequired * 0.20;
-  const priceMoveForSL = slAmount / (orderSize * leverage);
-  const priceMoveForTP = tpAmount / (orderSize * leverage);
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    
+    // Auto SL/TP removed – user must manually enter or leave blank.
+    // Parse SL and TP, treat empty strings as null
+  // Auto SL = 10%, Auto TP = 20%
+// Auto SL = 10% of margin, Auto TP = 20% of margin
+let sl = null;
+let tp = null;
 
-  if (side === 'LONG') {
-    sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
-    tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
-  } else if (side === 'SHORT') {
-    sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
-    tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
-  }
-  
-  const tradeData = {
-    symbol: selectedSymbol,
-    side: side,
-    size: parseFloat(orderSize),
-    leverage: leverage,
-    entryPrice: currentPrice,
-    stopLoss: sl,
-    takeProfit: tp,
-    margin: marginRequired,
-    timestamp: new Date().toISOString()
-  };
-  
-  // Generate local ID
-  const localId = `LOCAL-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  
-  // Create local position
-  const newPosition = {
-    id: localId,
-    ...tradeData,
-    status: 'OPEN',
-    timestamp: new Date().toLocaleTimeString(),
-    pnl: 0,
-    positionValue: currentPrice * orderSize * leverage,
-    isLocal: true // Mark as local-only
-  };
+// money risked and reward based on margin used
+const slAmount = marginRequired * 0.10; // 10% loss of margin
+const tpAmount = marginRequired * 0.20; // 20% profit of margin
 
-  // Update local state immediately
-  setPositions(prev => {
-    const updated = [newPosition, ...prev];
-    if (drawTradeLines) drawTradeLines(newPosition);
-    return updated;
-  });
-  
-  // Deduct margin from local balance
-  const marginINR = marginRequired * dollarRate;
-  const newBalance = balance - marginINR;
-  setBalance(newBalance);
-  setUserAccount(prev => ({ ...prev, paperBalance: newBalance }));
+// price movement needed for that PnL
+const priceMoveForSL = slAmount / (orderSize * leverage);
+const priceMoveForTP = tpAmount / (orderSize * leverage);
 
-  // Add to order history
-  const newOrder = {
-    id: localId,
-    ...tradeData,
-    status: 'OPEN',
-    timestamp: new Date().toLocaleString(),
-    pnl: 0,
-    currentPrice: currentPrice,
-    positionValue: currentPrice * orderSize * leverage,
-    marginUsed: marginRequired,
-    isLocal: true
-  };
-  setOrderHistory(prev => [newOrder, ...prev]);
+if (side === 'LONG') {
+  sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
+} else if (side === 'SHORT') {
+  sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
+}
 
-  // Update challenge stats locally
-  setUserAccount(prev => ({
-    ...prev,
-    challengeStats: {
-      ...prev.challengeStats,
-      tradesCount: (prev.challengeStats?.tradesCount || 0) + 1
-    }
-  }));
-
-  // If online, try to sync with backend
-  if (isOnline) {
+    
     try {
       const token = localStorage.getItem('token');
+      const tradeData = {
+        symbol: selectedSymbol,
+        side: side,
+        size: parseFloat(orderSize),
+        leverage: leverage,
+        entryPrice: currentPrice,
+        stopLoss: sl,
+        takeProfit: tp,
+        margin: marginRequired
+      };
+      
       const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
         method: 'POST',
         headers: {
@@ -2414,78 +2263,77 @@ const handleTrade = async (side) => {
       });
       
       const data = await response.json();
-      
-      if (data.success) {
-        // Replace local position with server position
-        setPositions(prev => prev.map(p => 
-          p.id === localId ? { ...data.trade, id: data.trade.id, status: 'OPEN' } : p
-        ));
-        setOrderHistory(prev => prev.map(o => 
-          o.id === localId ? { ...data.order, id: data.order.id } : o
-        ));
-        
-        // Update balance from server
-        setBalance(data.newBalance);
-        setUserAccount(prev => ({ ...prev, paperBalance: data.newBalance }));
-        
-        console.log('✅ Trade synced with server');
+          if (data.success) {
+  const newPosition = {
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleTimeString(),
+    pnl: 0,
+    positionValue: data.trade.positionValue
+  };
+
+  setPositions(prev => {
+    const updated = [newPosition, ...prev];
+    drawTradeLines(newPosition);
+    return updated;
+  });
+ 
+  setBalance(data.newBalance);
+  // 👇 Update userAccount.paperBalance immediately so the wallet reflects the new balance
+  setUserAccount(prev => ({ ...prev, paperBalance: data.newBalance }));
+
+  const newOrder = {
+    id: data.trade.id,
+    ...tradeData,
+    status: 'OPEN',
+    timestamp: new Date().toLocaleString(),
+    pnl: 0,
+    currentPrice: currentPrice,
+    positionValue: data.trade.positionValue,
+    marginUsed: (currentPrice * orderSize) / leverage
+  };
+
+  setOrderHistory(prev => [newOrder, ...prev]);
+
+  setUserAccount(prev => ({
+    ...prev,
+    challengeStats: {
+      ...prev.challengeStats,
+      tradesCount: prev.challengeStats.tradesCount + 1
+    }
+  }));
+
+  setStopLoss('');
+  setTakeProfit('');
       } else {
         alert(data.error || 'Trade failed');
       }
     } catch (error) {
-      console.warn('⚠️ Failed to sync trade with server, saved locally');
-      // Add to offline queue
-      const queueItem = {
-        id: `QUEUE-${Date.now()}`,
-        type: 'TRADE',
-        url: 'https://myproject1-d097.onrender.com/api/trades',
-        method: 'POST',
-        data: tradeData,
-        localId: localId,
-        timestamp: new Date().toISOString()
-      };
-      setOfflineQueue(prev => [...prev, queueItem]);
-      
-      // Show offline notification
-      alert('⚠️ You are offline. Trade saved locally and will sync when online.');
+      console.error('Trade error:', error);
+      alert('Trade failed. Please try again.');
     }
-  } else {
-    // Add to offline queue
-    const queueItem = {
-      id: `QUEUE-${Date.now()}`,
-      type: 'TRADE',
-      url: 'https://myproject1-d097.onrender.com/api/trades',
-      method: 'POST',
-      data: tradeData,
-      localId: localId,
-      timestamp: new Date().toISOString()
-    };
-    setOfflineQueue(prev => [...prev, queueItem]);
+  };
     
-    alert('⚠️ Offline mode: Trade saved locally. Will sync when back online.');
-  }
-  
-  setStopLoss('');
-  setTakeProfit('');
-};
-
-const handleChallengeBuy = async (challenge) => {
-  setSelectedChallenge(challenge);
-  
-  if (!isLoggedIn) {
-    setPendingChallengePurchase(true);
-    setShowRegister(true);
-  } else {
-    initiateUPIPayment(challenge.fee.replace('₹', ''));
+  const handleChallengeBuy = async (challenge) => {
+    setSelectedChallenge(challenge);
     
-    setTimeout(() => {
-      alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${challenge.paperBalance.toLocaleString()} paper money once admin approves your payment.`);
-    }, 500);
-  }
-};
-
+    if (!isLoggedIn) {
+      setPendingChallengePurchase(true);
+      setShowRegister(true);
+    } else {
+      initiateUPIPayment(challenge.fee.replace('₹', ''));
+      
+      setTimeout(() => {
+        alert(`💡 IMPORTANT:\n\nAfter payment, your request will be sent for admin approval.\nYou will receive ₹${challenge.paperBalance.toLocaleString()} paper money once admin approves your payment.`);
+      }, 500);
+    }
+  };
 const handleInstallClick = async () => {
   if (!deferredPrompt) return;
+  
+  // Show the install prompt
+  deferredPrompt.prompt();
   
   // Wait for the user to respond to the prompt
   const { outcome } = await deferredPrompt.userChoice;
@@ -2545,7 +2393,6 @@ const handleInstallClick = async () => {
     }
   };
 
-
 const closePosition = async (positionId, reason = 'MANUAL') => {
   const position = positions.find(p => p.id === positionId);
   if (!position) return;
@@ -2554,93 +2401,85 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
               (position.side === 'LONG' ? 1 : -1);
 
-  // Calculate new balance
-  const marginINR = position.marginUsed * dollarRate;
-  const pnlINR = pnl * dollarRate;
-  const newBalance = balance + marginINR + pnlINR;
-
-  // Update local state immediately
-  setBalance(newBalance);
-  setPositions(prev => prev.filter(p => p.id !== positionId));
-
-  setUserAccount(prev => ({
-    ...prev,
-    paperBalance: newBalance
-  }));
-
-  // Update order history
-  setOrderHistory(prev => prev.map(order =>
-    order.id === positionId ? {
-      ...order,
-      status: 'CLOSED',
-      exitPrice: currentPrice,
-      exitTime: new Date().toLocaleString(),
-      pnl: pnl,
-      closeReason: reason,
-      updatedAt: new Date().toISOString()
-    } : order
-  ));
-
-  // Update challenge stats locally
-  if (userAccount.currentChallenge) {
-    const updatedStats = { ...userAccount.challengeStats };
-    if (pnl > 0) {
-      updatedStats.totalProfit = (updatedStats.totalProfit || 0) + pnl;
-      updatedStats.currentProfit = (updatedStats.currentProfit || 0) + pnl;
-    } else {
-      updatedStats.totalLoss = (updatedStats.totalLoss || 0) + Math.abs(pnl);
-    }
-    setUserAccount(prev => ({ ...prev, challengeStats: updatedStats }));
-  }
-
-  // If online, try to sync with backend
-  if (isOnline && !position.isLocal) {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          exitPrice: currentPrice,
-          closeReason: reason
-        })
-      });
-      
-      if (response.ok) {
-        console.log('✅ Position closed on server');
-      }
-    } catch (error) {
-      console.warn('⚠️ Failed to sync close with server, will retry');
-      // Add to offline queue
-      const queueItem = {
-        id: `QUEUE-${Date.now()}`,
-        type: 'CLOSE_POSITION',
-        url: `https://myproject1-d097.onrender.com/api/trades/${positionId}/close`,
-        method: 'POST',
-        data: { exitPrice: currentPrice, closeReason: reason },
-        positionId: positionId,
-        timestamp: new Date().toISOString()
-      };
-      setOfflineQueue(prev => [...prev, queueItem]);
-    }
-  } else if (position.isLocal) {
-    // For local positions, add to queue for later sync
-    const queueItem = {
-      id: `QUEUE-${Date.now()}`,
-      type: 'CLOSE_POSITION',
-      url: `https://myproject1-d097.onrender.com/api/trades/${positionId}/close`,
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
       method: 'POST',
-      data: { exitPrice: currentPrice, closeReason: reason },
-      positionId: positionId,
-      timestamp: new Date().toISOString()
-    };
-    setOfflineQueue(prev => [...prev, queueItem]);
-  }
-};
-        
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        exitPrice: currentPrice,
+        closeReason: reason
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // 1. Determine new balance (INR) – prefer backend, else calculate correctly
+      let newBalance;
+      if (data.user?.paperBalance !== undefined) {
+        newBalance = data.user.paperBalance;
+      } else {
+        // Fallback: convert USD values to INR using current dollarRate
+        const pnlINR = pnl * dollarRate;
+        // Margin used in USD = (entryPrice * size) / leverage
+        const marginUsedUSD = (position.entryPrice * position.size) / position.leverage;
+        const marginUsedINR = marginUsedUSD * dollarRate;
+        // Current balance (INR) already has margin deducted; add back margin + PnL
+        newBalance = balance + pnlINR + marginUsedINR;
+      }
+
+      // 2. Update balance and remove position
+      setBalance(newBalance);
+      setPositions(prev => prev.filter(p => p.id !== positionId));
+
+      // 3. Update user account if backend returned it, otherwise use our calculation
+      if (data.user) {
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: data.user.paperBalance
+        }));
+      } else {
+        setUserAccount(prev => ({
+          ...prev,
+          paperBalance: newBalance
+        }));
+      }
+
+      // 4. Update order history
+      setOrderHistory(prev => prev.map(order =>
+        order.id === positionId ? {
+          ...order,
+          status: 'CLOSED',
+          exitPrice: currentPrice,
+          exitTime: new Date().toLocaleString(),
+          pnl: pnl,
+          closeReason: reason,
+          updatedAt: new Date().toISOString()
+        } : order
+      ));
+
+      // 5. Update challenge stats
+      if (userAccount.currentChallenge) {
+        const updatedStats = { ...userAccount.challengeStats };
+        if (pnl > 0) {
+          updatedStats.totalProfit += pnl;
+          updatedStats.currentProfit += pnl;
+        } else {
+          updatedStats.totalLoss += Math.abs(pnl);
+        }
+
+        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
+        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
+        updatedStats.winRate = (winningTrades / closedTrades) * 100;
+
+        setUserAccount(prev => ({
+          ...prev,
+          challengeStats: updatedStats
+        }));
         // Save updated stats to localStorage immediately
   const userDataStr = localStorage.getItem('userData');
   if (userDataStr) {
