@@ -278,6 +278,107 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // ========== OFFLINE MODE DETECTION ==========
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+const [offlineQueue, setOfflineQueue] = useState([]);
+const [syncInProgress, setSyncInProgress] = useState(false);
+const offlineQueueRef = useRef([]);
+
+// Monitor online/offline status
+useEffect(() => {
+  const handleOnline = () => {
+    setIsOnline(true);
+    syncOfflineQueue();
+  };
+  const handleOffline = () => setIsOnline(false);
+
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  return () => {
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+  };
+}, []);
+
+// Load offline queue from localStorage
+useEffect(() => {
+  const savedQueue = localStorage.getItem('offlineQueue');
+  if (savedQueue) {
+    try {
+      const queue = JSON.parse(savedQueue);
+      setOfflineQueue(queue);
+      offlineQueueRef.current = queue;
+    } catch (e) {
+      console.error('Error loading offline queue:', e);
+    }
+  }
+}, []);
+
+// Save offline queue to localStorage
+useEffect(() => {
+  localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+  offlineQueueRef.current = offlineQueue;
+}, [offlineQueue]);
+
+// Sync offline queue when back online
+const syncOfflineQueue = async () => {
+  if (syncInProgress || offlineQueueRef.current.length === 0) return;
+  
+  setSyncInProgress(true);
+  console.log('🔄 Syncing offline queue...', offlineQueueRef.current.length, 'items');
+  
+  const queue = [...offlineQueueRef.current];
+  const failedItems = [];
+  
+  for (const item of queue) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) continue;
+      
+      const response = await fetch(item.url, {
+        method: item.method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: item.data ? JSON.stringify(item.data) : undefined
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Synced ${item.type}:`, data);
+        
+        // Handle specific sync actions
+        if (item.type === 'TRADE') {
+          // Update local state with server response
+          if (data.trade) {
+            setPositions(prev => prev.filter(p => p.id !== item.localId));
+            setPositions(prev => [data.trade, ...prev]);
+          }
+        } else if (item.type === 'CLOSE_POSITION') {
+          // Remove from local positions
+          setPositions(prev => prev.filter(p => p.id !== item.positionId));
+        }
+      } else {
+        failedItems.push(item);
+      }
+    } catch (error) {
+      console.error('Sync failed for item:', item, error);
+      failedItems.push(item);
+    }
+  }
+  
+  setOfflineQueue(failedItems);
+  setSyncInProgress(false);
+  
+  if (failedItems.length === 0) {
+    console.log('✅ All offline items synced successfully');
+    alert('✅ All offline trades synced with server!');
+  } else {
+    console.log(`⚠️ ${failedItems.length} items failed to sync`);
+  }
+};
   const [userData, setUserData] = useState({
     name: '',
     email: '',
