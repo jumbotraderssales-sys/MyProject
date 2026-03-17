@@ -2553,6 +2553,7 @@ const handleInstallClick = async () => {
     }
   };
 
+
 const closePosition = async (positionId, reason = 'MANUAL') => {
   const position = positions.find(p => p.id === positionId);
   if (!position) return;
@@ -2561,85 +2562,93 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
               (position.side === 'LONG' ? 1 : -1);
 
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        exitPrice: currentPrice,
-        closeReason: reason
-      })
-    });
+  // Calculate new balance
+  const marginINR = position.marginUsed * dollarRate;
+  const pnlINR = pnl * dollarRate;
+  const newBalance = balance + marginINR + pnlINR;
 
-    const data = await response.json();
+  // Update local state immediately
+  setBalance(newBalance);
+  setPositions(prev => prev.filter(p => p.id !== positionId));
 
-    if (data.success) {
-      // 1. Determine new balance (INR) – prefer backend, else calculate correctly
-      let newBalance;
-      if (data.user?.paperBalance !== undefined) {
-        newBalance = data.user.paperBalance;
-      } else {
-        // Fallback: convert USD values to INR using current dollarRate
-        const pnlINR = pnl * dollarRate;
-        // Margin used in USD = (entryPrice * size) / leverage
-        const marginUsedUSD = (position.entryPrice * position.size) / position.leverage;
-        const marginUsedINR = marginUsedUSD * dollarRate;
-        // Current balance (INR) already has margin deducted; add back margin + PnL
-        newBalance = balance + pnlINR + marginUsedINR;
-      }
+  setUserAccount(prev => ({
+    ...prev,
+    paperBalance: newBalance
+  }));
 
-      // 2. Update balance and remove position
-      setBalance(newBalance);
-      setPositions(prev => prev.filter(p => p.id !== positionId));
+  // Update order history
+  setOrderHistory(prev => prev.map(order =>
+    order.id === positionId ? {
+      ...order,
+      status: 'CLOSED',
+      exitPrice: currentPrice,
+      exitTime: new Date().toLocaleString(),
+      pnl: pnl,
+      closeReason: reason,
+      updatedAt: new Date().toISOString()
+    } : order
+  ));
 
-      // 3. Update user account if backend returned it, otherwise use our calculation
-      if (data.user) {
-        setUserAccount(prev => ({
-          ...prev,
-          paperBalance: data.user.paperBalance
-        }));
-      } else {
-        setUserAccount(prev => ({
-          ...prev,
-          paperBalance: newBalance
-        }));
-      }
+  // Update challenge stats locally
+  if (userAccount.currentChallenge) {
+    const updatedStats = { ...userAccount.challengeStats };
+    if (pnl > 0) {
+      updatedStats.totalProfit = (updatedStats.totalProfit || 0) + pnl;
+      updatedStats.currentProfit = (updatedStats.currentProfit || 0) + pnl;
+    } else {
+      updatedStats.totalLoss = (updatedStats.totalLoss || 0) + Math.abs(pnl);
+    }
+    setUserAccount(prev => ({ ...prev, challengeStats: updatedStats }));
+  }
 
-      // 4. Update order history
-      setOrderHistory(prev => prev.map(order =>
-        order.id === positionId ? {
-          ...order,
-          status: 'CLOSED',
+  // If online, try to sync with backend
+  if (isOnline && !position.isLocal) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           exitPrice: currentPrice,
-          exitTime: new Date().toLocaleString(),
-          pnl: pnl,
-          closeReason: reason,
-          updatedAt: new Date().toISOString()
-        } : order
-      ));
-
-      // 5. Update challenge stats
-      if (userAccount.currentChallenge) {
-        const updatedStats = { ...userAccount.challengeStats };
-        if (pnl > 0) {
-          updatedStats.totalProfit += pnl;
-          updatedStats.currentProfit += pnl;
-        } else {
-          updatedStats.totalLoss += Math.abs(pnl);
-        }
-
-        const closedTrades = orderHistory.filter(o => o.status === 'CLOSED').length + 1;
-        const winningTrades = orderHistory.filter(o => o.status === 'CLOSED' && o.pnl > 0).length + (pnl > 0 ? 1 : 0);
-        updatedStats.winRate = (winningTrades / closedTrades) * 100;
-
-        setUserAccount(prev => ({
-          ...prev,
-          challengeStats: updatedStats
-        }));
+          closeReason: reason
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Position closed on server');
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to sync close with server, will retry');
+      // Add to offline queue
+      const queueItem = {
+        id: `QUEUE-${Date.now()}`,
+        type: 'CLOSE_POSITION',
+        url: `https://myproject1-d097.onrender.com/api/trades/${positionId}/close`,
+        method: 'POST',
+        data: { exitPrice: currentPrice, closeReason: reason },
+        positionId: positionId,
+        timestamp: new Date().toISOString()
+      };
+      setOfflineQueue(prev => [...prev, queueItem]);
+    }
+  } else if (position.isLocal) {
+    // For local positions, add to queue for later sync
+    const queueItem = {
+      id: `QUEUE-${Date.now()}`,
+      type: 'CLOSE_POSITION',
+      url: `https://myproject1-d097.onrender.com/api/trades/${positionId}/close`,
+      method: 'POST',
+      data: { exitPrice: currentPrice, closeReason: reason },
+      positionId: positionId,
+      timestamp: new Date().toISOString()
+    };
+    setOfflineQueue(prev => [...prev, queueItem]);
+  }
+};
+        
         // Save updated stats to localStorage immediately
   const userDataStr = localStorage.getItem('userData');
   if (userDataStr) {
