@@ -2447,7 +2447,7 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
       // Show offline notification
       alert('⚠️ You are offline. Trade saved locally and will sync when online.');
     }
-  } else {
+  else {
     // Add to offline queue
     const queueItem = {
       id: `QUEUE-${Date.now()}`,
