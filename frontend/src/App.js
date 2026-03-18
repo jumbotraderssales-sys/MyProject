@@ -251,6 +251,7 @@ const notifiedRef = useRef(new Set());
     ifscCode: '',
     upiId: ''
   });
+  const shownNotifications = useRef(new Set());
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [ignoreSyncUntil, setIgnoreSyncUntil] = useState(0);
   const [isProcessingTrade, setIsProcessingTrade] = useState(false);
@@ -808,7 +809,7 @@ useEffect(() => {
   loadChallengeStats();
 }, []);
   
- const syncPositionsWithBackend = async () => {
+const syncPositionsWithBackend = async () => {
   if (!isLoggedIn) return;
   
   try {
@@ -843,39 +844,35 @@ useEffect(() => {
               // Update order history
               setOrderHistory(ordersData.orders);
               
-              // Show notifications ONE TIME ONLY
-              let notificationShown = false;
-              
+              // Show notifications ONLY ONCE per position
               closedPositions.forEach(closedPos => {
-                // Check if we've already shown notification for this position in this session
-                const notificationKey = `notified_${closedPos.id}`;
-                if (sessionStorage.getItem(notificationKey)) {
-                  return; // Skip if already notified
-                }
-                
-                const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
-                if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
-                  const reason = closedOrder.closeReason;
-                  const pnl = closedOrder.pnl;
-                  
-                  let title = '';
-                  let message = '';
-                  
-                  if (reason === 'STOP_LOSS') {
-                    title = '🛑 STOP LOSS HIT (While You Were Away)';
-                    message = `Your ${closedPos.side} position for ${closedPos.symbol} was automatically closed by stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
-                  } else if (reason === 'TAKE_PROFIT') {
-                    title = '🎯 TAKE PROFIT HIT! (While You Were Away) 🎉';
-                    message = `Your ${closedPos.side} position for ${closedPos.symbol} automatically hit take profit!\nProfit: $${pnl.toFixed(2)}`;
-                  }
-                  
-                  if (title && !notificationShown) {
-                    // Mark as notified in sessionStorage (clears when browser tab closes)
-                    sessionStorage.setItem(notificationKey, 'true');
-                    notificationShown = true;
+                // Check if we've already shown notification for this position
+                if (!shownNotifications.current.has(closedPos.id)) {
+                  const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
+                  if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
+                    const reason = closedOrder.closeReason;
+                    const pnl = closedOrder.pnl;
                     
-                    // Show notification
-                    alert(`${title}\n\n${message}`);
+                    // Mark as notified immediately
+                    shownNotifications.current.add(closedPos.id);
+                    
+                    let title = '';
+                    let message = '';
+                    
+                    if (reason === 'STOP_LOSS') {
+                      title = '🛑 STOP LOSS HIT (While You Were Away)';
+                      message = `Your ${closedPos.side} position for ${closedPos.symbol} was automatically closed by stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
+                    } else if (reason === 'TAKE_PROFIT') {
+                      title = '🎯 TAKE PROFIT HIT! (While You Were Away) 🎉';
+                      message = `Your ${closedPos.side} position for ${closedPos.symbol} automatically hit take profit!\nProfit: $${pnl.toFixed(2)}`;
+                    }
+                    
+                    if (title) {
+                      // Use a flag to ensure only one alert shows
+                      setTimeout(() => {
+                        alert(`${title}\n\n${message}`);
+                      }, 500);
+                    }
                   }
                 }
               });
@@ -2276,23 +2273,27 @@ const syncUserWallet = async () => {
         
         const data = await response.json();
         
-        if (data.success) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('userData', JSON.stringify(data.user));
-            localStorage.setItem('isLoggedIn', 'true');
-            
-            setIsLoggedIn(true);
-            setUserAccount(data.user);
-            setBalance(data.user.paperBalance || 0);
-            setEquity(data.user.paperBalance || 0);
-            
-            setShowLogin(false);
-            
-            loadUserData(data.token);
-            
-            syncPaymentsWithBackend();
-            
-            alert('Login successful!');
+       if (data.success) {
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('userData', JSON.stringify(data.user));
+  localStorage.setItem('isLoggedIn', 'true');
+  
+  setIsLoggedIn(true);
+  
+  // Clear notification tracking on login
+  shownNotifications.current.clear();
+  
+  setUserAccount(data.user);
+  setBalance(data.user.paperBalance || 0);
+  setEquity(data.user.paperBalance || 0);
+  
+  setShowLogin(false);
+  
+  loadUserData(data.token);
+  
+  syncPaymentsWithBackend();
+  
+  alert('Login successful!');
             
             if (!data.user.currentChallenge) {
                 setActiveDashboard('Challenges');
@@ -3081,13 +3082,18 @@ Ready for your next trade!`;
     }));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userData');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userPayments');
-    setIsLoggedIn(false);
-    setActiveDashboard('Challenges');
+const handleLogout = () => {
+  // Clear notification tracking
+  shownNotifications.current.clear();
+  
+  localStorage.removeItem('token');
+  localStorage.removeItem('userData');
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('userPayments');
+  
+  setIsLoggedIn(false);
+  setActiveDashboard('Challenges');
+
     setUserAccount({
       id: null,
       name: "",
@@ -3406,13 +3412,8 @@ const calculatePositionPnL = (position) => {
 const checkSLTPHits = async () => {
   if (!isLoggedIn || positions.length === 0) return;
   
-  // Use a Set to track which positions we're processing in this cycle
-  const processingPositions = new Set();
-  
+  // Process one position at a time
   for (const position of positions) {
-    // Skip if we're already processing this position
-    if (processingPositions.has(position.id)) continue;
-    
     const currentPrice = prices[position.symbol];
     if (!currentPrice) continue;
     
@@ -3431,9 +3432,14 @@ const checkSLTPHits = async () => {
       }
       
       if (slHit) {
-        processingPositions.add(position.id);
-        await closePosition(position.id, 'STOP_LOSS');
-        return; // Exit after closing one position
+        // Check if already notified
+        if (!shownNotifications.current.has(position.id)) {
+          shownNotifications.current.add(position.id);
+          await closePosition(position.id, 'STOP_LOSS');
+        } else {
+          console.log(`⚠️ Position ${position.id} already processed, skipping`);
+        }
+        return; // Exit after processing one position
       }
     }
     
@@ -3450,14 +3456,18 @@ const checkSLTPHits = async () => {
       }
       
       if (tpHit) {
-        processingPositions.add(position.id);
-        await closePosition(position.id, 'TAKE_PROFIT');
-        return; // Exit after closing one position
+        // Check if already notified
+        if (!shownNotifications.current.has(position.id)) {
+          shownNotifications.current.add(position.id);
+          await closePosition(position.id, 'TAKE_PROFIT');
+        } else {
+          console.log(`⚠️ Position ${position.id} already processed, skipping`);
+        }
+        return; // Exit after processing one position
       }
     }
   }
 };
-  
 
   const calculateSLAmount = (order) => {
     if (!order.stopLoss) return 'N/A';
