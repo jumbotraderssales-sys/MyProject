@@ -808,7 +808,7 @@ useEffect(() => {
   loadChallengeStats();
 }, []);
   
-  const syncPositionsWithBackend = async () => {
+ const syncPositionsWithBackend = async () => {
   if (!isLoggedIn) return;
   
   try {
@@ -828,7 +828,7 @@ useEffect(() => {
           prevPos => !currentPositions.some(currPos => currPos.id === prevPos.id)
         );
         
-        // Update positions state immediately
+        // Update positions state
         setPositions(currentPositions);
         
         // Fetch order history to get details of closed positions
@@ -843,35 +843,39 @@ useEffect(() => {
               // Update order history
               setOrderHistory(ordersData.orders);
               
-              // Show notifications ONLY for positions that were closed by server
+              // Show notifications ONE TIME ONLY
+              let notificationShown = false;
+              
               closedPositions.forEach(closedPos => {
-                // Check if we've already shown notification for this position
-                if (!notifiedRef.current.has(closedPos.id)) {
-                  const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
-                  if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
-                    const reason = closedOrder.closeReason;
-                    const pnl = closedOrder.pnl;
+                // Check if we've already shown notification for this position in this session
+                const notificationKey = `notified_${closedPos.id}`;
+                if (sessionStorage.getItem(notificationKey)) {
+                  return; // Skip if already notified
+                }
+                
+                const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
+                if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
+                  const reason = closedOrder.closeReason;
+                  const pnl = closedOrder.pnl;
+                  
+                  let title = '';
+                  let message = '';
+                  
+                  if (reason === 'STOP_LOSS') {
+                    title = '🛑 STOP LOSS HIT (While You Were Away)';
+                    message = `Your ${closedPos.side} position for ${closedPos.symbol} was automatically closed by stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
+                  } else if (reason === 'TAKE_PROFIT') {
+                    title = '🎯 TAKE PROFIT HIT! (While You Were Away) 🎉';
+                    message = `Your ${closedPos.side} position for ${closedPos.symbol} automatically hit take profit!\nProfit: $${pnl.toFixed(2)}`;
+                  }
+                  
+                  if (title && !notificationShown) {
+                    // Mark as notified in sessionStorage (clears when browser tab closes)
+                    sessionStorage.setItem(notificationKey, 'true');
+                    notificationShown = true;
                     
-                    let title = '';
-                    let message = '';
-                    
-                    if (reason === 'STOP_LOSS') {
-                      title = '🛑 STOP LOSS HIT (While You Were Away)';
-                      message = `Your ${closedPos.side} position for ${closedPos.symbol} was automatically closed by stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
-                    } else if (reason === 'TAKE_PROFIT') {
-                      title = '🎯 TAKE PROFIT HIT! (While You Were Away) 🎉';
-                      message = `Your ${closedPos.side} position for ${closedPos.symbol} automatically hit take profit!\nProfit: $${pnl.toFixed(2)}`;
-                    }
-                    
-                    if (title) {
-                      // Mark as notified BEFORE showing alert
-                      notifiedRef.current.add(closedPos.id);
-                      
-                      // Show notification with a slight delay
-                      setTimeout(() => {
-                        alert(`${title}\n\n${message}`);
-                      }, 500);
-                    }
+                    // Show notification
+                    alert(`${title}\n\n${message}`);
                   }
                 }
               });
@@ -2303,6 +2307,7 @@ const syncUserWallet = async () => {
     
     setLoginData({ email: '', password: '' });
   };
+  
 
 const validateTrade = () => {
   if (!isLoggedIn) {
@@ -2850,54 +2855,76 @@ Ready for your next trade!`;
   };
  const drawTradeLines = (position) => {
   if (!window.tvWidget || !position) return;
-
+  
   try {
-    const chart = window.tvWidget.chart
-      ? window.tvWidget.chart()
-      : window.tvWidget;
-
+    // Check if chart is ready
+    if (!window.tvWidget.chart) {
+      console.log('Chart not ready yet');
+      return;
+    }
+    
+    const chart = window.tvWidget.chart();
     if (!chart) return;
-
-    chart.removeAllShapes();
-
-    chart.createOrderLine()
-      .setPrice(position.entryPrice)
-      .setText('Entry')
-      .setLineColor('#2962FF')
-      .setLineWidth(2)
-      .setEditable(false);
-
+    
+    // Safely remove shapes
+    try {
+      chart.removeAllShapes();
+    } catch (e) {
+      console.log('Error removing shapes:', e);
+    }
+    
+    // Add entry line
+    try {
+      chart.createOrderLine()
+        .setPrice(position.entryPrice)
+        .setText('Entry')
+        .setLineColor('#2962FF')
+        .setLineWidth(2)
+        .setEditable(false);
+    } catch (e) {
+      console.log('Error drawing entry line:', e);
+    }
+    
+    // Add SL line
     if (position.stopLoss) {
-      const slLine = chart.createOrderLine()
-        .setPrice(position.stopLoss)
-        .setText('SL')
-        .setLineColor('#D32F2F')
-        .setLineWidth(2)
-        .setEditable(true);
-
-      slLine.onMove((newPrice) => {
-        updatePositionSLTP(position.id, newPrice, position.takeProfit);
-      });
+      try {
+        const slLine = chart.createOrderLine()
+          .setPrice(position.stopLoss)
+          .setText('SL')
+          .setLineColor('#D32F2F')
+          .setLineWidth(2)
+          .setEditable(true);
+        
+        slLine.onMove((newPrice) => {
+          updatePositionSLTP(position.id, newPrice, position.takeProfit);
+        });
+      } catch (e) {
+        console.log('Error drawing SL line:', e);
+      }
     }
-
+    
+    // Add TP line
     if (position.takeProfit) {
-      const tpLine = chart.createOrderLine()
-        .setPrice(position.takeProfit)
-        .setText('TP')
-        .setLineColor('#2E7D32')
-        .setLineWidth(2)
-        .setEditable(true);
-
-      tpLine.onMove((newPrice) => {
-        updatePositionSLTP(position.id, position.stopLoss, newPrice);
-      });
+      try {
+        const tpLine = chart.createOrderLine()
+          .setPrice(position.takeProfit)
+          .setText('TP')
+          .setLineColor('#2E7D32')
+          .setLineWidth(2)
+          .setEditable(true);
+        
+        tpLine.onMove((newPrice) => {
+          updatePositionSLTP(position.id, position.stopLoss, newPrice);
+        });
+      } catch (e) {
+        console.log('Error drawing TP line:', e);
+      }
     }
-
+    
   } catch (e) {
     console.log("Line draw error:", e);
   }
 };
-
 
 
  const updateOrderSLTP = async (orderId, sl, tp) => {
@@ -3379,7 +3406,13 @@ const calculatePositionPnL = (position) => {
 const checkSLTPHits = async () => {
   if (!isLoggedIn || positions.length === 0) return;
   
+  // Use a Set to track which positions we're processing in this cycle
+  const processingPositions = new Set();
+  
   for (const position of positions) {
+    // Skip if we're already processing this position
+    if (processingPositions.has(position.id)) continue;
+    
     const currentPrice = prices[position.symbol];
     if (!currentPrice) continue;
     
@@ -3398,8 +3431,9 @@ const checkSLTPHits = async () => {
       }
       
       if (slHit) {
+        processingPositions.add(position.id);
         await closePosition(position.id, 'STOP_LOSS');
-        return;
+        return; // Exit after closing one position
       }
     }
     
@@ -3416,8 +3450,9 @@ const checkSLTPHits = async () => {
       }
       
       if (tpHit) {
+        processingPositions.add(position.id);
         await closePosition(position.id, 'TAKE_PROFIT');
-        return;
+        return; // Exit after closing one position
       }
     }
   }
