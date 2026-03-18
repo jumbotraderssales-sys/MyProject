@@ -3475,6 +3475,213 @@ app.use((err, req, res, next) => {
     message: err.message
   });
 });
+// ========== SERVER START ==========
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log('==========================================');
+  ...
+});
+2. Add ALL the server-side monitoring code RIGHT BEFORE that section:
+javascript
+// ========== SERVER-SIDE POSITION MONITORING ==========
+// ⚠️ ADD THIS ENTIRE BLOCK HERE - before app.listen()
+
+// Function to check all open positions for SL/TP hits
+const monitorPositions = async () => {
+  try {
+    // Read all open trades
+    const trades = await readTrades();
+    const openPositions = trades.filter(t => t.status === 'open');
+    
+    if (openPositions.length === 0) return;
+    
+    console.log(`🔍 Monitoring ${openPositions.length} open positions for SL/TP...`);
+    
+    // Get current prices from Binance
+    const symbols = [...new Set(openPositions.map(p => p.symbol))];
+    const prices = {};
+    
+    // Fetch current prices for all symbols
+    for (const symbol of symbols) {
+      try {
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+        const data = await response.json();
+        prices[symbol] = parseFloat(data.price);
+      } catch (error) {
+        console.error(`Failed to fetch price for ${symbol}:`, error.message);
+      }
+    }
+    
+    // Check each position
+    for (const position of openPositions) {
+      const currentPrice = prices[position.symbol];
+      if (!currentPrice) continue;
+      
+      let shouldClose = false;
+      let closeReason = '';
+      
+      // Check STOP LOSS
+      if (position.stopLoss) {
+        if (position.side === 'long' && currentPrice <= position.stopLoss) {
+          shouldClose = true;
+          closeReason = 'STOP_LOSS';
+          console.log(`🛑 SL HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        } else if (position.side === 'short' && currentPrice >= position.stopLoss) {
+          shouldClose = true;
+          closeReason = 'STOP_LOSS';
+          console.log(`🛑 SL HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        }
+      }
+      
+      // Check TAKE PROFIT
+      if (position.takeProfit && !shouldClose) {
+        if (position.side === 'long' && currentPrice >= position.takeProfit) {
+          shouldClose = true;
+          closeReason = 'TAKE_PROFIT';
+          console.log(`🎯 TP HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        } else if (position.side === 'short' && currentPrice <= position.takeProfit) {
+          shouldClose = true;
+          closeReason = 'TAKE_PROFIT';
+          console.log(`🎯 TP HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        }
+      }
+      
+      // Close position if SL or TP hit
+      if (shouldClose) {
+        await closePositionServerSide(position.id, currentPrice, closeReason);
+      }
+    }
+  } catch (error) {
+    console.error('Error in position monitoring:', error);
+  }
+};
+
+// Server-side position closing function
+const closePositionServerSide = async (positionId, exitPrice, reason) => {
+  try {
+    const trades = await readTrades();
+    const users = await readUsers();
+    const orders = await readOrders();
+    
+    const tradeIndex = trades.findIndex(t => t.id === positionId);
+    if (tradeIndex === -1) return;
+    
+    const trade = trades[tradeIndex];
+    
+    // Calculate PnL
+    const pnl = (exitPrice - trade.entryPrice) * trade.size * trade.leverage * 
+                (trade.side === 'long' ? 1 : -1);
+    
+    // Find user
+    const userIndex = users.findIndex(u => u.id === trade.userId);
+    if (userIndex !== -1) {
+      const user = users[userIndex];
+      
+      // Return margin + PnL to paper balance
+      const marginINR = trade.marginUsed * DOLLAR_RATE;
+      const pnlINR = pnl * DOLLAR_RATE;
+      user.paperBalance += marginINR + pnlINR;
+      
+      // Update challenge stats
+      if (!user.challengeStats) user.challengeStats = {};
+      
+      if (pnl > 0) {
+        user.challengeStats.totalProfit = (user.challengeStats.totalProfit || 0) + pnl;
+        user.challengeStats.currentProfit = (user.challengeStats.currentProfit || 0) + pnl;
+      } else {
+        user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
+      }
+      
+      // Update win rate
+      const userTrades = trades.filter(t => t.userId === trade.userId);
+      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
+      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
+      user.challengeStats.winRate = (winningTrades / closedTrades) * 100;
+      
+      // Check challenge rules
+      if (user.currentChallenge && user.challengeStats.status === 'active') {
+        const challenge = CHALLENGES[user.currentChallenge];
+        if (challenge) {
+          const profitPct = (user.challengeStats.currentProfit / user.paperBalance) * 100;
+          const lossPct = (user.challengeStats.totalLoss / user.paperBalance) * 100;
+          
+          if (profitPct >= challenge.profitTarget) {
+            user.challengeStats.status = 'passed';
+            user.challengeStats.endReason = 'Profit target achieved';
+            user.realBalance = (user.realBalance || 0) + challenge.feeRefund + challenge.skillReward;
+          } else if (lossPct >= challenge.maxLossLimit) {
+            user.challengeStats.status = 'failed';
+            user.challengeStats.endReason = 'Maximum loss limit exceeded';
+            user.paperBalance = 0;
+          }
+        }
+      }
+      
+      user.updatedAt = new Date().toISOString();
+    }
+    
+    // Update trade
+    trades[tradeIndex].status = 'closed';
+    trades[tradeIndex].exitPrice = exitPrice;
+    trades[tradeIndex].pnl = pnl;
+    trades[tradeIndex].closeReason = reason;
+    trades[tradeIndex].closedAt = new Date().toISOString();
+    trades[tradeIndex].updatedAt = new Date().toISOString();
+    
+    // Update order
+    const orderIndex = orders.findIndex(o => o.id === positionId);
+    if (orderIndex !== -1) {
+      orders[orderIndex].status = 'closed';
+      orders[orderIndex].exitPrice = exitPrice;
+      orders[orderIndex].pnl = pnl;
+      orders[orderIndex].exitTime = new Date().toISOString();
+      orders[orderIndex].closeReason = reason;
+      orders[orderIndex].updatedAt = new Date().toISOString();
+    }
+    
+    // Save all changes
+    await writeTrades(trades);
+    await writeUsers(users);
+    await writeOrders(orders);
+    
+    console.log(`✅ Position ${positionId} closed automatically (${reason}) at $${exitPrice}`);
+    
+  } catch (error) {
+    console.error('Error closing position server-side:', error);
+  }
+};
+
+// Start monitoring on server startup
+let monitoringInterval;
+
+const startPositionMonitoring = () => {
+  // Check every 5 seconds
+  monitoringInterval = setInterval(monitorPositions, 5000);
+  console.log('🚀 Server-side position monitoring started (checking every 5 seconds)');
+};
+
+// Cleanup on server shutdown
+const stopPositionMonitoring = () => {
+  if (monitoringInterval) {
+    clearInterval(monitoringInterval);
+    console.log('🛑 Server-side position monitoring stopped');
+  }
+};
+
+// Call this when server starts
+startPositionMonitoring();
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  stopPositionMonitoring();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  stopPositionMonitoring();
+  process.exit(0);
+});
 
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
@@ -3486,6 +3693,7 @@ app.listen(PORT, () => {
   console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
    console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log(`✅ Paper2Real Backend with Challenge System & Referral System`);
+   console.log(`✅ Server-side position monitoring ACTIVE (5s interval)`);
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration (with ref support)');
