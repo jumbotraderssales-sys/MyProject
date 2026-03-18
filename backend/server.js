@@ -3598,16 +3598,19 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
   try {
     // Read all data
     const trades = await readTrades();
+    
+    // Check if position is already closed
+    const existingTrade = trades.find(t => t.id === positionId);
+    if (!existingTrade || existingTrade.status !== 'open') {
+      console.log(`⚠️ Position ${positionId} is already closed, skipping...`);
+      return;
+    }
+    
     const users = await readUsers();
     const orders = await readOrders();
     
     // Find the trade
     const tradeIndex = trades.findIndex(t => t.id === positionId);
-    if (tradeIndex === -1) {
-      console.log(`❌ Position ${positionId} not found`);
-      return;
-    }
-    
     const trade = trades[tradeIndex];
     
     // Calculate PnL
@@ -3678,7 +3681,6 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     console.error('❌ Error in closePositionServerSide:', error);
   }
 };
-
 // Start monitoring
 const startPositionMonitoring = () => {
   console.log('🚀 Starting position monitoring service...');
