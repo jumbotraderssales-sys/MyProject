@@ -3477,6 +3477,7 @@ app.use((err, req, res, next) => {
 });
 
 // Function to check all open positions for SL/TP hits
+// Function to check all open positions for SL/TP hits
 const monitorPositions = async () => {
   try {
     // Read all open trades
@@ -3487,12 +3488,19 @@ const monitorPositions = async () => {
     
     console.log(`🔍 Monitoring ${openPositions.length} open positions for SL/TP...`);
     
-    // Get current prices from Binance
-    const symbols = [...new Set(openPositions.map(p => p.symbol))];
+    // Get unique symbols - FIXED: removed spread operator
+    const symbols = [];
+    for (let i = 0; i < openPositions.length; i++) {
+      if (!symbols.includes(openPositions[i].symbol)) {
+        symbols.push(openPositions[i].symbol);
+      }
+    }
+    
     const prices = {};
     
     // Fetch current prices for all symbols
-    for (const symbol of symbols) {
+    for (let i = 0; i < symbols.length; i++) {
+      const symbol = symbols[i];
       try {
         const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
         const data = await response.json();
@@ -3503,7 +3511,8 @@ const monitorPositions = async () => {
     }
     
     // Check each position
-    for (const position of openPositions) {
+    for (let i = 0; i < openPositions.length; i++) {
+      const position = openPositions[i];
       const currentPrice = prices[position.symbol];
       if (!currentPrice) continue;
       
@@ -3558,9 +3567,14 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     
     const trade = trades[tradeIndex];
     
-    // Calculate PnL
-    const pnl = (exitPrice - trade.entryPrice) * trade.size * trade.leverage * 
-                (trade.side === 'long' ? 1 : -1);
+    // Calculate PnL - FIXED: Ensure correct calculation for both LONG and SHORT
+    let pnl;
+    const priceDiff = exitPrice - trade.entryPrice;
+    if (trade.side === 'long') {
+      pnl = priceDiff * trade.size * trade.leverage;
+    } else {
+      pnl = -priceDiff * trade.size * trade.leverage;
+    }
     
     // Find user
     const userIndex = users.findIndex(u => u.id === trade.userId);
@@ -3586,14 +3600,28 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
       const userTrades = trades.filter(t => t.userId === trade.userId);
       const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
       const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
-      user.challengeStats.winRate = (winningTrades / closedTrades) * 100;
+      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
       
       // Check challenge rules
       if (user.currentChallenge && user.challengeStats.status === 'active') {
-        const challenge = CHALLENGES[user.currentChallenge];
+        // Find challenge - FIXED: Handle both object and string formats
+        let challenge = null;
+        if (CHALLENGES[user.currentChallenge]) {
+          challenge = CHALLENGES[user.currentChallenge];
+        } else {
+          // Try to find by name
+          const challengeKeys = Object.keys(CHALLENGES);
+          for (let j = 0; j < challengeKeys.length; j++) {
+            if (CHALLENGES[challengeKeys[j]].name === user.currentChallenge) {
+              challenge = CHALLENGES[challengeKeys[j]];
+              break;
+            }
+          }
+        }
+        
         if (challenge) {
-          const profitPct = (user.challengeStats.currentProfit / user.paperBalance) * 100;
-          const lossPct = (user.challengeStats.totalLoss / user.paperBalance) * 100;
+          const profitPct = user.paperBalance > 0 ? (user.challengeStats.currentProfit / user.paperBalance) * 100 : 0;
+          const lossPct = user.paperBalance > 0 ? (user.challengeStats.totalLoss / user.paperBalance) * 100 : 0;
           
           if (profitPct >= challenge.profitTarget) {
             user.challengeStats.status = 'passed';
@@ -3680,9 +3708,9 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
-   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
-  console.log(`✅ Paper2Real Backend with Challenge System & Referral System`);
-   console.log(`✅ Server-side position monitoring ACTIVE (5s interval)`);
+  console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
+  console.log(`✅ Server-side position monitoring ACTIVE (5s interval)`);
+  console.log('✅ Positions will be monitored even when users are offline');
   console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration (with ref support)');
