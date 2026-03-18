@@ -3466,165 +3466,151 @@ app.use((err, req, res, next) => {
   });
 });
 
+console.log('🔧 Setting up server-side position monitoring...');
+
 let monitoringInterval;
-let monitoringCounter = 0;
+let isMonitoring = false;
 
 // Function to check all open positions for SL/TP hits
 const monitorPositions = async () => {
-  monitoringCounter++;
-  console.log(`\n=== MONITORING CYCLE #${monitoringCounter} at ${new Date().toISOString()} ===`);
+  // Prevent overlapping runs
+  if (isMonitoring) {
+    console.log('⚠️ Previous monitoring cycle still running, skipping...');
+    return;
+  }
+  
+  isMonitoring = true;
+  const cycleId = Date.now();
   
   try {
+    console.log(`\n=== [${new Date().toISOString()}] MONITORING CYCLE STARTED ===`);
+    
     // Read all open trades
-    console.log('📊 Reading open trades...');
     const trades = await readTrades();
-    console.log(`📊 Total trades in database: ${trades.length}`);
+    console.log(`📊 Total trades: ${trades.length}`);
     
     const openPositions = trades.filter(t => t.status === 'open');
-    console.log(`📊 Open positions found: ${openPositions.length}`);
+    console.log(`📊 Open positions: ${openPositions.length}`);
     
     if (openPositions.length === 0) {
       console.log('✅ No open positions to monitor');
+      isMonitoring = false;
       return;
     }
     
-    // Log each open position
-    openPositions.forEach((pos, index) => {
-      console.log(`\n📈 Position #${index + 1}:`);
-      console.log(`   ID: ${pos.id}`);
-      console.log(`   User: ${pos.userName} (${pos.userId})`);
-      console.log(`   Symbol: ${pos.symbol}`);
-      console.log(`   Side: ${pos.side}`);
-      console.log(`   Entry: $${pos.entryPrice}`);
-      console.log(`   SL: $${pos.stopLoss || 'Not set'}`);
-      console.log(`   TP: $${pos.takeProfit || 'Not set'}`);
-      console.log(`   Size: ${pos.size}`);
-      console.log(`   Leverage: ${pos.leverage}x`);
-    });
-    
-    // Get unique symbols - FIXED: no spread operator
+    // Get unique symbols
     const symbols = [];
     for (let i = 0; i < openPositions.length; i++) {
       if (!symbols.includes(openPositions[i].symbol)) {
         symbols.push(openPositions[i].symbol);
       }
     }
-    console.log(`\n📊 Fetching prices for symbols: ${symbols.join(', ')}`);
+    console.log(`📊 Fetching prices for: ${symbols.join(', ')}`);
     
+    // Fetch current prices
     const prices = {};
-    
-    // Fetch current prices for all symbols
     for (let i = 0; i < symbols.length; i++) {
       const symbol = symbols[i];
       try {
-        console.log(`   Fetching price for ${symbol}...`);
         const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.ok) {
+          const data = await response.json();
+          prices[symbol] = parseFloat(data.price);
+          console.log(`   ✅ ${symbol}: $${prices[symbol]}`);
+        } else {
+          console.error(`   ❌ Failed to fetch ${symbol}: HTTP ${response.status}`);
         }
-        const data = await response.json();
-        prices[symbol] = parseFloat(data.price);
-        console.log(`   ✅ ${symbol} price: $${prices[symbol]}`);
       } catch (error) {
-        console.error(`   ❌ Failed to fetch price for ${symbol}:`, error.message);
+        console.error(`   ❌ Error fetching ${symbol}:`, error.message);
       }
     }
     
     // Check each position
+    let closedCount = 0;
     for (let i = 0; i < openPositions.length; i++) {
       const position = openPositions[i];
       const currentPrice = prices[position.symbol];
       
-      console.log(`\n🔍 Checking position ${position.id} (${position.symbol} ${position.side})`);
-      console.log(`   Current price: $${currentPrice || 'N/A'}`);
-      
       if (!currentPrice) {
-        console.log(`   ⚠️ No price available, skipping`);
+        console.log(`⚠️ No price for ${position.symbol}, skipping position ${position.id}`);
         continue;
       }
+      
+      console.log(`\n🔍 Position ${position.id}:`);
+      console.log(`   User: ${position.userName}`);
+      console.log(`   ${position.side} ${position.symbol} @ $${position.entryPrice}`);
+      console.log(`   Current: $${currentPrice}`);
+      console.log(`   SL: $${position.stopLoss || 'N/A'}, TP: $${position.takeProfit || 'N/A'}`);
       
       let shouldClose = false;
       let closeReason = '';
       
       // Check STOP LOSS
       if (position.stopLoss) {
-        console.log(`   Stop Loss set at: $${position.stopLoss}`);
-        
         if (position.side === 'long' && currentPrice <= position.stopLoss) {
           shouldClose = true;
           closeReason = 'STOP_LOSS';
-          console.log(`   🛑 LONG STOP LOSS HIT! $${currentPrice} <= $${position.stopLoss}`);
+          console.log(`   🛑 STOP LOSS HIT! $${currentPrice} <= $${position.stopLoss}`);
         } else if (position.side === 'short' && currentPrice >= position.stopLoss) {
           shouldClose = true;
           closeReason = 'STOP_LOSS';
-          console.log(`   🛑 SHORT STOP LOSS HIT! $${currentPrice} >= $${position.stopLoss}`);
-        } else {
-          console.log(`   ✅ Stop Loss not hit`);
+          console.log(`   🛑 STOP LOSS HIT! $${currentPrice} >= $${position.stopLoss}`);
         }
       }
       
       // Check TAKE PROFIT
       if (position.takeProfit && !shouldClose) {
-        console.log(`   Take Profit set at: $${position.takeProfit}`);
-        
         if (position.side === 'long' && currentPrice >= position.takeProfit) {
           shouldClose = true;
           closeReason = 'TAKE_PROFIT';
-          console.log(`   🎯 LONG TAKE PROFIT HIT! $${currentPrice} >= $${position.takeProfit}`);
+          console.log(`   🎯 TAKE PROFIT HIT! $${currentPrice} >= $${position.takeProfit}`);
         } else if (position.side === 'short' && currentPrice <= position.takeProfit) {
           shouldClose = true;
           closeReason = 'TAKE_PROFIT';
-          console.log(`   🎯 SHORT TAKE PROFIT HIT! $${currentPrice} <= $${position.takeProfit}`);
-        } else {
-          console.log(`   ✅ Take Profit not hit`);
+          console.log(`   🎯 TAKE PROFIT HIT! $${currentPrice} <= $${position.takeProfit}`);
         }
       }
       
       // Close position if SL or TP hit
       if (shouldClose) {
-        console.log(`   🔄 Closing position ${position.id} (${closeReason})`);
+        console.log(`   🔄 Closing position...`);
         await closePositionServerSide(position.id, currentPrice, closeReason);
+        closedCount++;
+        console.log(`   ✅ Position closed`);
       } else {
         console.log(`   ✅ Position remains open`);
       }
     }
     
-    console.log(`\n✅ Monitoring cycle #${monitoringCounter} complete\n`);
+    console.log(`\n✅ Monitoring cycle complete. Closed ${closedCount} positions.\n`);
     
   } catch (error) {
     console.error('❌ Error in position monitoring:', error);
+  } finally {
+    isMonitoring = false;
   }
 };
 
 // Server-side position closing function
 const closePositionServerSide = async (positionId, exitPrice, reason) => {
-  console.log(`\n🔴 CLOSING POSITION ${positionId} - ${reason} at $${exitPrice}`);
+  console.log(`\n🔴 EXECUTING CLOSE for position ${positionId} (${reason})`);
   
   try {
+    // Read all data
     const trades = await readTrades();
     const users = await readUsers();
     const orders = await readOrders();
     
+    // Find the trade
     const tradeIndex = trades.findIndex(t => t.id === positionId);
     if (tradeIndex === -1) {
-      console.log(`❌ Position ${positionId} not found in trades`);
+      console.log(`❌ Position ${positionId} not found`);
       return;
     }
     
     const trade = trades[tradeIndex];
-    console.log(`📊 Trade details:`, {
-      id: trade.id,
-      userId: trade.userId,
-      symbol: trade.symbol,
-      side: trade.side,
-      entryPrice: trade.entryPrice,
-      exitPrice: exitPrice,
-      size: trade.size,
-      leverage: trade.leverage,
-      marginUsed: trade.marginUsed
-    });
     
-    // Calculate PnL - FIXED: consistent with frontend
+    // Calculate PnL
     let pnl;
     const priceDiff = exitPrice - trade.entryPrice;
     if (trade.side === 'long') {
@@ -3632,22 +3618,22 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     } else {
       pnl = -priceDiff * trade.size * trade.leverage;
     }
-    console.log(`💰 Calculated PnL: $${pnl.toFixed(2)}`);
     
-    // Find user
+    console.log(`💰 PnL: $${pnl.toFixed(2)}`);
+    
+    // Find and update user
     const userIndex = users.findIndex(u => u.id === trade.userId);
     if (userIndex !== -1) {
       const user = users[userIndex];
-      console.log(`👤 User found: ${user.name} (${user.email})`);
-      console.log(`   Before - Paper Balance: $${user.paperBalance / DOLLAR_RATE} (₹${user.paperBalance})`);
       
-      // Return margin + PnL to paper balance
+      // Update paper balance
       const marginINR = trade.marginUsed * DOLLAR_RATE;
       const pnlINR = pnl * DOLLAR_RATE;
+      const oldBalance = user.paperBalance;
       user.paperBalance += marginINR + pnlINR;
       
-      console.log(`   After - Paper Balance: $${user.paperBalance / DOLLAR_RATE} (₹${user.paperBalance})`);
-      console.log(`   Added: Margin $${trade.marginUsed} + PnL $${pnl.toFixed(2)} = $${(trade.marginUsed + pnl).toFixed(2)}`);
+      console.log(`👤 User ${user.name}:`);
+      console.log(`   Paper balance: ₹${oldBalance} → ₹${user.paperBalance}`);
       
       // Update challenge stats
       if (!user.challengeStats) user.challengeStats = {};
@@ -3659,51 +3645,7 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
         user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
       }
       
-      // Update win rate
-      const userTrades = trades.filter(t => t.userId === trade.userId);
-      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
-      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
-      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
-      
-      // Check challenge rules
-      if (user.currentChallenge && user.challengeStats.status === 'active') {
-        // Find challenge - FIXED: handle both formats
-        let challenge = null;
-        if (CHALLENGES[user.currentChallenge]) {
-          challenge = CHALLENGES[user.currentChallenge];
-        } else {
-          const challengeKeys = Object.keys(CHALLENGES);
-          for (let j = 0; j < challengeKeys.length; j++) {
-            if (CHALLENGES[challengeKeys[j]].name === user.currentChallenge) {
-              challenge = CHALLENGES[challengeKeys[j]];
-              break;
-            }
-          }
-        }
-        
-        if (challenge) {
-          const profitPct = user.paperBalance > 0 ? (user.challengeStats.currentProfit / user.paperBalance) * 100 : 0;
-          const lossPct = user.paperBalance > 0 ? (user.challengeStats.totalLoss / user.paperBalance) * 100 : 0;
-          
-          console.log(`   Challenge stats - Profit: ${profitPct.toFixed(2)}%, Loss: ${lossPct.toFixed(2)}%`);
-          
-          if (profitPct >= challenge.profitTarget) {
-            user.challengeStats.status = 'passed';
-            user.challengeStats.endReason = 'Profit target achieved';
-            user.realBalance = (user.realBalance || 0) + challenge.feeRefund + challenge.skillReward;
-            console.log(`   🏆 Challenge PASSED! Reward added: ₹${challenge.feeRefund + challenge.skillReward}`);
-          } else if (lossPct >= challenge.maxLossLimit) {
-            user.challengeStats.status = 'failed';
-            user.challengeStats.endReason = 'Maximum loss limit exceeded';
-            user.paperBalance = 0;
-            console.log(`   ❌ Challenge FAILED - paper balance reset to 0`);
-          }
-        }
-      }
-      
       user.updatedAt = new Date().toISOString();
-    } else {
-      console.log(`❌ User ${trade.userId} not found`);
     }
     
     // Update trade
@@ -3723,57 +3665,54 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
       orders[orderIndex].exitTime = new Date().toISOString();
       orders[orderIndex].closeReason = reason;
       orders[orderIndex].updatedAt = new Date().toISOString();
-      console.log(`📝 Order ${positionId} updated`);
     }
     
     // Save all changes
-    console.log(`💾 Saving changes to database...`);
     await writeTrades(trades);
     await writeUsers(users);
     await writeOrders(orders);
     
-    console.log(`✅ Position ${positionId} closed successfully (${reason}) at $${exitPrice}`);
+    console.log(`✅ Position ${positionId} closed successfully`);
     
   } catch (error) {
-    console.error('❌ Error closing position server-side:', error);
+    console.error('❌ Error in closePositionServerSide:', error);
   }
 };
 
-// Start monitoring on server startup
+// Start monitoring
 const startPositionMonitoring = () => {
-  console.log('\n🚀 Starting server-side position monitoring...');
-  // Check every 5 seconds
-  monitoringInterval = setInterval(monitorPositions, 5000);
-  console.log('✅ Server-side position monitoring started (checking every 5 seconds)');
+  console.log('🚀 Starting position monitoring service...');
   
-  // Run first check immediately
+  // Run immediately
   setTimeout(() => {
     console.log('⏰ Running initial position check...');
     monitorPositions();
-  }, 1000);
+  }, 2000);
+  
+  // Then every 10 seconds
+  monitoringInterval = setInterval(monitorPositions, 10000);
+  console.log('✅ Position monitoring scheduled every 10 seconds');
 };
 
-// Cleanup on server shutdown
-const stopPositionMonitoring = () => {
-  if (monitoringInterval) {
-    clearInterval(monitoringInterval);
-    console.log('🛑 Server-side position monitoring stopped');
-  }
-};
-
-// Call this when server starts
+// Initialize monitoring
 startPositionMonitoring();
 
-// Handle graceful shutdown
+// Handle process termination
 process.on('SIGTERM', () => {
-  console.log('📴 SIGTERM received, shutting down...');
-  stopPositionMonitoring();
+  console.log('📴 SIGTERM received, cleaning up...');
+  if (monitoringInterval) {
+    clearInterval(monitoringInterval);
+    console.log('🛑 Monitoring stopped');
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('📴 SIGINT received, shutting down...');
-  stopPositionMonitoring();
+  console.log('📴 SIGINT received, cleaning up...');
+  if (monitoringInterval) {
+    clearInterval(monitoringInterval);
+    console.log('🛑 Monitoring stopped');
+  }
   process.exit(0);
 });
 
@@ -3781,13 +3720,14 @@ process.on('SIGINT', () => {
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-  console.log('==========================================');
+  console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
-  console.log(`✅ Server-side position monitoring ACTIVE (5s interval)`);
-  console.log('✅ Positions will be monitored even when users are offline');  console.log('');
+  console.log(`✅ Server-side position monitoring is ACTIVE`);
+ 
+  console.log('');
   console.log('🌐 GENERAL ENDPOINTS:');
   console.log('  GET  /                         - API root');
   console.log('  GET  /api                      - API info');
