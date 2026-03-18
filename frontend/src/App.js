@@ -1523,12 +1523,16 @@ useEffect(() => {
   let total = 0;
   positions.forEach(pos => {
     const currentPrice = prices[pos.symbol] || pos.entryPrice;
-    const pnl = (currentPrice - pos.entryPrice) * pos.size * (pos.leverage || 1) * (pos.side === 'LONG' ? 1 : -1);
-    total += pnl;
+    // Use the same calculation logic
+    if (pos.side === 'LONG' || pos.side === 'long') {
+      total += (currentPrice - pos.entryPrice) * pos.size * pos.leverage;
+    } else {
+      total += -(currentPrice - pos.entryPrice) * pos.size * pos.leverage;
+    }
   });
   setTotalPnl(total);
-  setEquity(balance + total * dollarRate);   // ← convert USD PnL to INR
-}, [positions, prices, balance, dollarRate]); // ← add dollarRate dependency
+  setEquity(balance + total * dollarRate);
+}, [positions, prices, balance, dollarRate]);
   
  useEffect(() => {
   const price = prices[selectedSymbol];
@@ -2532,8 +2536,14 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   if (!position) return;
 
   const currentPrice = prices[position.symbol] || position.entryPrice;
-  const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage *
-              (position.side === 'LONG' ? 1 : -1);
+  
+  // Calculate P&L consistently
+  let pnl;
+  if (position.side === 'LONG' || position.side === 'long') {
+    pnl = (currentPrice - position.entryPrice) * position.size * position.leverage;
+  } else {
+    pnl = -(currentPrice - position.entryPrice) * position.size * position.leverage;
+  }
 
   try {
     const token = localStorage.getItem('token');
@@ -3256,13 +3266,15 @@ const calculatePnL = (position, currentPrice) => {
   
   const priceDiff = currentPrice - position.entryPrice;
   
-  // For LONG: profit when currentPrice > entryPrice
-  // For SHORT: profit when currentPrice < entryPrice
+  // For LONG: profit when currentPrice > entryPrice (positive priceDiff)
+  // For SHORT: profit when currentPrice < entryPrice (negative priceDiff)
   let pnl;
   if (position.side === 'LONG' || position.side === 'long') {
     pnl = priceDiff * position.size * position.leverage;
   } else {
-    pnl = -priceDiff * position.size * position.leverage; // Negative of priceDiff gives correct SHORT P&L
+    // For SHORT: profit when price goes DOWN (currentPrice < entryPrice)
+    // So we multiply by -1 to make it positive when priceDiff is negative
+    pnl = -priceDiff * position.size * position.leverage;
   }
   
   return pnl;
