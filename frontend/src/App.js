@@ -3250,21 +3250,80 @@ Ready for your next trade!`;
     ]
   };
 
-  const calculatePositionPnL = (position) => {
-    const currentPrice = prices[position.symbol] || position.entryPrice;
-    const pnl = (currentPrice - position.entryPrice) * position.size * position.leverage * 
-                (position.side === 'LONG' ? 1 : -1);
-    return pnl;
-  };
+const calculatePnL = (position, currentPrice) => {
+  if (!currentPrice) currentPrice = position.entryPrice;
+  
+  const priceDiff = currentPrice - position.entryPrice;
+  
+  // For LONG: profit when currentPrice > entryPrice
+  // For SHORT: profit when currentPrice < entryPrice
+  let pnl;
+  if (position.side === 'LONG' || position.side === 'long' || position.side === 'LONG') {
+    pnl = priceDiff * position.size * position.leverage;
+  } else {
+    pnl = -priceDiff * position.size * position.leverage; // Negative of priceDiff gives correct SHORT P&L
+  }
+  
+  return pnl;
+};
 
+// Use this for both order and position calculations
 const calculateOrderPnL = (order) => {
   if (order.status?.toUpperCase() === 'CLOSED' || order.status?.toUpperCase() === 'CANCELLED') {
     return order.pnl || 0;
   } else {
-    const currentPrice = prices[order.symbol] || order.entryPrice;   // fallback added
-    const pnl = (currentPrice - order.entryPrice) * order.size * order.leverage * 
-                (order.side === 'LONG' ? 1 : -1);
-    return pnl;
+    const currentPrice = prices[order.symbol] || order.entryPrice;
+    return calculatePnL(order, currentPrice);
+  }
+};
+
+const calculatePositionPnL = (position) => {
+  const currentPrice = prices[position.symbol] || position.entryPrice;
+  return calculatePnL(position, currentPrice);
+};
+  // Check for SL/TP hits
+const checkSLTPHits = async () => {
+  if (!isLoggedIn || positions.length === 0) return;
+  
+  for (const position of positions) {
+    const currentPrice = prices[position.symbol];
+    if (!currentPrice) continue;
+    
+    // Check STOP LOSS
+    if (position.stopLoss) {
+      let slHit = false;
+      
+      if (position.side === 'LONG' && currentPrice <= position.stopLoss) {
+        slHit = true;
+        console.log(`🛑 SL HIT for LONG ${position.symbol} at $${currentPrice}`);
+      } else if (position.side === 'SHORT' && currentPrice >= position.stopLoss) {
+        slHit = true;
+        console.log(`🛑 SL HIT for SHORT ${position.symbol} at $${currentPrice}`);
+      }
+      
+      if (slHit) {
+        await closePosition(position.id, 'STOP_LOSS');
+        return; // Exit after closing one position to avoid multiple simultaneous requests
+      }
+    }
+    
+    // Check TAKE PROFIT
+    if (position.takeProfit) {
+      let tpHit = false;
+      
+      if (position.side === 'LONG' && currentPrice >= position.takeProfit) {
+        tpHit = true;
+        console.log(`🎯 TP HIT for LONG ${position.symbol} at $${currentPrice}`);
+      } else if (position.side === 'SHORT' && currentPrice <= position.takeProfit) {
+        tpHit = true;
+        console.log(`🎯 TP HIT for SHORT ${position.symbol} at $${currentPrice}`);
+      }
+      
+      if (tpHit) {
+        await closePosition(position.id, 'TAKE_PROFIT');
+        return; // Exit after closing one position
+      }
+    }
   }
 };
   
@@ -6781,7 +6840,7 @@ return (
               borderRadius: '50%',
               width: '24px',
               height: '24px',
-              cursor: 'pointer',a
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
