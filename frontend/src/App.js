@@ -2539,7 +2539,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   
   // Calculate P&L consistently
   let pnl;
- if (position.side === 'long') || position.side === 'long') {
+ if (position.side === 'LONG') || position.side === 'long') {
     pnl = (currentPrice - position.entryPrice) * position.size * position.leverage;
   } else {
     pnl = -(currentPrice - position.entryPrice) * position.size * position.leverage;
