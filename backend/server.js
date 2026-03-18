@@ -1463,7 +1463,163 @@ app.get('/api/trades/positions', requireValidUser, async (req, res) => {
   }
 });
 
-// Close a position with challenge stats update (NOW USES SHARED FUNCTION)
+// ========== SHARED POSITION CLOSING FUNCTION ==========
+// This function is used by all close operations (manual, auto, frontend-requested)
+const closePositionServerSide = async (positionId, exitPrice, reason) => {
+  console.log(`\n🔴 EXECUTING CLOSE for position ${positionId} (${reason}) at $${exitPrice}`);
+  
+  try {
+    // Read all data
+    const trades = await readTrades();
+    const users = await readUsers();
+    const orders = await readOrders();
+    
+    // Find the trade
+    const tradeIndex = trades.findIndex(t => t.id === positionId);
+    if (tradeIndex === -1) {
+      console.log(`❌ Position ${positionId} not found`);
+      return { success: false, error: 'Position not found' };
+    }
+    
+    const trade = trades[tradeIndex];
+    
+    // Check if already closed
+    if (trade.status !== 'open') {
+      console.log(`⚠️ Position ${positionId} is already closed (status: ${trade.status})`);
+      return { success: false, error: 'Position already closed' };
+    }
+    
+    console.log(`📊 Closing trade:`, {
+      id: trade.id,
+      userId: trade.userId,
+      symbol: trade.symbol,
+      side: trade.side,
+      entry: trade.entryPrice,
+      exit: exitPrice,
+      size: trade.size,
+      leverage: trade.leverage
+    });
+    
+    // Calculate PnL
+    const priceDiff = exitPrice - trade.entryPrice;
+    let pnl;
+    if (trade.side === 'long') {
+      pnl = priceDiff * trade.size * trade.leverage;
+    } else {
+      pnl = -priceDiff * trade.size * trade.leverage;
+    }
+    
+    console.log(`💰 Calculated PnL: $${pnl.toFixed(2)}`);
+    
+    // Find and update user
+    const userIndex = users.findIndex(u => u.id === trade.userId);
+    if (userIndex !== -1) {
+      const user = users[userIndex];
+      const oldBalance = user.paperBalance;
+      
+      // Return margin + PnL to paper balance
+      const marginINR = trade.marginUsed * DOLLAR_RATE;
+      const pnlINR = pnl * DOLLAR_RATE;
+      user.paperBalance += marginINR + pnlINR;
+      
+      console.log(`👤 User ${user.name}: ₹${oldBalance} → ₹${user.paperBalance}`);
+      
+      // Update challenge stats
+      if (!user.challengeStats) user.challengeStats = {};
+      
+      if (pnl > 0) {
+        user.challengeStats.totalProfit = (user.challengeStats.totalProfit || 0) + pnl;
+        user.challengeStats.currentProfit = (user.challengeStats.currentProfit || 0) + pnl;
+      } else {
+        user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
+      }
+      
+      // Update win rate
+      const userTrades = trades.filter(t => t.userId === trade.userId);
+      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
+      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
+      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
+      
+      user.updatedAt = new Date().toISOString();
+    }
+    
+    // Update trade
+    trades[tradeIndex].status = 'closed';
+    trades[tradeIndex].exitPrice = exitPrice;
+    trades[tradeIndex].pnl = pnl;
+    trades[tradeIndex].closeReason = reason;
+    trades[tradeIndex].closedAt = new Date().toISOString();
+    trades[tradeIndex].updatedAt = new Date().toISOString();
+    
+    // Update order
+    const orderIndex = orders.findIndex(o => o.id === positionId);
+    if (orderIndex !== -1) {
+      orders[orderIndex].status = 'closed';
+      orders[orderIndex].exitPrice = exitPrice;
+      orders[orderIndex].pnl = pnl;
+      orders[orderIndex].exitTime = new Date().toISOString();
+      orders[orderIndex].closeReason = reason;
+      orders[orderIndex].updatedAt = new Date().toISOString();
+    }
+    
+    // Save all changes
+    await writeTrades(trades);
+    await writeUsers(users);
+    await writeOrders(orders);
+    
+    console.log(`✅ Position ${positionId} closed successfully`);
+    return { success: true, pnl };
+    
+  } catch (error) {
+    console.error('❌ Error in closePositionServerSide:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ========== POSITION CLOSING ENDPOINTS ==========
+
+// NEW ENDPOINT: Check and close position (called by frontend when it detects SL/TP)
+app.post('/api/trades/:id/check-close', requireValidUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { exitPrice, reason } = req.body;
+    const userId = req.userId;
+    
+    console.log(`🔍 Frontend requested close for ${id} (${reason}) at $${exitPrice}`);
+    
+    // Call the server-side close function
+    const result = await closePositionServerSide(id, exitPrice, reason);
+    
+    if (result.success) {
+      // Get updated user data to return
+      const users = await readUsers();
+      const user = users.find(u => u.id === userId);
+      const userResponse = { ...user };
+      delete userResponse.password;
+      
+      res.json({
+        success: true,
+        message: 'Position closed successfully',
+        pnl: result.pnl,
+        user: userResponse
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to close position'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in check-close:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// UPDATED: Close a position with challenge stats update (now uses shared function)
 app.post('/api/trades/:id/close', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -1481,7 +1637,7 @@ app.post('/api/trades/:id/close', requireValidUser, async (req, res) => {
     
     console.log(`📝 Manual close requested for ${id} (${closeReason}) by user ${userId}`);
     
-    // Call the server-side close function (which we added above)
+    // Call the server-side close function
     const result = await closePositionServerSide(id, exitPrice, closeReason || 'manual');
     
     if (result.success) {
@@ -1509,123 +1665,6 @@ app.post('/api/trades/:id/close', requireValidUser, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
-    });
-  }
-});
-    
-    // Find the trade
-    const tradeIndex = trades.findIndex(t => t.id === id && t.userId === userId);
-    if (tradeIndex === -1) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Trade not found' 
-      });
-    }
-    
-    const trade = trades[tradeIndex];
-    
-    // Find user
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
-    
-    const user = users[userIndex];
-    
-    // Calculate PnL
-    const currentPrice = exitPrice || trade.currentPrice || trade.entryPrice;
-    const pnl = (currentPrice - trade.entryPrice) * trade.size * trade.leverage * 
-                (trade.side === 'long' ? 1 : -1);
-    
-    // Return margin and add PnL to paper balance
-  const marginINR = trade.marginUsed * DOLLAR_RATE;
-const pnlINR = pnl * DOLLAR_RATE;
-user.paperBalance += marginINR + pnlINR;
-    
-    // Update challenge stats
-    if (pnl > 0) {
-      user.challengeStats.totalProfit += pnl;
-      user.challengeStats.currentProfit += pnl;
-    } else {
-      user.challengeStats.totalLoss += Math.abs(pnl);
-    }
-    
-    // Calculate win rate
-    const closedTrades = trades.filter(t => t.userId === userId && t.status === 'closed').length + 1;
-    const winningTrades = trades.filter(t => 
-      t.userId === userId && 
-      t.status === 'closed' && 
-      t.pnl > 0
-    ).length + (pnl > 0 ? 1 : 0);
-    
-    user.challengeStats.winRate = (winningTrades / closedTrades) * 100;
-    
-    // Check challenge rules if user has active challenge
-    if (user.currentChallenge && user.challengeStats.status === 'active') {
-      const challenge = CHALLENGES[user.currentChallenge];
-      
-      // Calculate percentages
-      const profitPercentage = (user.challengeStats.currentProfit / user.paperBalance) * 100;
-      const lossPercentage = (user.challengeStats.totalLoss / user.paperBalance) * 100;
-      
-      // Check profit target
-      if (profitPercentage >= challenge.profitTarget) {
-        user.challengeStats.status = 'passed';
-        user.challengeStats.endReason = 'Profit target achieved';
-      }
-      
-      // Check max loss limit
-      if (lossPercentage >= challenge.maxLossLimit) {
-        user.challengeStats.status = 'failed';
-        user.challengeStats.endReason = 'Maximum loss limit exceeded';
-      }
-    }
-    
-    user.updatedAt = new Date().toISOString();
-    
-    // Update trade
-    trades[tradeIndex].status = 'closed';
-    trades[tradeIndex].exitPrice = currentPrice;
-    trades[tradeIndex].pnl = pnl;
-    trades[tradeIndex].closeReason = closeReason || 'manual';
-    trades[tradeIndex].closedAt = new Date().toISOString();
-    trades[tradeIndex].updatedAt = new Date().toISOString();
-    
-    // Update order if exists
-    const orderIndex = orders.findIndex(o => o.id === id);
-    if (orderIndex !== -1) {
-      orders[orderIndex].status = 'closed';
-      orders[orderIndex].exitPrice = currentPrice;
-      orders[orderIndex].pnl = pnl;
-      orders[orderIndex].exitTime = new Date().toISOString();
-      orders[orderIndex].closeReason = closeReason || 'manual';
-      orders[orderIndex].updatedAt = new Date().toISOString();
-    }
-    
-    // Save data
-    await writeTrades(trades);
-    await writeUsers(users);
-    await writeOrders(orders);
-    
-    const userResponse = { ...user };
-    delete userResponse.password;
-    
-    res.json({
-      success: true,
-      message: 'Position closed successfully',
-      pnl,
-      user: userResponse,
-      newBalance: user.paperBalance
-    });
-    
-  } catch (error) {
-    console.error('Error closing position:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
     });
   }
 });
@@ -1798,46 +1837,6 @@ app.get('/api/trades/history', requireValidUser, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message 
-    });
-  }
-});
-// ========== NEW ENDPOINT: Check and close position (called by frontend) ==========
-app.post('/api/trades/:id/check-close', requireValidUser, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { exitPrice, reason } = req.body;
-    const userId = req.userId;
-    
-    console.log(`🔍 Frontend requested close for ${id} (${reason}) at $${exitPrice}`);
-    
-    // Call the server-side close function
-    const result = await closePositionServerSide(id, exitPrice, reason);
-    
-    if (result.success) {
-      // Get updated user data to return
-      const users = await readUsers();
-      const user = users.find(u => u.id === userId);
-      const userResponse = { ...user };
-      delete userResponse.password;
-      
-      res.json({
-        success: true,
-        message: 'Position closed successfully',
-        pnl: result.pnl,
-        user: userResponse
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        error: result.error || 'Failed to close position'
-      });
-    }
-    
-  } catch (error) {
-    console.error('Error in check-close:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
     });
   }
 });
@@ -3573,119 +3572,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ========== SERVER-SIDE POSITION CLOSING FUNCTION ==========
-// This MUST be at the top level, not inside any other function
-const closePositionServerSide = async (positionId, exitPrice, reason) => {
-  console.log(`\n🔴 EXECUTING CLOSE for position ${positionId} (${reason}) at $${exitPrice}`);
-  
-  try {
-    // Read all data
-    const trades = await readTrades();
-    const users = await readUsers();
-    const orders = await readOrders();
-    
-    // Find the trade
-    const tradeIndex = trades.findIndex(t => t.id === positionId);
-    if (tradeIndex === -1) {
-      console.log(`❌ Position ${positionId} not found`);
-      return { success: false, error: 'Position not found' };
-    }
-    
-    const trade = trades[tradeIndex];
-    
-    // Check if already closed
-    if (trade.status !== 'open') {
-      console.log(`⚠️ Position ${positionId} is already closed (status: ${trade.status})`);
-      return { success: false, error: 'Position already closed' };
-    }
-    
-    console.log(`📊 Closing trade:`, {
-      id: trade.id,
-      userId: trade.userId,
-      symbol: trade.symbol,
-      side: trade.side,
-      entry: trade.entryPrice,
-      exit: exitPrice,
-      size: trade.size,
-      leverage: trade.leverage
-    });
-    
-    // Calculate PnL
-    const priceDiff = exitPrice - trade.entryPrice;
-    let pnl;
-    if (trade.side === 'long') {
-      pnl = priceDiff * trade.size * trade.leverage;
-    } else {
-      pnl = -priceDiff * trade.size * trade.leverage;
-    }
-    
-    console.log(`💰 Calculated PnL: $${pnl.toFixed(2)}`);
-    
-    // Find and update user
-    const userIndex = users.findIndex(u => u.id === trade.userId);
-    if (userIndex !== -1) {
-      const user = users[userIndex];
-      const oldBalance = user.paperBalance;
-      
-      // Return margin + PnL to paper balance
-      const marginINR = trade.marginUsed * DOLLAR_RATE;
-      const pnlINR = pnl * DOLLAR_RATE;
-      user.paperBalance += marginINR + pnlINR;
-      
-      console.log(`👤 User ${user.name}: ₹${oldBalance} → ₹${user.paperBalance}`);
-      
-      // Update challenge stats
-      if (!user.challengeStats) user.challengeStats = {};
-      
-      if (pnl > 0) {
-        user.challengeStats.totalProfit = (user.challengeStats.totalProfit || 0) + pnl;
-        user.challengeStats.currentProfit = (user.challengeStats.currentProfit || 0) + pnl;
-      } else {
-        user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
-      }
-      
-      // Update win rate
-      const userTrades = trades.filter(t => t.userId === trade.userId);
-      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
-      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
-      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
-      
-      user.updatedAt = new Date().toISOString();
-    }
-    
-    // Update trade
-    trades[tradeIndex].status = 'closed';
-    trades[tradeIndex].exitPrice = exitPrice;
-    trades[tradeIndex].pnl = pnl;
-    trades[tradeIndex].closeReason = reason;
-    trades[tradeIndex].closedAt = new Date().toISOString();
-    trades[tradeIndex].updatedAt = new Date().toISOString();
-    
-    // Update order
-    const orderIndex = orders.findIndex(o => o.id === positionId);
-    if (orderIndex !== -1) {
-      orders[orderIndex].status = 'closed';
-      orders[orderIndex].exitPrice = exitPrice;
-      orders[orderIndex].pnl = pnl;
-      orders[orderIndex].exitTime = new Date().toISOString();
-      orders[orderIndex].closeReason = reason;
-      orders[orderIndex].updatedAt = new Date().toISOString();
-    }
-    
-    // Save all changes
-    await writeTrades(trades);
-    await writeUsers(users);
-    await writeOrders(orders);
-    
-    console.log(`✅ Position ${positionId} closed successfully`);
-    return { success: true, pnl };
-    
-  } catch (error) {
-    console.error('❌ Error in closePositionServerSide:', error);
-    return { success: false, error: error.message };
-  }
-};
-
 // ========== SIMPLE SERVER-SIDE POSITION MONITORING ==========
 console.log('🔧 Setting up position monitoring...');
 
@@ -3780,7 +3666,8 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   if (monitorInterval) clearInterval(monitorInterval);
   process.exit(0);
-});console.log('✅ Monitoring setup complete, about to start server...');
+});
+console.log('✅ Monitoring setup complete, about to start server...');
 
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
@@ -3793,6 +3680,61 @@ app.listen(PORT, () => {
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log('==========================================\n');
  
+  console.log('');
+    console.log('👥 USER ENDPOINTS:');
+  console.log('  POST /api/register             - User registration (with ref support)');
+  console.log('  POST /api/login                - User login');
+  console.log('  GET  /api/user/profile         - Get user profile');
+  console.log('  GET  /api/user/referral        - Get user referral info (NEW)');
+  console.log('  GET  /api/upi-qr               - Get UPI QR code');
+  console.log('  GET  /api/withdrawals/history  - Get user withdrawal history');
+  console.log('  PUT  /api/user/bank-account    - Update bank account');
+  console.log('');
+  console.log('🎯 CHALLENGE ENDPOINTS:');
+  console.log('  GET  /api/challenges           - Get available challenges');
+  console.log('  PUT  /api/challenge/status     - Update challenge status');
+  console.log('');
+  console.log('📈 TRADING ENDPOINTS (with Challenge Rules):');
+  console.log('  POST /api/trades               - Create trade (with validation)');
+  console.log('  GET  /api/trades/positions     - Get open positions');
+  console.log('  POST /api/trades/:id/close     - Close a position');
+  console.log('  POST /api/trades/:id/cancel    - Cancel an order');
+  console.log('  PUT  /api/trades/:id/update-sltp - Update SL/TP');
+  console.log('  GET  /api/trades/history       - Get order history');
+  console.log('');
+  console.log('💳 PAYMENT SYSTEM:');
+  console.log('  POST /api/payments/request     - Submit payment for challenge');
+  console.log('  GET  /api/payments             - Get user payments');
+  console.log('  GET  /api/payments/stats       - Get payment statistics');
+  console.log('  PUT  /api/payments/:id/status  - Update payment status');
+  console.log('');
+  console.log('🏦 WALLET MANAGEMENT:');
+  console.log('  POST /api/admin/users/:id/wallet/add    - Add funds');
+  console.log('  POST /api/admin/users/:id/wallet/deduct - Deduct funds');
+  console.log('');
+  console.log('💸 WITHDRAWAL ENDPOINTS:');
+  console.log('  POST /api/withdrawals/request  - Submit withdrawal request');
+  console.log('  GET  /api/withdrawals/history  - Get withdrawal history');
+  console.log('  POST /api/admin/withdrawal/:id/approve - Approve withdrawal');
+  console.log('  POST /api/admin/withdrawal/:id/reject  - Reject withdrawal');
+  console.log('');
+  console.log('👑 ADMIN ENDPOINTS:');
+  console.log('  GET  /api/admin/users          - Get all users');
+  console.log('  GET  /api/admin/trades         - Get all trades');
+  console.log('  GET  /api/admin/orders         - Get all orders');
+  console.log('  GET  /api/admin/stats          - Get platform statistics');
+  console.log('  GET  /api/admin/payments       - Get all payments');
+  console.log('  GET  /api/admin/withdrawals    - Get all withdrawals');
+  console.log('  GET  /api/admin/upi-settings   - Get UPI settings');
+  console.log('  POST /api/admin/upi-qr/upload  - Upload UPI QR code');
+  console.log('  PUT  /api/admin/upi-settings   - Update UPI settings');
+  console.log('  DELETE /api/admin/upi-qr       - Delete UPI QR code');
+  console.log('');
+  console.log('🎁 REFERRAL SYSTEM (NEW):');
+  console.log('  GET  /api/admin/referrals           - Get all referral data');
+  console.log('  GET  /api/admin/referral-settings   - Get referral settings');
+  console.log('  PUT  /api/admin/referral-settings   - Update referral settings');
+  console.log('  POST /api/admin/referrals/approve/:userId - Approve reward');
   console.log('');
   console.log('🌐 GENERAL ENDPOINTS:');
   console.log('  GET  /                         - API root');
