@@ -3574,7 +3574,7 @@ app.use((err, req, res, next) => {
 });
 
 // ========== SERVER-SIDE POSITION CLOSING FUNCTION ==========
-// This function actually closes positions - THIS WAS MISSING!
+// This MUST be at the top level, not inside any other function
 const closePositionServerSide = async (positionId, exitPrice, reason) => {
   console.log(`\n🔴 EXECUTING CLOSE for position ${positionId} (${reason}) at $${exitPrice}`);
   
@@ -3685,7 +3685,6 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     return { success: false, error: error.message };
   }
 };
-
 
 // ========== SIMPLE SERVER-SIDE POSITION MONITORING ==========
 console.log('🔧 Setting up position monitoring...');
