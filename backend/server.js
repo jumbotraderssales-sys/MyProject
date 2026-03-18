@@ -9,6 +9,9 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 const DOLLAR_RATE = 90; // 1 USD = 90 INR – match frontend's dollarRate
 const app = express();
+console.log('🚀 SERVER STARTING...');
+console.log('📅 Current time:', new Date().toISOString());
+console.log('📂 Current directory:', __dirname);
 
 // Load environment variables
 dotenv.config();
