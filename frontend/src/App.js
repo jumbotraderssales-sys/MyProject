@@ -251,7 +251,6 @@ const notifiedRef = useRef(new Set());
     ifscCode: '',
     upiId: ''
   });
-  const shownNotifications = useRef(new Set());
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [ignoreSyncUntil, setIgnoreSyncUntil] = useState(0);
   const [isProcessingTrade, setIsProcessingTrade] = useState(false);
@@ -272,6 +271,8 @@ const notifiedRef = useRef(new Set());
   const [totalPnl, setTotalPnl] = useState(0);
     const [orderHistory, setOrderHistory] = useState([]);
   const orderHistoryRef = useRef(orderHistory);
+  const shownNotifications = useRef(new Set());
+  const closingPositionRef = useRef(false);
   const [activeProfileTab, setActiveProfileTab] = useState('overview');
   const [chartType, setChartType] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
@@ -1331,6 +1332,102 @@ const checkChallengeRules = (profitPct, dailyLossPct, totalLossPct) => {
   const calculateDollarBalance = (paperBalance) => {
     return (paperBalance / dollarRate).toFixed(2);
   };
+  // New function: Ask backend to close position (single source of truth)
+const requestClosePosition = async (positionId, exitPrice, reason) => {
+  if (closingPositionRef.current) {
+    console.log('⏳ Already closing a position, please wait...');
+    return;
+  }
+  
+  closingPositionRef.current = true;
+  
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/check-close`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        exitPrice,
+        reason
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      console.log(`✅ Position ${positionId} closed by backend`);
+      
+      // Update local state based on backend response
+      setPositions(prev => prev.filter(p => p.id !== positionId));
+      
+      if (data.user) {
+        setUserAccount(data.user);
+        setBalance(data.user.paperBalance);
+      }
+      
+      // Show appropriate message
+      const position = positions.find(p => p.id === positionId);
+      let title = '';
+      let message = '';
+      
+      if (reason === 'STOP_LOSS') {
+        title = '🛑 STOP LOSS HIT';
+        message = `Your ${position?.side} position for ${position?.symbol} was closed.\nLoss: $${Math.abs(data.pnl).toFixed(2)}`;
+      } else if (reason === 'TAKE_PROFIT') {
+        title = '🎯 TAKE PROFIT HIT!';
+        message = `Your ${position?.side} position for ${position?.symbol} hit target!\nProfit: $${data.pnl.toFixed(2)}`;
+      }
+      
+      if (title) {
+        setTimeout(() => {
+          alert(`${title}\n\n${message}`);
+        }, 100);
+      }
+      
+      // Refresh order history
+      const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        if (ordersData.success) {
+          setOrderHistory(ordersData.orders);
+        }
+      }
+      
+    } else {
+      console.error('❌ Backend failed to close position:', data.error);
+      
+      // If position was already closed, just update local state
+      if (data.error === 'Position already closed') {
+        setPositions(prev => prev.filter(p => p.id !== positionId));
+        
+        // Refresh order history
+        const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json();
+          if (ordersData.success) {
+            setOrderHistory(ordersData.orders);
+          }
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error requesting close:', error);
+  } finally {
+    setTimeout(() => {
+      closingPositionRef.current = false;
+    }, 2000);
+  }
+};
 
   useEffect(() => {
     if (isLoggedIn && userAccount.id) {
@@ -3410,9 +3507,8 @@ const calculatePositionPnL = (position) => {
   return calculatePnL(position, currentPrice);
 };
 const checkSLTPHits = async () => {
-  if (!isLoggedIn || positions.length === 0) return;
+  if (!isLoggedIn || positions.length === 0 || closingPositionRef.current) return;
   
-  // Process one position at a time
   for (const position of positions) {
     const currentPrice = prices[position.symbol];
     if (!currentPrice) continue;
@@ -3432,14 +3528,13 @@ const checkSLTPHits = async () => {
       }
       
       if (slHit) {
-        // Check if already notified
+        // Check if already notified in this session
         if (!shownNotifications.current.has(position.id)) {
           shownNotifications.current.add(position.id);
-          await closePosition(position.id, 'STOP_LOSS');
-        } else {
-          console.log(`⚠️ Position ${position.id} already processed, skipping`);
+          // Ask backend to close instead of closing directly
+          await requestClosePosition(position.id, currentPrice, 'STOP_LOSS');
         }
-        return; // Exit after processing one position
+        return;
       }
     }
     
@@ -3456,19 +3551,17 @@ const checkSLTPHits = async () => {
       }
       
       if (tpHit) {
-        // Check if already notified
+        // Check if already notified in this session
         if (!shownNotifications.current.has(position.id)) {
           shownNotifications.current.add(position.id);
-          await closePosition(position.id, 'TAKE_PROFIT');
-        } else {
-          console.log(`⚠️ Position ${position.id} already processed, skipping`);
+          // Ask backend to close instead of closing directly
+          await requestClosePosition(position.id, currentPrice, 'TAKE_PROFIT');
         }
-        return; // Exit after processing one position
+        return;
       }
     }
   }
 };
-
   const calculateSLAmount = (order) => {
     if (!order.stopLoss) return 'N/A';
     const amount = Math.abs(order.entryPrice - order.stopLoss) * order.size * order.leverage;
