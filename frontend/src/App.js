@@ -5920,150 +5920,129 @@ return (
                         <span>PnL</span>
                         <span>Action</span>
                       </div>
-                      <div className="order-history-list">
-                    {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
-  const currentPnl = calculateOrderPnL(order);
-  const slAmount = calculateSLAmount(order);
-  const tpAmount = calculateTPAmount(order);
-  const isOpenOrder = order.status === 'OPEN';
-  const side = (order.side || '').toLowerCase();
-  
-  return (
-                            <div key={order.id} className={`order-history-item enhanced ${order.side?.toLowerCase()}`}>
-                              <span className={`order-side ${order.side?.toLowerCase()}`}>{order.side}</span>
-                              <span>{order.size}</span>
-                              <span>${order.marginUsed ? order.marginUsed.toFixed(2) : '0.00'}</span>
-                              <span>
-                                <span className="leverage-badge">{order.leverage}x</span>
-                              </span>
-                              <span>${order.entryPrice?.toFixed(2)}</span>
-                              <span>
-                               {isOpenOrder && editingOrderId === order.id ? (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-    <input
-      type="number"
-      value={editSL}
-      onChange={(e) => setEditSL(e.target.value)}
-      placeholder="SL"
-      style={{ width: '60px', fontSize: '0.7rem' }}
-    />
-  </div>
-) : (
-  <div className="sl-info">
-    <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
-    <div className="sl-amount">{slAmount}</div>
-    {isOpenOrder && (
-      <button
-        className="edit-sltp-btn"
-        onClick={() => {
-          setEditingOrderId(order.id);
-          setEditSL(order.stopLoss?.toString() || '');
-          setEditTP(order.takeProfit?.toString() || '');
-        }}
-        style={{ 
-          marginLeft: '5px', 
-          background: 'none', 
-          border: 'none', 
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          color: '#4f46e5',
-          fontSize: '0.8rem'
-        }}
-        title="Edit SL/TP"
-      >
-        <span style={{ fontWeight: 'bold' }}>EDIT</span> <span style={{ fontSize: '0.9rem' }}>✎</span>
-      </button>
-    )}
-  </div>
-)}
-                              </span>
-                              <span>
-                                {isOpenOrder && editingOrderId === order.id ? (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <input
-                                      type="number"
-                                      value={editTP}
-                                      onChange={(e) => setEditTP(e.target.value)}
-                                      placeholder="TP"
-                                      style={{ width: '60px', fontSize: '0.7rem' }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="tp-info">
-                                    <div>${order.takeProfit?.toFixed(2) || 'N/A'}</div>
-                                    <div className="tp-amount">{tpAmount}</div>
-                                  </div>
-                                )}
-                              </span>
-                              {isOpenOrder && editingOrderId === order.id && (
-                                <span>
-                                  <button onClick={() => updateOrderSLTP(order.id, editSL, editTP)} style={{ fontSize: '0.7rem', padding: '2px 4px', background: '#4f46e5' }}>Save</button>
-                                  <button onClick={() => setEditingOrderId(null)} style={{ fontSize: '0.7rem', padding: '2px 4px', background: '#6b7280', marginLeft: '2px' }}>Cancel</button>
-                                </span>
-                              )}
-                              <span>
-                                <span className={`order-status ${order.status === 'OPEN' ? 'active-badge' : 'triggered-badge'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
-                                  {order.status}
-                                </span>
-                              </span>
-                              <span>
-                                <div className="order-pnl-section">
-                                  <span className={`order-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
-                                    {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
-                                  </span>
-                                </div>
-                              </span>
-                              <span>
-                                <div className="order-actions">
-                                    {/* isCancellable && (
-                                  {isCancellable && (
-                                    <button 
-                                      className="cancel-order-btn"
-                                      onClick={() => handleCancelOrder(order.id)}
-                                      style={{
-                                        marginLeft: '5px',
-                                        padding: '0.1rem 0.3rem',
-                                        fontSize: '0.7rem',
-                                        background: '#dc2626',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                      }}
-                                      title="Cancel Order"
-                                    >
-                                      Cancel
-                                    </button>
-                                  )}
-) */}
-                                  {order.status === 'OPEN' && !isCancellable && (
-                                    <button 
-                                      className="close-position-btn"
-                                      onClick={() => closePosition(order.id)}
-                                      style={{
-                                        marginLeft: '5px',
-                                        padding: '0.1rem 0.3rem',
-                                        fontSize: '0.7rem',
-                                        background: '#3b82f6',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                      }}
-                                      title="Close Position"
-                                    >
-                                      Close
-                                    </button>
-                                  )}
-                                </div>
-                              </span>
-                            </div>
-                          );
-                        })}
-                        {orderHistory.length === 0 && (
-                          <div className="no-orders">No orders yet</div>
-                        )}
-                      </div>
+<div className="order-history-list">
+  {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
+    const currentPnl = calculateOrderPnL(order);
+    const slAmount = calculateSLAmount(order);
+    const tpAmount = calculateTPAmount(order);
+    const isOpenOrder = order.status === 'OPEN';
+    const side = (order.side || '').toLowerCase();
+    
+    return (
+      <div key={order.id} className={`order-history-item enhanced ${side}`}>
+        <span className={`order-side ${side}`}>{order.side}</span>
+        <span>{order.size}</span>
+        <span>${order.marginUsed ? order.marginUsed.toFixed(2) : '0.00'}</span>
+        <span>
+          <span className="leverage-badge">{order.leverage}x</span>
+        </span>
+        <span>${order.entryPrice?.toFixed(2)}</span>
+        <span>
+          {isOpenOrder && editingOrderId === order.id ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <input
+                type="number"
+                value={editSL}
+                onChange={(e) => setEditSL(e.target.value)}
+                placeholder="SL"
+                style={{ width: '60px', fontSize: '0.7rem' }}
+              />
+            </div>
+          ) : (
+            <div className="sl-info">
+              <div>${order.stopLoss?.toFixed(2) || 'N/A'}</div>
+              <div className="sl-amount">{slAmount}</div>
+              {isOpenOrder && (
+                <button
+                  className="edit-sltp-btn"
+                  onClick={() => {
+                    setEditingOrderId(order.id);
+                    setEditSL(order.stopLoss?.toString() || '');
+                    setEditTP(order.takeProfit?.toString() || '');
+                  }}
+                  style={{ 
+                    marginLeft: '5px', 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    color: '#4f46e5',
+                    fontSize: '0.8rem'
+                  }}
+                  title="Edit SL/TP"
+                >
+                  <span style={{ fontWeight: 'bold' }}>EDIT</span> <span style={{ fontSize: '0.9rem' }}>✎</span>
+                </button>
+              )}
+            </div>
+          )}
+        </span>
+        <span>
+          {isOpenOrder && editingOrderId === order.id ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <input
+                type="number"
+                value={editTP}
+                onChange={(e) => setEditTP(e.target.value)}
+                placeholder="TP"
+                style={{ width: '60px', fontSize: '0.7rem' }}
+              />
+            </div>
+          ) : (
+            <div className="tp-info">
+              <div>${order.takeProfit?.toFixed(2) || 'N/A'}</div>
+              <div className="tp-amount">{tpAmount}</div>
+            </div>
+          )}
+        </span>
+        {isOpenOrder && editingOrderId === order.id && (
+          <span>
+            <button onClick={() => updateOrderSLTP(order.id, editSL, editTP)} style={{ fontSize: '0.7rem', padding: '2px 4px', background: '#4f46e5' }}>Save</button>
+            <button onClick={() => setEditingOrderId(null)} style={{ fontSize: '0.7rem', padding: '2px 4px', background: '#6b7280', marginLeft: '2px' }}>Cancel</button>
+          </span>
+        )}
+        <span>
+          <span className={`order-status ${order.status === 'OPEN' ? 'active-badge' : 'triggered-badge'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+            {order.status}
+          </span>
+        </span>
+        <span>
+          <div className="order-pnl-section">
+            <span className={`order-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
+              {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
+            </span>
+          </div>
+        </span>
+        <span>
+          <div className="order-actions">
+            {order.status === 'OPEN' && (
+              <button 
+                className="close-position-btn"
+                onClick={() => closePosition(order.id)}
+                style={{
+                  marginLeft: '5px',
+                  padding: '0.1rem 0.3rem',
+                  fontSize: '0.7rem',
+                  background: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+                title="Close Position"
+              >
+                Close
+              </button>
+            )}
+          </div>
+        </span>
+      </div>
+    );
+  })}
+  {orderHistory.length === 0 && (
+    <div className="no-orders">No orders yet</div>
+  )}
+</div>
                     </div>
                   </div>
 
