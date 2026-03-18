@@ -1463,7 +1463,7 @@ app.get('/api/trades/positions', requireValidUser, async (req, res) => {
   }
 });
 
-// Close a position with challenge stats update
+// Close a position with challenge stats update (NOW USES SHARED FUNCTION)
 app.post('/api/trades/:id/close', requireValidUser, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -1479,9 +1479,39 @@ app.post('/api/trades/:id/close', requireValidUser, async (req, res) => {
     const { id } = req.params;
     const { exitPrice, closeReason } = req.body;
     
-    const trades = await readTrades();
-    const users = await readUsers();
-    const orders = await readOrders();
+    console.log(`📝 Manual close requested for ${id} (${closeReason}) by user ${userId}`);
+    
+    // Call the server-side close function (which we added above)
+    const result = await closePositionServerSide(id, exitPrice, closeReason || 'manual');
+    
+    if (result.success) {
+      // Get updated user data to return
+      const users = await readUsers();
+      const user = users.find(u => u.id === userId);
+      const userResponse = { ...user };
+      delete userResponse.password;
+      
+      res.json({
+        success: true,
+        message: 'Position closed successfully',
+        pnl: result.pnl,
+        user: userResponse
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to close position'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error closing position:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
     
     // Find the trade
     const tradeIndex = trades.findIndex(t => t.id === id && t.userId === userId);
@@ -1768,6 +1798,46 @@ app.get('/api/trades/history', requireValidUser, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message 
+    });
+  }
+});
+// ========== NEW ENDPOINT: Check and close position (called by frontend) ==========
+app.post('/api/trades/:id/check-close', requireValidUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { exitPrice, reason } = req.body;
+    const userId = req.userId;
+    
+    console.log(`🔍 Frontend requested close for ${id} (${reason}) at $${exitPrice}`);
+    
+    // Call the server-side close function
+    const result = await closePositionServerSide(id, exitPrice, reason);
+    
+    if (result.success) {
+      // Get updated user data to return
+      const users = await readUsers();
+      const user = users.find(u => u.id === userId);
+      const userResponse = { ...user };
+      delete userResponse.password;
+      
+      res.json({
+        success: true,
+        message: 'Position closed successfully',
+        pnl: result.pnl,
+        user: userResponse
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to close position'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in check-close:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
@@ -3502,6 +3572,120 @@ app.use((err, req, res, next) => {
     message: err.message
   });
 });
+
+// ========== SERVER-SIDE POSITION CLOSING FUNCTION ==========
+// This function actually closes positions - THIS WAS MISSING!
+const closePositionServerSide = async (positionId, exitPrice, reason) => {
+  console.log(`\n🔴 EXECUTING CLOSE for position ${positionId} (${reason}) at $${exitPrice}`);
+  
+  try {
+    // Read all data
+    const trades = await readTrades();
+    const users = await readUsers();
+    const orders = await readOrders();
+    
+    // Find the trade
+    const tradeIndex = trades.findIndex(t => t.id === positionId);
+    if (tradeIndex === -1) {
+      console.log(`❌ Position ${positionId} not found`);
+      return { success: false, error: 'Position not found' };
+    }
+    
+    const trade = trades[tradeIndex];
+    
+    // Check if already closed
+    if (trade.status !== 'open') {
+      console.log(`⚠️ Position ${positionId} is already closed (status: ${trade.status})`);
+      return { success: false, error: 'Position already closed' };
+    }
+    
+    console.log(`📊 Closing trade:`, {
+      id: trade.id,
+      userId: trade.userId,
+      symbol: trade.symbol,
+      side: trade.side,
+      entry: trade.entryPrice,
+      exit: exitPrice,
+      size: trade.size,
+      leverage: trade.leverage
+    });
+    
+    // Calculate PnL
+    const priceDiff = exitPrice - trade.entryPrice;
+    let pnl;
+    if (trade.side === 'long') {
+      pnl = priceDiff * trade.size * trade.leverage;
+    } else {
+      pnl = -priceDiff * trade.size * trade.leverage;
+    }
+    
+    console.log(`💰 Calculated PnL: $${pnl.toFixed(2)}`);
+    
+    // Find and update user
+    const userIndex = users.findIndex(u => u.id === trade.userId);
+    if (userIndex !== -1) {
+      const user = users[userIndex];
+      const oldBalance = user.paperBalance;
+      
+      // Return margin + PnL to paper balance
+      const marginINR = trade.marginUsed * DOLLAR_RATE;
+      const pnlINR = pnl * DOLLAR_RATE;
+      user.paperBalance += marginINR + pnlINR;
+      
+      console.log(`👤 User ${user.name}: ₹${oldBalance} → ₹${user.paperBalance}`);
+      
+      // Update challenge stats
+      if (!user.challengeStats) user.challengeStats = {};
+      
+      if (pnl > 0) {
+        user.challengeStats.totalProfit = (user.challengeStats.totalProfit || 0) + pnl;
+        user.challengeStats.currentProfit = (user.challengeStats.currentProfit || 0) + pnl;
+      } else {
+        user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
+      }
+      
+      // Update win rate
+      const userTrades = trades.filter(t => t.userId === trade.userId);
+      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
+      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
+      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
+      
+      user.updatedAt = new Date().toISOString();
+    }
+    
+    // Update trade
+    trades[tradeIndex].status = 'closed';
+    trades[tradeIndex].exitPrice = exitPrice;
+    trades[tradeIndex].pnl = pnl;
+    trades[tradeIndex].closeReason = reason;
+    trades[tradeIndex].closedAt = new Date().toISOString();
+    trades[tradeIndex].updatedAt = new Date().toISOString();
+    
+    // Update order
+    const orderIndex = orders.findIndex(o => o.id === positionId);
+    if (orderIndex !== -1) {
+      orders[orderIndex].status = 'closed';
+      orders[orderIndex].exitPrice = exitPrice;
+      orders[orderIndex].pnl = pnl;
+      orders[orderIndex].exitTime = new Date().toISOString();
+      orders[orderIndex].closeReason = reason;
+      orders[orderIndex].updatedAt = new Date().toISOString();
+    }
+    
+    // Save all changes
+    await writeTrades(trades);
+    await writeUsers(users);
+    await writeOrders(orders);
+    
+    console.log(`✅ Position ${positionId} closed successfully`);
+    return { success: true, pnl };
+    
+  } catch (error) {
+    console.error('❌ Error in closePositionServerSide:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 
 // ========== SIMPLE SERVER-SIDE POSITION MONITORING ==========
 console.log('🔧 Setting up position monitoring...');
