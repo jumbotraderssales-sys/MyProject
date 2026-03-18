@@ -2539,7 +2539,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   
   // Calculate P&L consistently
   let pnl;
-  if (position.side === 'LONG' || position.side === 'long') {
+ if (position.side.toLowerCase() === 'long') || position.side === 'long') {
     pnl = (currentPrice - position.entryPrice) * position.size * position.leverage;
   } else {
     pnl = -(currentPrice - position.entryPrice) * position.size * position.leverage;
@@ -3269,7 +3269,7 @@ const calculatePnL = (position, currentPrice) => {
   // For LONG: profit when currentPrice > entryPrice (positive priceDiff)
   // For SHORT: profit when currentPrice < entryPrice (negative priceDiff)
   let pnl;
-  if (position.side === 'LONG' || position.side === 'long') {
+ if (position.side.toLowerCase() === 'long' || position.side === 'long') {
     pnl = priceDiff * position.size * position.leverage;
   } else {
     // For SHORT: profit when price goes DOWN (currentPrice < entryPrice)
@@ -3306,7 +3306,7 @@ const checkSLTPHits = async () => {
     if (position.stopLoss) {
       let slHit = false;
       
-      if (position.side === 'LONG' && currentPrice <= position.stopLoss) {
+      if (position.side.toLowerCase() === 'long' && currentPrice <= position.stopLoss) {
         slHit = true;
         console.log(`🛑 SL HIT for LONG ${position.symbol} at $${currentPrice}`);
       } else if (position.side === 'SHORT' && currentPrice >= position.stopLoss) {
@@ -3324,7 +3324,7 @@ const checkSLTPHits = async () => {
     if (position.takeProfit) {
       let tpHit = false;
       
-      if (position.side === 'LONG' && currentPrice >= position.takeProfit) {
+      if (position.side.toLowerCase() === 'long' && currentPrice >= position.takeProfit) {
         tpHit = true;
         console.log(`🎯 TP HIT for LONG ${position.symbol} at $${currentPrice}`);
       } else if (position.side === 'SHORT' && currentPrice <= position.takeProfit) {
