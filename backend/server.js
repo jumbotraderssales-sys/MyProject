@@ -3475,17 +3475,6 @@ app.use((err, req, res, next) => {
     message: err.message
   });
 });
-// ========== SERVER START ==========
-const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, () => {
-  console.log('==========================================');
-  ...
-});
-2. Add ALL the server-side monitoring code RIGHT BEFORE that section:
-javascript
-// ========== SERVER-SIDE POSITION MONITORING ==========
-// ⚠️ ADD THIS ENTIRE BLOCK HERE - before app.listen()
 
 // Function to check all open positions for SL/TP hits
 const monitorPositions = async () => {
