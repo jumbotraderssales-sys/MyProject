@@ -6781,7 +6781,7 @@ return (
               borderRadius: '50%',
               width: '24px',
               height: '24px',
-              cursor: 'pointer',
+              cursor: 'pointer',a
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
