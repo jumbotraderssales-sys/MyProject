@@ -2305,7 +2305,7 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
   return { valid: true, message: '' };
 };
 
- const handleTrade = async (side) => {
+const handleTrade = async (side) => {
   // Prevent multiple simultaneous trades
   if (isProcessingTrade) {
     console.log('Trade already in progress, please wait...');
@@ -2343,27 +2343,27 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
     // Update local price for consistency
     setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
 
-    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    // Get challenge for auto SL/TP calculation
+    const currentChallenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     
     // Auto SL/TP calculation based on challenge rules
-let sl = null;
-let tp = null;
+    let sl = null;
+    let tp = null;
 
-const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
-const autoSLPercent = challenge?.autoStopLossTarget || 10; // 10% of order value
+    const autoSLPercent = currentChallenge?.autoStopLossTarget || 10; // 10% of order value
 
-// Calculate price movement for SL/TP based on percentage of position value
-const positionValue = currentPrice * orderSize * leverage;
-const priceMoveForSL = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
-const priceMoveForTP = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
+    // Calculate price movement for SL/TP based on percentage of position value
+    const positionValue = currentPrice * orderSize * leverage;
+    const priceMoveForSL = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
+    const priceMoveForTP = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
 
-if (side === 'LONG') {
-  sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
-  tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
-} else if (side === 'SHORT') {
-  sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
-  tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
-}
+    if (side === 'LONG') {
+      sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
+      tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
+    } else if (side === 'SHORT') {
+      sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
+      tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
+    }
     
     const token = localStorage.getItem('token');
     if (!token) {
@@ -2372,16 +2372,17 @@ if (side === 'LONG') {
       return;
     }
 
-   const tradeData = {
-  symbol: selectedSymbol,
-  side: side,
-  size: parseFloat(orderSize),
-  leverage: leverage,
-  entryPrice: currentPrice,
-  stopLoss: sl,        // ← This is already being sent
-  takeProfit: tp,      // ← This is already being sent
-  margin: marginRequired
-};
+    const tradeData = {
+      symbol: selectedSymbol,
+      side: side,
+      size: parseFloat(orderSize),
+      leverage: leverage,
+      entryPrice: currentPrice,
+      stopLoss: sl,
+      takeProfit: tp,
+      margin: marginRequired
+    };
+    
     const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
       method: 'POST',
       headers: {
@@ -2448,7 +2449,6 @@ if (side === 'LONG') {
     }, 1000); // Add a small delay to prevent rapid re-clicks
   }
 };
-
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
     
