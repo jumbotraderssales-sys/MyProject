@@ -154,7 +154,7 @@ const PriceLineOverlay = ({ position, currentPrice }) => {
     (currentPrice - position.entryPrice) *
     position.size *
     position.leverage *
-    (position.side === 'long' ? 1 : -1);
+    (position.side === 'LONG' ? 1 : -1);
 
   return (
     <>
@@ -1523,11 +1523,13 @@ useEffect(() => {
   let total = 0;
   positions.forEach(pos => {
     const currentPrice = prices[pos.symbol] || pos.entryPrice;
-    // Use the same calculation logic
-    if (pos.side === 'long' || pos.side === 'long') {
-      total += (currentPrice - pos.entryPrice) * pos.size * pos.leverage;
+    const priceDiff = currentPrice - pos.entryPrice;
+    const side = (pos.side || '').toLowerCase();
+    
+    if (side === 'long') {
+      total += priceDiff * pos.size * pos.leverage;
     } else {
-      total += -(currentPrice - pos.entryPrice) * pos.size * pos.leverage;
+      total += -priceDiff * pos.size * pos.leverage;
     }
   });
   setTotalPnl(total);
@@ -2309,7 +2311,7 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
   return { valid: true, message: '' };
 };
 
-const handleTrade = async (side) => {
+ const handleTrade = async (side) => {
   // Prevent multiple simultaneous trades
   if (isProcessingTrade) {
     console.log('Trade already in progress, please wait...');
@@ -2347,24 +2349,21 @@ const handleTrade = async (side) => {
     // Update local price for consistency
     setPrices(prev => ({ ...prev, [selectedSymbol]: currentPrice }));
 
-    // Get challenge for auto SL/TP calculation
-    const currentChallenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+    const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     
-    // Auto SL/TP calculation based on challenge rules
+    // Auto SL/TP calculation
     let sl = null;
     let tp = null;
 
-    const autoSLPercent = currentChallenge?.autoStopLossTarget || 10; // 10% of order value
+    const slAmount = marginRequired * 0.01;
+    const tpAmount = marginRequired * 0.01;
+    const priceMoveForSL = slAmount / (orderSize * leverage);
+    const priceMoveForTP = tpAmount / (orderSize * leverage);
 
-    // Calculate price movement for SL/TP based on percentage of position value
-    const positionValue = currentPrice * orderSize * leverage;
-    const priceMoveForSL = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
-    const priceMoveForTP = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
-
-    if (side === 'long') {
+    if (side === 'LONG') {
       sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
       tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
-    } else if (side === 'short') {
+    } else if (side === 'SHORT') {
       sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
       tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
     }
@@ -2376,17 +2375,16 @@ const handleTrade = async (side) => {
       return;
     }
 
-    const tradeData = {
-      symbol: selectedSymbol,
-      side: side,
-      size: parseFloat(orderSize),
-      leverage: leverage,
-      entryPrice: currentPrice,
-      stopLoss: sl,
-      takeProfit: tp,
-      margin: marginRequired
-    };
-    
+   const tradeData = {
+  symbol: selectedSymbol,
+  side: side,
+  size: parseFloat(orderSize),
+  leverage: leverage,
+  entryPrice: currentPrice,
+  stopLoss: sl,        // ← This is already being sent
+  takeProfit: tp,      // ← This is already being sent
+  margin: marginRequired
+};
     const response = await fetch('https://myproject1-d097.onrender.com/api/trades', {
       method: 'POST',
       headers: {
@@ -2453,6 +2451,7 @@ const handleTrade = async (side) => {
     }, 1000); // Add a small delay to prevent rapid re-clicks
   }
 };
+
   const handleChallengeBuy = async (challenge) => {
     setSelectedChallenge(challenge);
     
@@ -2538,12 +2537,17 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   const currentPrice = prices[position.symbol] || position.entryPrice;
   
   // Calculate P&L consistently
+  const priceDiff = currentPrice - position.entryPrice;
+  const side = (position.side || '').toLowerCase();
+  
   let pnl;
- if (position.side === 'LONG') || position.side === 'long') {
-    pnl = (currentPrice - position.entryPrice) * position.size * position.leverage;
+  if (side === 'long') {
+    pnl = priceDiff * position.size * position.leverage;
   } else {
-    pnl = -(currentPrice - position.entryPrice) * position.size * position.leverage;
+    pnl = -priceDiff * position.size * position.leverage;
   }
+
+
 
   try {
     const token = localStorage.getItem('token');
@@ -2822,12 +2826,12 @@ Ready for your next trade!`;
   if (sl) {
     const newSL = parseFloat(sl);
 
-    if (order.side === 'long' && newSL < order.stopLoss) {
+    if (order.side === 'LONG' && newSL < order.stopLoss) {
       alert('❌ You can only reduce Stop Loss (cannot increase risk)');
       return;
     }
 
-    if (order.side === 'short' && newSL > order.stopLoss) {
+    if (order.side === 'SHORT' && newSL > order.stopLoss) {
       alert('❌ You can only reduce Stop Loss (cannot increase risk)');
       return;
     }
@@ -3266,18 +3270,14 @@ const calculatePnL = (position, currentPrice) => {
   
   const priceDiff = currentPrice - position.entryPrice;
   
-  // For long: profit when currentPrice > entryPrice (positive priceDiff)
-  // For short: profit when currentPrice < entryPrice (negative priceDiff)
-  let pnl;
- if (position.side === 'long' || position.side === 'long') {
-    pnl = priceDiff * position.size * position.leverage;
-  } else {
-    // For short: profit when price goes DOWN (currentPrice < entryPrice)
-    // So we multiply by -1 to make it positive when priceDiff is negative
-    pnl = -priceDiff * position.size * position.leverage;
-  }
+  // Convert to lowercase for consistent comparison
+  const side = (position.side || '').toLowerCase();
   
-  return pnl;
+  if (side === 'long') {
+    return priceDiff * position.size * position.leverage;
+  } else {
+    return -priceDiff * position.size * position.leverage;
+  }
 };
 
 // Use this for both order and position calculations
@@ -3294,7 +3294,7 @@ const calculatePositionPnL = (position) => {
   const currentPrice = prices[position.symbol] || position.entryPrice;
   return calculatePnL(position, currentPrice);
 };
-
+  // Check for SL/TP hits
 const checkSLTPHits = async () => {
   if (!isLoggedIn || positions.length === 0) return;
   
@@ -3302,21 +3302,23 @@ const checkSLTPHits = async () => {
     const currentPrice = prices[position.symbol];
     if (!currentPrice) continue;
     
+    const side = (position.side || '').toLowerCase();
+    
     // Check STOP LOSS
     if (position.stopLoss) {
       let slHit = false;
       
-      if (position.side === 'long' && currentPrice <= position.stopLoss) {
+      if (side === 'long' && currentPrice <= position.stopLoss) {
         slHit = true;
-        console.log(`🛑 SL HIT for long ${position.symbol} at $${currentPrice}`);
-      } else if (position.side === 'short' && currentPrice >= position.stopLoss) {
+        console.log(`🛑 SL HIT for LONG ${position.symbol} at $${currentPrice}`);
+      } else if (side === 'short' && currentPrice >= position.stopLoss) {
         slHit = true;
-        console.log(`🛑 SL HIT for short ${position.symbol} at $${currentPrice}`);
+        console.log(`🛑 SL HIT for SHORT ${position.symbol} at $${currentPrice}`);
       }
       
       if (slHit) {
         await closePosition(position.id, 'STOP_LOSS');
-        return; // Exit after closing one position to avoid multiple simultaneous requests
+        return;
       }
     }
     
@@ -3324,17 +3326,17 @@ const checkSLTPHits = async () => {
     if (position.takeProfit) {
       let tpHit = false;
       
-      if (position.side === 'long' && currentPrice >= position.takeProfit) {
+      if (side === 'long' && currentPrice >= position.takeProfit) {
         tpHit = true;
-        console.log(`🎯 TP HIT for long ${position.symbol} at $${currentPrice}`);
-      } else if (position.side === 'short' && currentPrice <= position.takeProfit) {
+        console.log(`🎯 TP HIT for LONG ${position.symbol} at $${currentPrice}`);
+      } else if (side === 'short' && currentPrice <= position.takeProfit) {
         tpHit = true;
-        console.log(`🎯 TP HIT for short ${position.symbol} at $${currentPrice}`);
+        console.log(`🎯 TP HIT for SHORT ${position.symbol} at $${currentPrice}`);
       }
       
       if (tpHit) {
         await closePosition(position.id, 'TAKE_PROFIT');
-        return; // Exit after closing one position
+        return;
       }
     }
   }
@@ -3454,19 +3456,19 @@ const checkSLTPHits = async () => {
         <div className="trade-actions-top">
           <button 
   className="trade-btn-top buy-btn-top"
-  onClick={() => handleTrade('long')}
+  onClick={() => handleTrade('LONG')}
   disabled={!canTrade || isProcessingTrade}
   style={{ opacity: isProcessingTrade ? 0.5 : 1 }}
 >
-  {isProcessingTrade ? 'Processing...' : (canTrade ? 'BUY/long' : 'BUY CHALLENGE')}
+  {isProcessingTrade ? 'Processing...' : (canTrade ? 'BUY/LONG' : 'BUY CHALLENGE')}
 </button>
 <button 
   className="trade-btn-top sell-btn-top"
-  onClick={() => handleTrade('short')}
+  onClick={() => handleTrade('SHORT')}
   disabled={!canTrade || isProcessingTrade}
   style={{ opacity: isProcessingTrade ? 0.5 : 1 }}
 >
-  {isProcessingTrade ? 'Processing...' : (canTrade ? 'SELL/short' : 'BUY CHALLENGE')}
+  {isProcessingTrade ? 'Processing...' : (canTrade ? 'SELL/SHORT' : 'BUY CHALLENGE')}
 </button>
         </div>
 
@@ -5839,12 +5841,12 @@ return (
                     {chartHorizontalLines.map(line => (
                       <div key={line.id} className="chart-horizontal-line-container">
                         <div 
-                          className={`chart-horizontal-line ${line.side === 'long' ? 'line-long' : 'line-short'}`}
+                          className={`chart-horizontal-line ${line.side === 'LONG' ? 'line-long' : 'line-short'}`}
                           style={{ top: '50%' }}
                         >
                           <div className="line-info-box">
                             <div className="line-header">
-                              <span className={`line-side ${line.side === 'long' ? 'side-long' : 'side-short'}`}>
+                              <span className={`line-side ${line.side === 'LONG' ? 'side-long' : 'side-short'}`}>
                                 {line.side}
                               </span>
                               <button 
@@ -5919,14 +5921,14 @@ return (
                         <span>Action</span>
                       </div>
                       <div className="order-history-list">
-                        {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
-                          const currentPnl = calculateOrderPnL(order);
-                          const slAmount = calculateSLAmount(order);
-                          const tpAmount = calculateTPAmount(order);
-                          const isOpenOrder = order.status === 'OPEN';
-                          const isCancellable = isOpenOrder;
-                          
-                          return (
+                    {orderHistory.slice(0, isFullScreen ? 5 : 10).map(order => {
+  const currentPnl = calculateOrderPnL(order);
+  const slAmount = calculateSLAmount(order);
+  const tpAmount = calculateTPAmount(order);
+  const isOpenOrder = order.status === 'OPEN';
+  const side = (order.side || '').toLowerCase();
+  
+  return (
                             <div key={order.id} className={`order-history-item enhanced ${order.side?.toLowerCase()}`}>
                               <span className={`order-side ${order.side?.toLowerCase()}`}>{order.side}</span>
                               <span>{order.size}</span>
@@ -6007,8 +6009,8 @@ return (
                               <span>
                                 <div className="order-pnl-section">
                                   <span className={`order-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
-  {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
-</span>
+                                    {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
+                                  </span>
                                 </div>
                               </span>
                               <span>
@@ -6068,11 +6070,19 @@ return (
                   <div className="positions-panel" style={{ maxHeight: isFullScreen ? '150px' : '200px', overflowY: 'auto' }}>
                     <h3>Active Positions ({positions.length})</h3>
                     <div className="positions-list">
-                      {positions.slice(0, isFullScreen ? 2 : 3).map(pos => {
-                        const currentPrice = prices[pos.symbol] || pos.entryPrice;
-                        const positionPnl = (currentPrice - pos.entryPrice) * pos.size * pos.leverage * 
-                                            (pos.side === 'long' ? 1 : -1);
-                        return (
+                     {positions.slice(0, isFullScreen ? 2 : 3).map(pos => {
+  const currentPrice = prices[pos.symbol] || pos.entryPrice;
+  const priceDiff = currentPrice - pos.entryPrice;
+  const side = (pos.side || '').toLowerCase();
+  
+  let positionPnl;
+  if (side === 'long') {
+    positionPnl = priceDiff * pos.size * pos.leverage;
+  } else {
+    positionPnl = -priceDiff * pos.size * pos.leverage;
+  }
+  
+  return (
                           <div key={pos.id} className="position-item">
                             <div className="position-header">
                               <span className={`position-side ${pos.side.toLowerCase()}`}>{pos.side}</span>
