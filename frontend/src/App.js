@@ -424,56 +424,13 @@ const validateToken = () => {
   return true;
 };
 // Check for positions closed by server when app becomes active
+// Check for positions closed by server when app becomes active - SIMPLIFIED
 useEffect(() => {
   if (!isLoggedIn) return;
   
   const checkServerClosedPositions = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      // First sync positions to get current open positions
-      await syncPositionsWithBackend();
-      
-      // Then check order history for any new closed positions
-      const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (ordersResponse.ok) {
-        const ordersData = await ordersResponse.json();
-        if (ordersData.success) {
-          // Compare with current order history to find newly closed positions
-          const previousOrders = orderHistoryRef.current;
-          const newOrders = ordersData.orders;
-          
-          // Find orders that are now closed but weren't before
-          const newlyClosed = newOrders.filter(newOrder => 
-            newOrder.status === 'closed' && 
-            !previousOrders.some(prevOrder => 
-              prevOrder.id === newOrder.id && prevOrder.status === 'closed'
-            )
-          );
-          
-          // Show notifications for server-closed positions
-          newlyClosed.forEach(order => {
-            if (order.closeReason === 'STOP_LOSS' || order.closeReason === 'TAKE_PROFIT') {
-              const title = order.closeReason === 'STOP_LOSS' ? '🛑 STOP LOSS HIT' : '🎯 TAKE PROFIT HIT!';
-              const message = order.closeReason === 'STOP_LOSS' 
-                ? `Your ${order.side} position for ${order.symbol} was closed by stop loss while you were away.\nLoss: $${Math.abs(order.pnl).toFixed(2)}`
-                : `Your ${order.side} position for ${order.symbol} hit take profit while you were away!\nProfit: $${order.pnl.toFixed(2)}`;
-              
-              setTimeout(() => {
-                alert(`${title}\n\n${message}`);
-              }, 1000);
-            }
-          });
-          
-          setOrderHistory(newOrders);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking server-closed positions:', error);
-    }
+    console.log('Checking for server-closed positions...');
+    await syncPositionsWithBackend();
   };
   
   // Check when app becomes visible
@@ -486,12 +443,8 @@ useEffect(() => {
   
   document.addEventListener('visibilitychange', handleVisibilityChange);
   
-  // Also check every 30 seconds
-  const interval = setInterval(checkServerClosedPositions, 30000);
-  
   return () => {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
-    clearInterval(interval);
   };
 }, [isLoggedIn]);
   
@@ -815,26 +768,28 @@ const syncPositionsWithBackend = async () => {
   
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
+    
+    // Get current positions
+    const positionsResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/positions', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
+    if (positionsResponse.ok) {
+      const positionsData = await positionsResponse.json();
+      if (positionsData.success) {
         const previousPositions = positionsRef.current;
-        const currentPositions = data.positions;
+        const currentPositions = positionsData.positions;
         
-        // Find positions that were closed on backend
-        const closedPositions = previousPositions.filter(
+        // Find positions that were closed by server while we were away
+        const serverClosedPositions = previousPositions.filter(
           prevPos => !currentPositions.some(currPos => currPos.id === prevPos.id)
         );
         
         // Update positions state
         setPositions(currentPositions);
         
-        // Fetch order history to get details of closed positions
-        if (closedPositions.length > 0) {
+        // If there are server-closed positions, get their details and show ONE notification
+        if (serverClosedPositions.length > 0) {
           const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -842,41 +797,27 @@ const syncPositionsWithBackend = async () => {
           if (ordersResponse.ok) {
             const ordersData = await ordersResponse.json();
             if (ordersData.success) {
-              // Update order history
               setOrderHistory(ordersData.orders);
               
-              // Show notifications ONLY ONCE per position
-              closedPositions.forEach(closedPos => {
-                // Check if we've already shown notification for this position
-                if (!shownNotifications.current.has(closedPos.id)) {
-                  const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
-                  if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
-                    const reason = closedOrder.closeReason;
-                    const pnl = closedOrder.pnl;
-                    
-                    // Mark as notified immediately
-                    shownNotifications.current.add(closedPos.id);
-                    
-                    let title = '';
-                    let message = '';
-                    
-                    if (reason === 'STOP_LOSS') {
-                      title = '🛑 STOP LOSS HIT (While You Were Away)';
-                      message = `Your ${closedPos.side} position for ${closedPos.symbol} was automatically closed by stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
-                    } else if (reason === 'TAKE_PROFIT') {
-                      title = '🎯 TAKE PROFIT HIT! (While You Were Away) 🎉';
-                      message = `Your ${closedPos.side} position for ${closedPos.symbol} automatically hit take profit!\nProfit: $${pnl.toFixed(2)}`;
-                    }
-                    
-                    if (title) {
-                      // Use a flag to ensure only one alert shows
-                      setTimeout(() => {
-                        alert(`${title}\n\n${message}`);
-                      }, 500);
-                    }
-                  }
+              // Show notification for the FIRST server-closed position only
+              const firstClosed = serverClosedPositions[0];
+              if (!shownNotifications.current.has(firstClosed.id)) {
+                shownNotifications.current.add(firstClosed.id);
+                
+                const closedOrder = ordersData.orders.find(o => o.id === firstClosed.id);
+                if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
+                  const title = closedOrder.closeReason === 'STOP_LOSS' 
+                    ? '🛑 STOP LOSS HIT (While You Were Away)' 
+                    : '🎯 TAKE PROFIT HIT! (While You Were Away)';
+                  const message = closedOrder.closeReason === 'STOP_LOSS'
+                    ? `Your ${firstClosed.side} position for ${firstClosed.symbol} was closed by stop loss.\nLoss: $${Math.abs(closedOrder.pnl).toFixed(2)}`
+                    : `Your ${firstClosed.side} position for ${firstClosed.symbol} hit take profit!\nProfit: $${closedOrder.pnl.toFixed(2)}`;
+                  
+                  setTimeout(() => {
+                    alert(`${title}\n\n${message}`);
+                  }, 500);
                 }
-              });
+              }
             }
           }
         }
@@ -2736,7 +2677,7 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/close`, {
+    const response = await fetch(`https://myproject1-d097.onrender.com/api/trades/${positionId}/check-close`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
