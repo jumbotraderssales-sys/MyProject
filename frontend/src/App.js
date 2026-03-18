@@ -235,7 +235,8 @@ function App() {
       dailyResetTime: null
     }
   });
-
+const [notifiedClosedPositions, setNotifiedClosedPositions] = useState(new Set());
+const notifiedRef = useRef(new Set());
   const [balance, setBalance] = useState(0);
   const [balanceAnimation, setBalanceAnimation] = useState(false);
   const [equity, setEquity] = useState(0);
@@ -531,15 +532,21 @@ useEffect(() => {
   }
 }, []); // Empty dependency array = runs once on mount
 
-  // Check SL/TP conditions every 2 seconds
+ // Check SL/TP conditions every 2 seconds - DISABLED
 useEffect(() => {
+  // This effect is now disabled - server handles all SL/TP
+  // We keep it but it does nothing
+  return;
+  
+  /* Original code commented out
   if (!isLoggedIn || positions.length === 0) return;
   
   const checkInterval = setInterval(() => {
     checkSLTPHits();
-  }, 2000); // Check every 2 seconds
+  }, 2000);
   
   return () => clearInterval(checkInterval);
+  */
 }, [isLoggedIn, positions, prices]);
   
   // ========== NEW REFERRAL STATE ==========
@@ -807,7 +814,7 @@ useEffect(() => {
   loadChallengeStats();
 }, []);
   
-   const syncPositionsWithBackend = async () => {
+  const syncPositionsWithBackend = async () => {
   if (!isLoggedIn) return;
   
   try {
@@ -827,6 +834,9 @@ useEffect(() => {
           prevPos => !currentPositions.some(currPos => currPos.id === prevPos.id)
         );
         
+        // Update positions state immediately
+        setPositions(currentPositions);
+        
         // Fetch order history to get details of closed positions
         if (closedPositions.length > 0) {
           const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
@@ -836,38 +846,44 @@ useEffect(() => {
           if (ordersResponse.ok) {
             const ordersData = await ordersResponse.json();
             if (ordersData.success) {
+              // Update order history
               setOrderHistory(ordersData.orders);
               
-              // Show notifications for closed positions
+              // Show notifications ONLY for positions that were closed by server
               closedPositions.forEach(closedPos => {
-                const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
-                if (closedOrder) {
-                  const reason = closedOrder.closeReason;
-                  const pnl = closedOrder.pnl;
-                  
-                  let title = '';
-                  let message = '';
-                  
-                  if (reason === 'STOP_LOSS') {
-                    title = '🛑 STOP LOSS HIT';
-                    message = `Your ${closedPos.side} position for ${closedPos.symbol} hit stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
-                  } else if (reason === 'TAKE_PROFIT') {
-                    title = '🎯 TAKE PROFIT HIT!';
-                    message = `Your ${closedPos.side} position for ${closedPos.symbol} hit take profit!\nProfit: $${pnl.toFixed(2)}`;
-                  }
-                  
-                  if (title) {
-                    setTimeout(() => {
-                      alert(`${title}\n\n${message}`);
-                    }, 500);
+                // Check if we've already shown notification for this position
+                if (!notifiedRef.current.has(closedPos.id)) {
+                  const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
+                  if (closedOrder && (closedOrder.closeReason === 'STOP_LOSS' || closedOrder.closeReason === 'TAKE_PROFIT')) {
+                    const reason = closedOrder.closeReason;
+                    const pnl = closedOrder.pnl;
+                    
+                    let title = '';
+                    let message = '';
+                    
+                    if (reason === 'STOP_LOSS') {
+                      title = '🛑 STOP LOSS HIT (While You Were Away)';
+                      message = `Your ${closedPos.side} position for ${closedPos.symbol} was automatically closed by stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
+                    } else if (reason === 'TAKE_PROFIT') {
+                      title = '🎯 TAKE PROFIT HIT! (While You Were Away) 🎉';
+                      message = `Your ${closedPos.side} position for ${closedPos.symbol} automatically hit take profit!\nProfit: $${pnl.toFixed(2)}`;
+                    }
+                    
+                    if (title) {
+                      // Mark as notified BEFORE showing alert
+                      notifiedRef.current.add(closedPos.id);
+                      
+                      // Show notification with a slight delay
+                      setTimeout(() => {
+                        alert(`${title}\n\n${message}`);
+                      }, 500);
+                    }
                   }
                 }
               });
             }
           }
         }
-        
-        setPositions(currentPositions);
       }
     }
   } catch (error) {
@@ -3366,8 +3382,13 @@ const calculatePositionPnL = (position) => {
   const currentPrice = prices[position.symbol] || position.entryPrice;
   return calculatePnL(position, currentPrice);
 };
-  // Check for SL/TP hits
+// Check for SL/TP hits - DISABLED - Now handled by server only
 const checkSLTPHits = async () => {
+  // This function is now disabled - server handles all SL/TP
+  // We keep it as a placeholder but it does nothing
+  return;
+  
+  /* Original code commented out
   if (!isLoggedIn || positions.length === 0) return;
   
   for (const position of positions) {
@@ -3412,6 +3433,7 @@ const checkSLTPHits = async () => {
       }
     }
   }
+  */
 };
   
 
