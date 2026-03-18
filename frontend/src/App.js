@@ -531,14 +531,9 @@ useEffect(() => {
     }
   }
 }, []); // Empty dependency array = runs once on mount
-
- // Check SL/TP conditions every 2 seconds - DISABLED
-useEffect(() => {
-  // This effect is now disabled - server handles all SL/TP
-  // We keep it but it does nothing
-  return;
   
-  /* Original code commented out
+// Check SL/TP conditions every 2 seconds
+useEffect(() => {
   if (!isLoggedIn || positions.length === 0) return;
   
   const checkInterval = setInterval(() => {
@@ -546,7 +541,6 @@ useEffect(() => {
   }, 2000);
   
   return () => clearInterval(checkInterval);
-  */
 }, [isLoggedIn, positions, prices]);
   
   // ========== NEW REFERRAL STATE ==========
@@ -3382,13 +3376,7 @@ const calculatePositionPnL = (position) => {
   const currentPrice = prices[position.symbol] || position.entryPrice;
   return calculatePnL(position, currentPrice);
 };
-// Check for SL/TP hits - DISABLED - Now handled by server only
 const checkSLTPHits = async () => {
-  // This function is now disabled - server handles all SL/TP
-  // We keep it as a placeholder but it does nothing
-  return;
-  
-  /* Original code commented out
   if (!isLoggedIn || positions.length === 0) return;
   
   for (const position of positions) {
@@ -3433,7 +3421,6 @@ const checkSLTPHits = async () => {
       }
     }
   }
-  */
 };
   
 
