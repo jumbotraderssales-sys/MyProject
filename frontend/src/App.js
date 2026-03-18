@@ -420,6 +420,78 @@ const validateToken = () => {
   }
   return true;
 };
+// Check for positions closed by server when app becomes active
+useEffect(() => {
+  if (!isLoggedIn) return;
+  
+  const checkServerClosedPositions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // First sync positions to get current open positions
+      await syncPositionsWithBackend();
+      
+      // Then check order history for any new closed positions
+      const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        if (ordersData.success) {
+          // Compare with current order history to find newly closed positions
+          const previousOrders = orderHistoryRef.current;
+          const newOrders = ordersData.orders;
+          
+          // Find orders that are now closed but weren't before
+          const newlyClosed = newOrders.filter(newOrder => 
+            newOrder.status === 'closed' && 
+            !previousOrders.some(prevOrder => 
+              prevOrder.id === newOrder.id && prevOrder.status === 'closed'
+            )
+          );
+          
+          // Show notifications for server-closed positions
+          newlyClosed.forEach(order => {
+            if (order.closeReason === 'STOP_LOSS' || order.closeReason === 'TAKE_PROFIT') {
+              const title = order.closeReason === 'STOP_LOSS' ? '🛑 STOP LOSS HIT' : '🎯 TAKE PROFIT HIT!';
+              const message = order.closeReason === 'STOP_LOSS' 
+                ? `Your ${order.side} position for ${order.symbol} was closed by stop loss while you were away.\nLoss: $${Math.abs(order.pnl).toFixed(2)}`
+                : `Your ${order.side} position for ${order.symbol} hit take profit while you were away!\nProfit: $${order.pnl.toFixed(2)}`;
+              
+              setTimeout(() => {
+                alert(`${title}\n\n${message}`);
+              }, 1000);
+            }
+          });
+          
+          setOrderHistory(newOrders);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking server-closed positions:', error);
+    }
+  };
+  
+  // Check when app becomes visible
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      console.log('App became visible - checking for server-closed positions');
+      checkServerClosedPositions();
+    }
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // Also check every 30 seconds
+  const interval = setInterval(checkServerClosedPositions, 30000);
+  
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    clearInterval(interval);
+  };
+}, [isLoggedIn]);
+  
   // Add this effect near your other useEffect hooks
 useEffect(() => {
   if (activeDashboard === 'Trading') {
