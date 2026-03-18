@@ -734,8 +734,8 @@ useEffect(() => {
 
   loadChallengeStats();
 }, []);
-    // Sync positions with backend to get updated status (SL/TP hits)
-const syncPositionsWithBackend = async () => {
+  
+   const syncPositionsWithBackend = async () => {
   if (!isLoggedIn) return;
   
   try {
@@ -747,67 +747,54 @@ const syncPositionsWithBackend = async () => {
     if (response.ok) {
       const data = await response.json();
       if (data.success) {
-        // Check if any positions were closed on backend
         const previousPositions = positionsRef.current;
         const currentPositions = data.positions;
         
-        // Find positions that are no longer open (were closed by SL/TP on backend)
+        // Find positions that were closed on backend
         const closedPositions = previousPositions.filter(
           prevPos => !currentPositions.some(currPos => currPos.id === prevPos.id)
         );
         
-        // Show notifications for closed positions
-        closedPositions.forEach(async (closedPos) => {
-          // Fetch the closed order details to get reason
-          const orderResponse = await fetch(`https://myproject1-d097.onrender.com/api/trades/${closedPos.id}`, {
+        // Fetch order history to get details of closed positions
+        if (closedPositions.length > 0) {
+          const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
-          if (orderResponse.ok) {
-            const orderData = await orderResponse.json();
-            if (orderData.success) {
-              const reason = orderData.order.closeReason;
-              const pnl = orderData.order.pnl;
+          if (ordersResponse.ok) {
+            const ordersData = await ordersResponse.json();
+            if (ordersData.success) {
+              setOrderHistory(ordersData.orders);
               
-              let title = '';
-              let message = '';
-              let emoji = '';
-              
-              if (reason === 'STOP_LOSS') {
-                emoji = '🛑';
-                title = `${emoji} STOP LOSS HIT (Offline)`;
-                message = 
-`While you were away, your ${closedPos.side} position for ${closedPos.symbol} hit stop loss.
-
-📉 Entry: $${closedPos.entryPrice.toFixed(2)}
-🎯 Stop Loss: $${closedPos.stopLoss?.toFixed(2)}
-💵 Loss: $${Math.abs(pnl).toFixed(2)}
-
-💡 Tip: Review your strategy when you're back!`;
-              } 
-              else if (reason === 'TAKE_PROFIT') {
-                emoji = '🎯';
-                title = `${emoji} TAKE PROFIT HIT! (Offline) 🎉`;
-                message = 
-`Great news! While you were away, your ${closedPos.side} position hit take profit!
-
-📈 Entry: $${closedPos.entryPrice.toFixed(2)}
-💰 Take Profit: $${closedPos.takeProfit?.toFixed(2)}
-✅ Profit: $${pnl.toFixed(2)}
-
-🎊 Congratulations on the automated win!`;
-              }
-              
-              if (title) {
-                setTimeout(() => {
-                  alert(`${title}\n\n${message}`);
-                }, 500);
-              }
+              // Show notifications for closed positions
+              closedPositions.forEach(closedPos => {
+                const closedOrder = ordersData.orders.find(o => o.id === closedPos.id);
+                if (closedOrder) {
+                  const reason = closedOrder.closeReason;
+                  const pnl = closedOrder.pnl;
+                  
+                  let title = '';
+                  let message = '';
+                  
+                  if (reason === 'STOP_LOSS') {
+                    title = '🛑 STOP LOSS HIT';
+                    message = `Your ${closedPos.side} position for ${closedPos.symbol} hit stop loss.\nLoss: $${Math.abs(pnl).toFixed(2)}`;
+                  } else if (reason === 'TAKE_PROFIT') {
+                    title = '🎯 TAKE PROFIT HIT!';
+                    message = `Your ${closedPos.side} position for ${closedPos.symbol} hit take profit!\nProfit: $${pnl.toFixed(2)}`;
+                  }
+                  
+                  if (title) {
+                    setTimeout(() => {
+                      alert(`${title}\n\n${message}`);
+                    }, 500);
+                  }
+                }
+              });
             }
           }
-        });
+        }
         
-        // Update positions state
         setPositions(currentPositions);
       }
     }
