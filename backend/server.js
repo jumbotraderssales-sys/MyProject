@@ -7,11 +7,17 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const mongoose = require('mongoose');
-const DOLLAR_RATE = 90; // 1 USD = 90 INR – match frontend's dollarRate
-const app = express();
+const DOLLAR_RATE = 90;
+
+// ========== STARTUP VERIFICATION ==========
+console.log('\n==========================================');
 console.log('🚀 SERVER STARTING...');
-console.log('📅 Current time:', new Date().toISOString());
-console.log('📂 Current directory:', __dirname);
+console.log('📅 Time:', new Date().toISOString());
+console.log('📂 Directory:', __dirname);
+console.log('🌍 Node Version:', process.version);
+console.log('==========================================\n');
+
+const app = express();
 
 // Load environment variables
 dotenv.config();
@@ -3434,6 +3440,37 @@ app.post('/api/admin/referrals/approve/:userId', requireAdmin, async (req, res) 
     res.status(500).json({ success: false, error: error.message });
   }
 });
+// ========== TEST ENDPOINTS ==========
+// SIMPLE TEST ENDPOINT - Add this to verify server is running
+app.get('/api/ping', (req, res) => {
+  console.log('📡 Ping received at', new Date().toISOString());
+  res.json({ 
+    success: true, 
+    message: 'Server is running',
+    time: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// MANUAL MONITOR TEST - Call this to force a monitoring cycle
+app.get('/api/force-monitor', async (req, res) => {
+  console.log('🔧 Manual monitoring triggered at', new Date().toISOString());
+  try {
+    await monitorPositions();
+    res.json({ 
+      success: true, 
+      message: 'Monitoring cycle complete',
+      time: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Force monitor error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 
 // ========== SERVE REACT ADMIN APP ==========
 // Serve static files from the React build folder
@@ -3660,6 +3697,8 @@ process.on('SIGINT', () => {
   if (monitoringInterval) clearInterval(monitoringInterval);
   process.exit(0);
 });
+console.log('✅ Monitoring setup complete, about to start server...');
+
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
@@ -3669,7 +3708,7 @@ app.listen(PORT, () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
-  console.log(`✅ Server-side position monitoring is ACTIVE`);
+  console.log('==========================================\n');
  
   console.log('');
   console.log('🌐 GENERAL ENDPOINTS:');
