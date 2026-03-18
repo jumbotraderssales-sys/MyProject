@@ -2345,22 +2345,25 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
 
     const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
     
-    // Auto SL/TP calculation
-    let sl = null;
-    let tp = null;
+    // Auto SL/TP calculation based on challenge rules
+let sl = null;
+let tp = null;
 
-    const slAmount = marginRequired * 0.01;
-    const tpAmount = marginRequired * 0.01;
-    const priceMoveForSL = slAmount / (orderSize * leverage);
-    const priceMoveForTP = tpAmount / (orderSize * leverage);
+const challenge = CHALLENGES.find(c => c.name === userAccount.currentChallenge);
+const autoSLPercent = challenge?.autoStopLossTarget || 10; // 10% of order value
 
-    if (side === 'LONG') {
-      sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
-      tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
-    } else if (side === 'SHORT') {
-      sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
-      tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
-    }
+// Calculate price movement for SL/TP based on percentage of position value
+const positionValue = currentPrice * orderSize * leverage;
+const priceMoveForSL = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
+const priceMoveForTP = (positionValue * (autoSLPercent/100)) / (orderSize * leverage);
+
+if (side === 'LONG') {
+  sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice + priceMoveForTP).toFixed(2));
+} else if (side === 'SHORT') {
+  sl = parseFloat((currentPrice + priceMoveForSL).toFixed(2));
+  tp = parseFloat((currentPrice - priceMoveForTP).toFixed(2));
+}
     
     const token = localStorage.getItem('token');
     if (!token) {
@@ -3256,7 +3259,7 @@ const calculatePnL = (position, currentPrice) => {
   // For LONG: profit when currentPrice > entryPrice
   // For SHORT: profit when currentPrice < entryPrice
   let pnl;
-  if (position.side === 'LONG' || position.side === 'long' || position.side === 'LONG') {
+  if (position.side === 'LONG' || position.side === 'long') {
     pnl = priceDiff * position.size * position.leverage;
   } else {
     pnl = -priceDiff * position.size * position.leverage; // Negative of priceDiff gives correct SHORT P&L
@@ -3279,7 +3282,7 @@ const calculatePositionPnL = (position) => {
   const currentPrice = prices[position.symbol] || position.entryPrice;
   return calculatePnL(position, currentPrice);
 };
-  // Check for SL/TP hits
+
 const checkSLTPHits = async () => {
   if (!isLoggedIn || positions.length === 0) return;
   
@@ -5992,8 +5995,8 @@ return (
                               <span>
                                 <div className="order-pnl-section">
                                   <span className={`order-pnl ${currentPnl >= 0 ? 'positive' : 'negative'}`}>
-                                    {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
-                                  </span>
+  {currentPnl ? (currentPnl >= 0 ? '+' : '') + currentPnl.toFixed(2) : '0.00'}
+</span>
                                 </div>
                               </span>
                               <span>
