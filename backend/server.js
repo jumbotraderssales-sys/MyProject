@@ -6,19 +6,17 @@ const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
-const mongoose = require('mongoose');          // <-- ADDED
+const mongoose = require('mongoose');
 const DOLLAR_RATE = 90; // 1 USD = 90 INR – match frontend's dollarRate
 const app = express();
 
 // Load environment variables
 dotenv.config();
 
-// ========== MONGODB CONNECTION (only if MONGO_URI exists) ==========
-// ========== MONGODB CONNECTION (hardcoded URI) ==========
+// ========== MONGODB CONNECTION ==========
 let isMongoConnected = false;
 let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
 
-// Hardcoded MongoDB URI – replace with your actual connection string
 const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
 
 mongoose.connect(MONGO_URI, {
@@ -36,7 +34,7 @@ mongoose.connect(MONGO_URI, {
   console.error('❌ MongoDB connection failed, using file storage only', err.message);
 });
 
-// Define schemas (unchanged – keep the entire block below)
+// Define schemas
 const userSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: String,
@@ -174,7 +172,6 @@ WithdrawalModel = mongoose.model('Withdrawal', withdrawalSchema);
 ReferralModel = mongoose.model('Referral', referralSchema);
 SettingModel = mongoose.model('Setting', settingSchema);
 
-
 // ========== CORS CONFIGURATION ==========
 app.use(cors({
   origin: [
@@ -196,8 +193,8 @@ app.options('*', cors());
 // ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
 // ========== USER AUTH MIDDLEWARE ==========
-// This checks if user exists and is active for all protected routes
 const requireValidUser = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -213,7 +210,6 @@ const requireValidUser = async (req, res, next) => {
     const users = await readUsers();
     const user = users.find(u => u.id === userId);
     
-    // Check if user exists
     if (!user) {
       console.log(`🚫 Deleted user attempted access: ${userId}`);
       return res.status(401).json({ 
@@ -223,7 +219,6 @@ const requireValidUser = async (req, res, next) => {
       });
     }
     
-    // Check if user is active
     if (user.accountStatus !== 'active') {
       console.log(`🚫 Inactive user attempted access: ${userId} (status: ${user.accountStatus})`);
       return res.status(403).json({ 
@@ -233,7 +228,6 @@ const requireValidUser = async (req, res, next) => {
       });
     }
     
-    // Attach user to request for later use
     req.user = user;
     req.userId = userId;
     next();
@@ -259,7 +253,6 @@ const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 const REFERRALS_FILE = path.join(__dirname, 'data', 'referrals.json');
 
 // ========== CHALLENGE CONFIGURATION ==========
-// Original CHALLENGES object – restored exactly as in your original server.js
 const CHALLENGES = {
   "🚀 Beginner Challenge": {
     id: 1,
@@ -354,7 +347,6 @@ const createDirectories = async () => {
   }
 };
 
-// Initialize directories
 createDirectories();
 
 // Serve static files
@@ -366,7 +358,7 @@ app.use('/uploads', express.static(uploadsDir, {
   }
 }));
 
-// ========== HELPER FUNCTIONS – MODIFIED to use MongoDB when available ==========
+// ========== HELPER FUNCTIONS ==========
 const readUsers = async () => {
   if (isMongoConnected) {
     try {
@@ -374,7 +366,6 @@ const readUsers = async () => {
       return users;
     } catch (error) {
       console.error('Error reading users from MongoDB, falling back to file', error.message);
-      // fall through to file read
     }
   }
   try {
@@ -389,13 +380,11 @@ const readUsers = async () => {
 const writeUsers = async (users) => {
   if (isMongoConnected) {
     try {
-      // Replace all documents with current users array
       await UserModel.deleteMany({});
       await UserModel.insertMany(users);
       return true;
     } catch (error) {
       console.error('Error writing users to MongoDB, falling back to file', error.message);
-      // fall through to file write
     }
   }
   try {
@@ -577,7 +566,6 @@ const readSettings = async () => {
     try {
       let settings = await SettingModel.findOne().lean();
       if (!settings) {
-        // create default settings in DB
         settings = {
           upiQrCode: null,
           upiId: '7799191208-2@ybl',
@@ -598,7 +586,6 @@ const readSettings = async () => {
     const data = await fs.readFile(SETTINGS_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    // Default settings
     return {
       upiQrCode: null,
       upiId: '7799191208-2@ybl',
@@ -614,7 +601,6 @@ const readSettings = async () => {
 const writeSettings = async (settings) => {
   if (isMongoConnected) {
     try {
-      // Replace the single settings document
       await SettingModel.deleteMany({});
       await SettingModel.create(settings);
       return true;
@@ -666,6 +652,7 @@ const writeReferrals = async (referrals) => {
     return false;
   }
 };
+
 
 // ========== ALL YOUR EXISTING ROUTES – UNCHANGED ==========
 // (they all use the helpers above, so they now transparently use MongoDB when connected)
@@ -3672,6 +3659,198 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
 // Start monitoring on server startup
 let monitoringInterval;
 
+// Function to check all open positions for SL/TP hits
+const monitorPositions = async () => {
+  try {
+    // Read all open trades
+    const trades = await readTrades();
+    const openPositions = trades.filter(t => t.status === 'open');
+    
+    if (openPositions.length === 0) return;
+    
+    console.log(`🔍 Monitoring ${openPositions.length} open positions for SL/TP...`);
+    
+    // Get unique symbols - FIXED: no spread operator
+    const symbols = [];
+    for (let i = 0; i < openPositions.length; i++) {
+      if (!symbols.includes(openPositions[i].symbol)) {
+        symbols.push(openPositions[i].symbol);
+      }
+    }
+    
+    const prices = {};
+    
+    // Fetch current prices for all symbols
+    for (let i = 0; i < symbols.length; i++) {
+      const symbol = symbols[i];
+      try {
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+        const data = await response.json();
+        prices[symbol] = parseFloat(data.price);
+      } catch (error) {
+        console.error(`Failed to fetch price for ${symbol}:`, error.message);
+      }
+    }
+    
+    // Check each position
+    for (let i = 0; i < openPositions.length; i++) {
+      const position = openPositions[i];
+      const currentPrice = prices[position.symbol];
+      if (!currentPrice) continue;
+      
+      let shouldClose = false;
+      let closeReason = '';
+      
+      // Check STOP LOSS
+      if (position.stopLoss) {
+        if (position.side === 'long' && currentPrice <= position.stopLoss) {
+          shouldClose = true;
+          closeReason = 'STOP_LOSS';
+          console.log(`🛑 SL HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        } else if (position.side === 'short' && currentPrice >= position.stopLoss) {
+          shouldClose = true;
+          closeReason = 'STOP_LOSS';
+          console.log(`🛑 SL HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        }
+      }
+      
+      // Check TAKE PROFIT
+      if (position.takeProfit && !shouldClose) {
+        if (position.side === 'long' && currentPrice >= position.takeProfit) {
+          shouldClose = true;
+          closeReason = 'TAKE_PROFIT';
+          console.log(`🎯 TP HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        } else if (position.side === 'short' && currentPrice <= position.takeProfit) {
+          shouldClose = true;
+          closeReason = 'TAKE_PROFIT';
+          console.log(`🎯 TP HIT: ${position.id} - ${position.symbol} ${position.side} at $${currentPrice}`);
+        }
+      }
+      
+      // Close position if SL or TP hit
+      if (shouldClose) {
+        await closePositionServerSide(position.id, currentPrice, closeReason);
+      }
+    }
+  } catch (error) {
+    console.error('Error in position monitoring:', error);
+  }
+};
+
+// Server-side position closing function
+const closePositionServerSide = async (positionId, exitPrice, reason) => {
+  try {
+    const trades = await readTrades();
+    const users = await readUsers();
+    const orders = await readOrders();
+    
+    const tradeIndex = trades.findIndex(t => t.id === positionId);
+    if (tradeIndex === -1) return;
+    
+    const trade = trades[tradeIndex];
+    
+    // Calculate PnL - FIXED: consistent with frontend
+    let pnl;
+    const priceDiff = exitPrice - trade.entryPrice;
+    if (trade.side === 'long') {
+      pnl = priceDiff * trade.size * trade.leverage;
+    } else {
+      pnl = -priceDiff * trade.size * trade.leverage;
+    }
+    
+    // Find user
+    const userIndex = users.findIndex(u => u.id === trade.userId);
+    if (userIndex !== -1) {
+      const user = users[userIndex];
+      
+      // Return margin + PnL to paper balance
+      const marginINR = trade.marginUsed * DOLLAR_RATE;
+      const pnlINR = pnl * DOLLAR_RATE;
+      user.paperBalance += marginINR + pnlINR;
+      
+      // Update challenge stats
+      if (!user.challengeStats) user.challengeStats = {};
+      
+      if (pnl > 0) {
+        user.challengeStats.totalProfit = (user.challengeStats.totalProfit || 0) + pnl;
+        user.challengeStats.currentProfit = (user.challengeStats.currentProfit || 0) + pnl;
+      } else {
+        user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
+      }
+      
+      // Update win rate
+      const userTrades = trades.filter(t => t.userId === trade.userId);
+      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
+      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
+      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
+      
+      // Check challenge rules
+      if (user.currentChallenge && user.challengeStats.status === 'active') {
+        // Find challenge - FIXED: handle both formats
+        let challenge = null;
+        if (CHALLENGES[user.currentChallenge]) {
+          challenge = CHALLENGES[user.currentChallenge];
+        } else {
+          const challengeKeys = Object.keys(CHALLENGES);
+          for (let j = 0; j < challengeKeys.length; j++) {
+            if (CHALLENGES[challengeKeys[j]].name === user.currentChallenge) {
+              challenge = CHALLENGES[challengeKeys[j]];
+              break;
+            }
+          }
+        }
+        
+        if (challenge) {
+          const profitPct = user.paperBalance > 0 ? (user.challengeStats.currentProfit / user.paperBalance) * 100 : 0;
+          const lossPct = user.paperBalance > 0 ? (user.challengeStats.totalLoss / user.paperBalance) * 100 : 0;
+          
+          if (profitPct >= challenge.profitTarget) {
+            user.challengeStats.status = 'passed';
+            user.challengeStats.endReason = 'Profit target achieved';
+            user.realBalance = (user.realBalance || 0) + challenge.feeRefund + challenge.skillReward;
+          } else if (lossPct >= challenge.maxLossLimit) {
+            user.challengeStats.status = 'failed';
+            user.challengeStats.endReason = 'Maximum loss limit exceeded';
+            user.paperBalance = 0;
+          }
+        }
+      }
+      
+      user.updatedAt = new Date().toISOString();
+    }
+    
+    // Update trade
+    trades[tradeIndex].status = 'closed';
+    trades[tradeIndex].exitPrice = exitPrice;
+    trades[tradeIndex].pnl = pnl;
+    trades[tradeIndex].closeReason = reason;
+    trades[tradeIndex].closedAt = new Date().toISOString();
+    trades[tradeIndex].updatedAt = new Date().toISOString();
+    
+    // Update order
+    const orderIndex = orders.findIndex(o => o.id === positionId);
+    if (orderIndex !== -1) {
+      orders[orderIndex].status = 'closed';
+      orders[orderIndex].exitPrice = exitPrice;
+      orders[orderIndex].pnl = pnl;
+      orders[orderIndex].exitTime = new Date().toISOString();
+      orders[orderIndex].closeReason = reason;
+      orders[orderIndex].updatedAt = new Date().toISOString();
+    }
+    
+    // Save all changes
+    await writeTrades(trades);
+    await writeUsers(users);
+    await writeOrders(orders);
+    
+    console.log(`✅ Position ${positionId} closed automatically (${reason}) at $${exitPrice}`);
+    
+  } catch (error) {
+    console.error('Error closing position server-side:', error);
+  }
+};
+
+// Start monitoring on server startup
 const startPositionMonitoring = () => {
   // Check every 5 seconds
   monitoringInterval = setInterval(monitorPositions, 5000);
@@ -3710,8 +3889,7 @@ app.listen(PORT, () => {
   console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log(`✅ Server-side position monitoring ACTIVE (5s interval)`);
-  console.log('✅ Positions will be monitored even when users are offline');
-  console.log('');
+  console.log('✅ Positions will be monitored even when users are offline');  console.log('');
   console.log('👥 USER ENDPOINTS:');
   console.log('  POST /api/register             - User registration (with ref support)');
   console.log('  POST /api/login                - User login');
