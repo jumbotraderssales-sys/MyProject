@@ -273,6 +273,8 @@ const notifiedRef = useRef(new Set());
   const orderHistoryRef = useRef(orderHistory);
   const shownNotifications = useRef(new Set());
   const closingPositionRef = useRef(false);
+  const wsRef = useRef(null);                   
+ const wsReconnectTimerRef = useRef(null);
   const [activeProfileTab, setActiveProfileTab] = useState('overview');
   const [chartType, setChartType] = useState('0');
   const [searchTerm, setSearchTerm] = useState('');
@@ -863,6 +865,127 @@ useEffect(() => {
     window.removeEventListener('beforeunload', handleBeforeUnload);
   };
 }, [isLoggedIn]);
+
+  // ========== WEBSOCKET CONNECTION ==========
+const connectWebSocket = () => {
+  if (!isLoggedIn || !userAccount.id) return;
+  
+  // Clear any existing reconnect timer
+  if (wsReconnectTimerRef.current) {
+    clearTimeout(wsReconnectTimerRef.current);
+    wsReconnectTimerRef.current = null;
+  }
+  
+  // Close existing connection if any
+  if (wsRef.current) {
+    wsRef.current.close();
+  }
+  
+  try {
+    // Connect to WebSocket server with userId
+    const wsUrl = `wss://myproject1-d097.onrender.com?userId=${userAccount.id}`;
+    wsRef.current = new WebSocket(wsUrl);
+    
+    wsRef.current.onopen = () => {
+      console.log('📱 WebSocket connected');
+      // Send ping every 30 seconds to keep connection alive
+      const pingInterval = setInterval(() => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'PING' }));
+        }
+      }, 30000);
+      
+      // Store interval to clear on disconnect
+      wsRef.current.pingInterval = pingInterval;
+    };
+    
+    wsRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('📨 WebSocket message:', data);
+        
+        if (data.type === 'POSITION_CLOSED') {
+          const position = data.data;
+          
+          // Check if we've already shown this notification
+          if (!shownNotifications.current.has(position.positionId)) {
+            shownNotifications.current.add(position.positionId);
+            
+            // Update positions state immediately
+            setPositions(prev => prev.filter(p => p.id !== position.positionId));
+            
+            // Refresh order history
+            const token = localStorage.getItem('token');
+            if (token) {
+              fetch('https://myproject1-d097.onrender.com/api/trades/history', {
+                headers: { 'Authorization': `Bearer ${token}` }
+              })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) setOrderHistory(data.orders);
+                })
+                .catch(console.error);
+            }
+            
+            // Show notification
+            const title = position.reason === 'STOP_LOSS' 
+              ? '🛑 STOP LOSS HIT' 
+              : '🎯 TAKE PROFIT HIT!';
+            const message = position.reason === 'STOP_LOSS'
+              ? `Your ${position.side} position for ${position.symbol} was closed.\nLoss: $${Math.abs(position.pnl).toFixed(2)}`
+              : `Your ${position.side} position for ${position.symbol} hit target!\nProfit: $${position.pnl.toFixed(2)}`;
+            
+            setTimeout(() => {
+              alert(`${title}\n\n${message}`);
+            }, 100);
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    };
+    
+    wsRef.current.onclose = () => {
+      console.log('📴 WebSocket disconnected');
+      if (wsRef.current?.pingInterval) {
+        clearInterval(wsRef.current.pingInterval);
+      }
+      
+      // Attempt to reconnect after 5 seconds
+      wsReconnectTimerRef.current = setTimeout(() => {
+        console.log('🔄 Attempting to reconnect WebSocket...');
+        connectWebSocket();
+      }, 5000);
+    };
+    
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+  } catch (error) {
+    console.error('WebSocket connection error:', error);
+    // Attempt to reconnect after 5 seconds
+    wsReconnectTimerRef.current = setTimeout(() => {
+      console.log('🔄 Attempting to reconnect WebSocket...');
+      connectWebSocket();
+    }, 5000);
+  }
+};
+
+// Disconnect WebSocket
+const disconnectWebSocket = () => {
+  if (wsRef.current) {
+    if (wsRef.current.pingInterval) {
+      clearInterval(wsRef.current.pingInterval);
+    }
+    wsRef.current.close();
+    wsRef.current = null;
+  }
+  if (wsReconnectTimerRef.current) {
+    clearTimeout(wsReconnectTimerRef.current);
+    wsReconnectTimerRef.current = null;
+  }
+};
   
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
