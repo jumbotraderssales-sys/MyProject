@@ -7,6 +7,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const mongoose = require('mongoose');
+const WebSocket = require('ws');          
+const http = require('http');
 const DOLLAR_RATE = 90;
 
 // ========== STARTUP VERIFICATION ==========
@@ -18,6 +20,9 @@ console.log('🌍 Node Version:', process.version);
 console.log('==========================================\n');
 
 const app = express();
+const server = http.createServer(app);                    // <--- ADD THIS
+const wss = new WebSocket.Server({ server });             // <--- ADD THIS
+const clients = new Map();                                 // <--- ADD THIS (stores userId -> WebSocket)
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +31,69 @@ dotenv.config();
 let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
 
 const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
+// ========== WEBSOCKET CONNECTION HANDLER ==========
+wss.on('connection', (ws, req) => {
+  console.log('📱 New WebSocket client connected');
+  
+  // Extract userId from query string (e.g., ws://url/?userId=123)
+  const urlParams = new URLSearchParams(req.url?.split('?')[1]);
+  const userId = urlParams.get('userId');
+  
+  if (userId) {
+    clients.set(userId, ws);
+    console.log(`✅ User ${userId} registered for WebSocket`);
+    
+    // Send confirmation
+    ws.send(JSON.stringify({
+      type: 'CONNECTED',
+      message: 'WebSocket connected successfully'
+    }));
+  }
+  
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message);
+      console.log('📨 WebSocket message received:', data);
+      
+      // Handle ping messages to keep connection alive
+      if (data.type === 'PING') {
+        ws.send(JSON.stringify({ type: 'PONG' }));
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+    }
+  });
+  
+  ws.on('close', () => {
+    if (userId) {
+      clients.delete(userId);
+      console.log(`📴 User ${userId} disconnected from WebSocket`);
+    }
+  });
+  
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
+});
+
+// Helper function to send notification to specific user
+const notifyUser = (userId, data) => {
+  const client = clients.get(userId);
+  if (client && client.readyState === WebSocket.OPEN) {
+    client.send(JSON.stringify(data));
+    return true;
+  }
+  return false;
+};
+
+// Helper function to broadcast to all users (admin use)
+const broadcastToAll = (data) => {
+  clients.forEach((client, userId) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
 
 // Wait for MongoDB connection before starting server
 const connectWithRetry = async () => {
@@ -1422,8 +1490,31 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     await writeUsers(users);
     await writeOrders(orders);
     
-    console.log(`✅ Position ${positionId} closed successfully`);
-    return { success: true, pnl };
+ console.log(`✅ Position ${positionId} closed successfully`);
+
+// Send WebSocket notification to user
+if (trade && trade.userId) {
+  const notification = {
+    type: 'POSITION_CLOSED',
+    data: {
+      positionId: trade.id,
+      symbol: trade.symbol,
+      side: trade.side,
+      entryPrice: trade.entryPrice,
+      exitPrice: exitPrice,
+      pnl: pnl,
+      reason: reason,
+      closedAt: new Date().toISOString()
+    }
+  };
+  
+  const sent = notifyUser(trade.userId, notification);
+  if (sent) {
+    console.log(`📱 WebSocket notification sent to user ${trade.userId}`);
+  }
+}
+
+return { success: true, pnl };
     
   } catch (error) {
     console.error('❌ Error in closePositionServerSide:', error);
@@ -3530,6 +3621,7 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
+  console.log(`📱 WebSocket server running on ws://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📦 Storage: MongoDB (primary)`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
