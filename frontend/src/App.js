@@ -883,15 +883,19 @@ const connectWebSocket = () => {
   
   try {
     // Connect to WebSocket server with userId
-    const wsUrl = `wss://myproject1-d097.onrender.com?userId=${userAccount.id}`;
+    const wsUrl = `wss://myproject1-d097.onrender.com/ws?userId=${userAccount.id}`;
+    console.log('🔌 Connecting to WebSocket:', wsUrl);
+    
     wsRef.current = new WebSocket(wsUrl);
     
     wsRef.current.onopen = () => {
-      console.log('📱 WebSocket connected');
+      console.log('📱 WebSocket connected successfully');
+      
       // Send ping every 30 seconds to keep connection alive
       const pingInterval = setInterval(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: 'PING' }));
+          console.log('📤 Ping sent');
         }
       }, 30000);
       
@@ -902,7 +906,7 @@ const connectWebSocket = () => {
     wsRef.current.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 WebSocket message:', data);
+        console.log('📨 WebSocket message received:', data);
         
         if (data.type === 'POSITION_CLOSED') {
           const position = data.data;
@@ -939,23 +943,32 @@ const connectWebSocket = () => {
               alert(`${title}\n\n${message}`);
             }, 100);
           }
+        } else if (data.type === 'CONNECTED') {
+          console.log('✅ WebSocket confirmed by server:', data);
+        } else if (data.type === 'PONG') {
+          console.log('📥 Pong received');
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
       }
     };
     
-    wsRef.current.onclose = () => {
-      console.log('📴 WebSocket disconnected');
+    wsRef.current.onclose = (event) => {
+      console.log(`📴 WebSocket disconnected: ${event.code} - ${event.reason}`);
       if (wsRef.current?.pingInterval) {
         clearInterval(wsRef.current.pingInterval);
       }
       
-      // Attempt to reconnect after 5 seconds
+      // Attempt to reconnect with exponential backoff
+      const reconnectDelay = Math.min(1000 * Math.pow(2, (wsRef.current.reconnectAttempt || 0)), 30000);
+      console.log(`🔄 Attempting to reconnect in ${reconnectDelay/1000}s...`);
+      
+      wsRef.current.reconnectAttempt = (wsRef.current.reconnectAttempt || 0) + 1;
+      
       wsReconnectTimerRef.current = setTimeout(() => {
         console.log('🔄 Attempting to reconnect WebSocket...');
         connectWebSocket();
-      }, 5000);
+      }, reconnectDelay);
     };
     
     wsRef.current.onerror = (error) => {
