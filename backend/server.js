@@ -20,9 +20,25 @@ console.log('🌍 Node Version:', process.version);
 console.log('==========================================\n');
 
 const app = express();
-const server = http.createServer(app);                    // <--- ADD THIS
-const wss = new WebSocket.Server({ server });             // <--- ADD THIS
-const clients = new Map();                                 // <--- ADD THIS (stores userId -> WebSocket)
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ 
+  server,
+  // Add path to avoid conflict with HTTP routes
+  path: '/ws'
+});
+const clients = new Map();
+
+// Handle WebSocket upgrade specifically
+server.on('upgrade', (request, socket, head) => {
+  // Only handle WebSocket upgrades to our specific path
+  if (request.url && request.url.startsWith('/ws')) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
 // Load environment variables
 dotenv.config();
@@ -35,9 +51,15 @@ const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@pape
 wss.on('connection', (ws, req) => {
   console.log('📱 New WebSocket client connected');
   
-  // Extract userId from query string (e.g., ws://url/?userId=123)
-  const urlParams = new URLSearchParams(req.url?.split('?')[1]);
-  const userId = urlParams.get('userId');
+  // Extract userId from query string more reliably
+  const url = req.url || '';
+  const urlParts = url.split('?');
+  let userId = null;
+  
+  if (urlParts.length > 1) {
+    const params = new URLSearchParams(urlParts[1]);
+    userId = params.get('userId');
+  }
   
   if (userId) {
     clients.set(userId, ws);
@@ -46,7 +68,14 @@ wss.on('connection', (ws, req) => {
     // Send confirmation
     ws.send(JSON.stringify({
       type: 'CONNECTED',
-      message: 'WebSocket connected successfully'
+      message: 'WebSocket connected successfully',
+      userId: userId
+    }));
+  } else {
+    console.log('⚠️ WebSocket connected without userId');
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'No userId provided'
     }));
   }
   
@@ -57,17 +86,18 @@ wss.on('connection', (ws, req) => {
       
       // Handle ping messages to keep connection alive
       if (data.type === 'PING') {
-        ws.send(JSON.stringify({ type: 'PONG' }));
+        ws.send(JSON.stringify({ type: 'PONG', timestamp: Date.now() }));
       }
     } catch (error) {
       console.error('WebSocket message error:', error);
     }
   });
   
-  ws.on('close', () => {
+  ws.on('close', (code, reason) => {
+    console.log(`📴 WebSocket closed: ${code} - ${reason}`);
     if (userId) {
       clients.delete(userId);
-      console.log(`📴 User ${userId} disconnected from WebSocket`);
+      console.log(`User ${userId} removed from clients map`);
     }
   });
   
@@ -80,12 +110,17 @@ wss.on('connection', (ws, req) => {
 const notifyUser = (userId, data) => {
   const client = clients.get(userId);
   if (client && client.readyState === WebSocket.OPEN) {
-    client.send(JSON.stringify(data));
-    return true;
+    try {
+      client.send(JSON.stringify(data));
+      console.log(`📱 Notification sent to user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error(`Error sending to user ${userId}:`, error);
+      return false;
+    }
   }
   return false;
 };
-
 // Helper function to broadcast to all users (admin use)
 const broadcastToAll = (data) => {
   clients.forEach((client, userId) => {
