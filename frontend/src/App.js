@@ -986,6 +986,18 @@ const disconnectWebSocket = () => {
     wsReconnectTimerRef.current = null;
   }
 };
+  // ========== WEBSOCKET CONNECTION MANAGEMENT ==========
+useEffect(() => {
+  if (isLoggedIn && userAccount.id) {
+    connectWebSocket();
+  } else {
+    disconnectWebSocket();
+  }
+  
+  return () => {
+    disconnectWebSocket();
+  };
+}, [isLoggedIn, userAccount.id]);
   
   // ========== FETCH REFERRAL INFO ==========
   const fetchReferralInfo = async () => {
@@ -3245,6 +3257,7 @@ Ready for your next trade!`;
 
 const handleLogout = () => {
   // Clear notification tracking
+  disconnectWebSocket();
   shownNotifications.current.clear();
   
   localStorage.removeItem('token');
