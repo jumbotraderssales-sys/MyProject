@@ -22,26 +22,41 @@ const app = express();
 // Load environment variables
 dotenv.config();
 
-// ========== MONGODB CONNECTION ==========
-let isMongoConnected = false;
+
 let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
 
 const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
 
-mongoose.connect(MONGO_URI, {
-  serverApi: {
-    version: '1',
-    strict: true,
-    deprecationErrors: true,
+// Wait for MongoDB connection before starting server
+const connectWithRetry = async () => {
+  try {
+    await mongoose.connect(MONGO_URI, {
+      serverApi: {
+        version: '1',
+        strict: true,
+        deprecationErrors: true,
+      }
+    });
+    isMongoConnected = true;
+    console.log('✅ MongoDB connected successfully');
+    return true;
+  } catch (err) {
+    console.error('❌ MongoDB connection failed:', err.message);
+    console.log('🔄 Retrying in 5 seconds...');
+    return false;
   }
-})
-.then(() => {
-  isMongoConnected = true;
-  console.log('✅ MongoDB connected – data will be backed up');
-})
-.catch(err => {
-  console.error('❌ MongoDB connection failed, using file storage only', err.message);
-});
+};
+
+// Keep trying until connected
+(async function initDB() {
+  let connected = false;
+  while (!connected) {
+    connected = await connectWithRetry();
+    if (!connected) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+})();
 
 // Define schemas
 const userSchema = new mongoose.Schema({
@@ -250,16 +265,6 @@ const requireValidUser = async (req, res, next) => {
   }
 };
 
-// ========== FILE PATHS ==========
-const USERS_FILE = path.join(__dirname, 'data', 'users.json');
-const TRADES_FILE = path.join(__dirname, 'data', 'trades.json');
-const ORDERS_FILE = path.join(__dirname, 'data', 'orders.json');
-const TRANSACTIONS_FILE = path.join(__dirname, 'data', 'transactions.json');
-const PAYMENTS_FILE = path.join(__dirname, 'data', 'payments.json');
-const DEPOSITS_FILE = path.join(__dirname, 'data', 'deposits.json');
-const WITHDRAWALS_FILE = path.join(__dirname, 'data', 'withdrawals.json');
-const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
-const REFERRALS_FILE = path.join(__dirname, 'data', 'referrals.json');
 
 // ========== CHALLENGE CONFIGURATION ==========
 const CHALLENGES = {
@@ -340,23 +345,6 @@ const upload = multer({
   }
 });
 
-// ========== CREATE DIRECTORIES ==========
-const createDirectories = async () => {
-  const dirs = [
-    path.join(__dirname, 'data'),
-    path.join(__dirname, 'public', 'uploads')
-  ];
-  
-  for (const dir of dirs) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-    } catch (error) {
-      // Directory already exists
-    }
-  }
-};
-
-createDirectories();
 
 // Serve static files
 app.use('/uploads', express.static(uploadsDir, {
@@ -369,210 +357,113 @@ app.use('/uploads', express.static(uploadsDir, {
 
 // ========== HELPER FUNCTIONS ==========
 const readUsers = async () => {
-  if (isMongoConnected) {
-    try {
-      const users = await UserModel.find().lean();
-      return users;
-    } catch (error) {
-      console.error('Error reading users from MongoDB, falling back to file', error.message);
-    }
-  }
   try {
-    const data = await fs.readFile(USERS_FILE, 'utf8');
-    return JSON.parse(data);
+    const users = await UserModel.find().lean();
+    return users;
   } catch (error) {
-    console.error('Error reading users:', error.message);
-    return [];
+    console.error('Error reading users from MongoDB:', error.message);
+    throw error; // Let the caller handle the error
   }
 };
-
 const writeUsers = async (users) => {
-  if (isMongoConnected) {
-    try {
+     try {
       await UserModel.deleteMany({});
       await UserModel.insertMany(users);
       return true;
     } catch (error) {
-      console.error('Error writing users to MongoDB, falling back to file', error.message);
+      console.error('Error writing users to MongoDB:',  error.message);
+       throw error;
     }
   }
-  try {
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing users:', error.message);
-    return false;
-  }
-};
+ 
 
 const readTrades = async () => {
-  if (isMongoConnected) {
     try {
       const trades = await TradeModel.find().lean();
       return trades;
     } catch (error) {
-      console.error('Error reading trades from MongoDB, falling back to file', error.message);
+      console.error('Error reading trades from MongoDB:',  error.message);
+       throw error;
     }
   }
-  try {
-    const data = await fs.readFile(TRADES_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading trades:', error.message);
-    return [];
-  }
-};
-
+ 
 const writeTrades = async (trades) => {
-  if (isMongoConnected) {
-    try {
+     try {
       await TradeModel.deleteMany({});
       await TradeModel.insertMany(trades);
       return true;
     } catch (error) {
-      console.error('Error writing trades to MongoDB, falling back to file', error.message);
+      console.error('Error writing trades to MongoDB:',  error.message);
+        throw error;
     }
   }
-  try {
-    await fs.writeFile(TRADES_FILE, JSON.stringify(trades, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing trades:', error.message);
-    return false;
-  }
-};
-
+  
 const readOrders = async () => {
-  if (isMongoConnected) {
-    try {
+     try {
       const orders = await OrderModel.find().lean();
       return orders;
     } catch (error) {
-      console.error('Error reading orders from MongoDB, falling back to file', error.message);
+      console.error('Error reading orders from MongoDB:',  error.message);
+        throw error;
     }
   }
-  try {
-    const data = await fs.readFile(ORDERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading orders:', error.message);
-    return [];
-  }
-};
+
 
 const writeOrders = async (orders) => {
-  if (isMongoConnected) {
-    try {
+      try {
       await OrderModel.deleteMany({});
       await OrderModel.insertMany(orders);
       return true;
     } catch (error) {
-      console.error('Error writing orders to MongoDB, falling back to file', error.message);
+      console.error('Error writing orders to MongoDB:',  error.message);
+         throw error;
     }
   }
-  try {
-    await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing orders:', error.message);
-    return false;
-  }
-};
-
+ 
 const readPayments = async () => {
-  if (isMongoConnected) {
     try {
       const payments = await PaymentModel.find().lean();
       return payments;
     } catch (error) {
-      console.error('Error reading payments from MongoDB, falling back to file', error.message);
+      console.error('Error reading payments from MongoDB:',  error.message);
+       throw error;
     }
   }
-  try {
-    const data = await fs.readFile(PAYMENTS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading payments:', error.message);
-    return [];
-  }
-};
 
 const writePayments = async (payments) => {
-  if (isMongoConnected) {
     try {
       await PaymentModel.deleteMany({});
       await PaymentModel.insertMany(payments);
       return true;
     } catch (error) {
-      console.error('Error writing payments to MongoDB, falling back to file', error.message);
+      console.error('Error writing payments to MongoDB:',  error.message);
+       throw error;
     }
   }
-  try {
-    await fs.writeFile(PAYMENTS_FILE, JSON.stringify(payments, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing payments:', error.message);
-    return false;
-  }
-};
-
+ 
 const readWithdrawals = async () => {
-  if (isMongoConnected) {
-    try {
+      try {
       const withdrawals = await WithdrawalModel.find().lean();
       return withdrawals;
     } catch (error) {
-      console.error('Error reading withdrawals from MongoDB, falling back to file', error.message);
+      console.error('Error reading withdrawals from MongoDB:',  error.message);
+         throw error;
     }
   }
-  try {
-    if (!fsSync.existsSync(WITHDRAWALS_FILE)) {
-      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
-      return [];
-    }
-    const data = await fs.readFile(WITHDRAWALS_FILE, 'utf8');
-    if (!data || data.trim() === '') {
-      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
-      return [];
-    }
-    const withdrawals = JSON.parse(data);
-    if (!Array.isArray(withdrawals)) {
-      await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify([]));
-      return [];
-    }
-    return withdrawals;
-  } catch (error) {
-    console.error('Error reading withdrawals:', error.message);
-    return [];
-  }
-};
 
 const writeWithdrawals = async (withdrawals) => {
-  if (isMongoConnected) {
     try {
       await WithdrawalModel.deleteMany({});
       await WithdrawalModel.insertMany(withdrawals);
       return true;
     } catch (error) {
-      console.error('Error writing withdrawals to MongoDB, falling back to file', error.message);
+      console.error('Error writing withdrawals to MongoDB:',  error.message);
+       throw error;
     }
   }
-  try {
-    const dataDir = path.join(__dirname, 'data');
-    if (!fsSync.existsSync(dataDir)) {
-      await fs.mkdir(dataDir, { recursive: true });
-    }
-    await fs.writeFile(WITHDRAWALS_FILE, JSON.stringify(withdrawals, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing withdrawals:', error.message);
-    return false;
-  }
-};
-
+ 
 const readSettings = async () => {
-  if (isMongoConnected) {
-    try {
+     try {
       let settings = await SettingModel.findOne().lean();
       if (!settings) {
         settings = {
@@ -588,80 +479,44 @@ const readSettings = async () => {
       }
       return settings;
     } catch (error) {
-      console.error('Error reading settings from MongoDB, falling back to file', error.message);
+      console.error('Error reading settings from MongoDB:',  error.message);
+        throw error;
     }
   }
-  try {
-    const data = await fs.readFile(SETTINGS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return {
-      upiQrCode: null,
-      upiId: '7799191208-2@ybl',
-      merchantName: 'Paper2Real Trading',
-      referralTarget: 20,
-      referralRewardName: 'Beginner Challenge',
-      referralRewardAmount: 20000,
-      updatedAt: new Date().toISOString()
-    };
-  }
-};
-
+  
 const writeSettings = async (settings) => {
-  if (isMongoConnected) {
-    try {
+      try {
       await SettingModel.deleteMany({});
       await SettingModel.create(settings);
       return true;
     } catch (error) {
-      console.error('Error writing settings to MongoDB, falling back to file', error.message);
+      console.error('Error writing settings to MongoDB:',  error.message);
+         throw error;
     }
   }
-  try {
-    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing settings:', error.message);
-    return false;
-  }
-};
+
 
 const readReferrals = async () => {
-  if (isMongoConnected) {
-    try {
+     try {
       const referrals = await ReferralModel.find().lean();
       return referrals;
     } catch (error) {
-      console.error('Error reading referrals from MongoDB, falling back to file', error.message);
+      console.error('Error reading referrals from MongoDB:',  error.message);
+        throw error;
     }
   }
-  try {
-    const data = await fs.readFile(REFERRALS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
-};
-
+ 
 const writeReferrals = async (referrals) => {
-  if (isMongoConnected) {
     try {
       await ReferralModel.deleteMany({});
       await ReferralModel.insertMany(referrals);
       return true;
     } catch (error) {
-      console.error('Error writing referrals to MongoDB, falling back to file', error.message);
+      console.error('Error writing referrals to MongoDB:',  error.message);
+       throw error;
     }
   }
-  try {
-    await fs.writeFile(REFERRALS_FILE, JSON.stringify(referrals, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing referrals:', error.message);
-    return false;
-  }
-};
-
+ 
 
 // ========== ALL YOUR EXISTING ROUTES – UNCHANGED ==========
 // (they all use the helpers above, so they now transparently use MongoDB when connected)
@@ -3676,7 +3531,7 @@ app.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📦 Storage: ${isMongoConnected ? 'MongoDB + file' : 'file only'}`);
+  console.log(`📦 Storage: MongoDB (primary)`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log('==========================================\n');
  
