@@ -259,25 +259,7 @@ ReferralModel = mongoose.model('Referral', referralSchema);
 SettingModel = mongoose.model('Setting', settingSchema);
 
 // ========== CORS CONFIGURATION ==========
-app.use(cors({
-  origin: [
-    'https://paper2real.com',
-    'https://www.paper2real.com',
-    'https://admin.paper2real.com',
-    'http://localhost:3000',
-    'http://localhost:3002'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['Content-Length', 'Content-Type']
-}));
-
-// Handle preflight requests
-app.options('*', cors());
-// Add this to ensure credentials are allowed
-// ========== CORS CONFIGURATION - ENHANCED ==========
-// Allow all origins during development (temporary fix)
+// Enhanced CORS middleware
 app.use((req, res, next) => {
   // Allow all origins - temporarily for debugging
   const allowedOrigins = [
@@ -311,7 +293,6 @@ app.use((req, res, next) => {
   
   next();
 });
-
 // ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
