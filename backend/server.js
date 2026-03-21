@@ -21,11 +21,7 @@ console.log('==========================================\n');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ 
-  server,
-  // Add path to avoid conflict with HTTP routes
-  path: '/ws'
-});
+const wss = new WebSocket.Server({ server, path: '/ws' });
 const clients = new Map();
 
 
@@ -3653,7 +3649,7 @@ console.log('✅ Monitoring setup complete, about to start server...');
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📱 WebSocket server running on ws://localhost:${PORT}`);
