@@ -3511,14 +3511,6 @@ app.get('/api/force-monitor', async (req, res) => {
 });
 
 
-// ========== SERVE REACT ADMIN APP ==========
-// Serve static files from the React build folder
-app.use(express.static(path.join(__dirname, '../frontend/build')));
-
-// For any request that doesn't match an API route, send index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
 // ========== ERROR HANDLING ==========
 
 // Handle 404
