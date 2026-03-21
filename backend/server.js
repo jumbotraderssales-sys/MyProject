@@ -21,16 +21,37 @@ console.log('==========================================\n');
 
 const app = express();
 const server = http.createServer(app);
-// ========== WEBSOCKET CONNECTION HANDLER ==========
 const wss = new WebSocket.Server({ 
   server,
+  // Add path to avoid conflict with HTTP routes
   path: '/ws'
 });
+const clients = new Map();
 
+// Handle WebSocket upgrade specifically
+server.on('upgrade', (request, socket, head) => {
+  // Only handle WebSocket upgrades to our specific path
+  if (request.url && request.url.startsWith('/ws')) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+// Load environment variables
+dotenv.config();
+
+
+let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
+
+const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
+// ========== WEBSOCKET CONNECTION HANDLER ==========
 wss.on('connection', (ws, req) => {
   console.log('📱 New WebSocket client connected');
   
-  // Extract userId from query string
+  // Extract userId from query string more reliably
   const url = req.url || '';
   const urlParts = url.split('?');
   let userId = null;
@@ -44,6 +65,7 @@ wss.on('connection', (ws, req) => {
     clients.set(userId, ws);
     console.log(`✅ User ${userId} registered for WebSocket`);
     
+    // Send confirmation
     ws.send(JSON.stringify({
       type: 'CONNECTED',
       message: 'WebSocket connected successfully',
@@ -62,6 +84,7 @@ wss.on('connection', (ws, req) => {
       const data = JSON.parse(message);
       console.log('📨 WebSocket message received:', data);
       
+      // Handle ping messages to keep connection alive
       if (data.type === 'PING') {
         ws.send(JSON.stringify({ type: 'PONG', timestamp: Date.now() }));
       }
