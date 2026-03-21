@@ -17,7 +17,6 @@ console.log('🚀 SERVER STARTING...');
 console.log('📅 Time:', new Date().toISOString());
 console.log('📂 Directory:', __dirname);
 console.log('🌍 Node Version:', process.version);
-
 console.log('==========================================\n');
 
 const app = express();
@@ -299,133 +298,7 @@ PaymentModel = mongoose.model('Payment', paymentSchema);
 WithdrawalModel = mongoose.model('Withdrawal', withdrawalSchema);
 ReferralModel = mongoose.model('Referral', referralSchema);
 SettingModel = mongoose.model('Setting', settingSchema);
-// ================== SLTP OPTIMIZED ENGINE ==================
 
-// Price cache
-const priceCache = {};
-console.log("BTC price:", priceCache["BTCUSDT"]);
-
-// Fetch ALL prices from Binance (single API call)
-const updatePrices = async () => {
-  try {
-    const res = await fetch('https://api.binance.com/api/v3/ticker/price');
-    const data = await res.json();
-
-    // ✅ Check if array
-    if (!Array.isArray(data)) {
-      console.error('❌ Invalid price data:', data);
-      return;
-    }
-
-    data.forEach(item => {
-      priceCache[item.symbol] = parseFloat(item.price);
-    });
-
-    console.log('📊 Prices updated successfully');
-
-  } catch (err) {
-    console.error('❌ Price update error:', err.message);
-  }
-};
-
-// Backup price fetch (fail-safe)
-const fallbackPrice = async (symbol) => {
-  try {
-    const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-    const data = await res.json();
-    return parseFloat(data.price);
-  } catch {
-    return null;
-  }
-};
-
-// Close trade
-const closeTrade = async (trade, price, reason) => {
-  try {
-    const pnl =
-      (price - trade.entryPrice) *
-      trade.size *
-      trade.leverage *
-      (trade.side === 'LONG' ? 1 : -1);
-
-    await TradeModel.updateOne(
-      { id: trade.id },
-      {
-        status: 'CLOSED',
-        exitPrice: price,
-        pnl: pnl,
-        closeReason: reason,
-        closedAt: new Date(),
-        updatedAt: new Date()
-      }
-    );
-
-    console.log(`✅ Trade closed: ${trade.id} | ${reason}`);
-
-    // Notify frontend
-    notifyUser(trade.userId, {
-      type: 'POSITION_CLOSED',
-      data: {
-        positionId: trade.id,
-        symbol: trade.symbol,
-        side: trade.side,
-        pnl: pnl,
-        reason: reason
-      }
-    });
-
-  } catch (err) {
-    console.error('❌ Close trade error:', err);
-  }
-};
-
-// SLTP ENGINE
-const startSLTPEngine = () => {
-  console.log('🚀 SLTP Engine Started');
-
-  setInterval(async () => {
-    try {
-      const openTrades = await TradeModel.find({ status: 'OPEN' });
-
-      for (let trade of openTrades) {
-        let price = priceCache[trade.symbol];
-
-        // fallback if cache missing
-        if (!price) {
-          price = await fallbackPrice(trade.symbol);
-          if (!price) continue;
-        }
-
-        // LONG
-        if (trade.side === 'LONG') {
-          if (trade.stopLoss && price <= trade.stopLoss) {
-            await closeTrade(trade, price, 'STOP_LOSS');
-          } else if (trade.takeProfit && price >= trade.takeProfit) {
-            await closeTrade(trade, price, 'TAKE_PROFIT');
-          }
-        }
-
-        // SHORT
-        if (trade.side === 'SHORT') {
-          if (trade.stopLoss && price >= trade.stopLoss) {
-            await closeTrade(trade, price, 'STOP_LOSS');
-          } else if (trade.takeProfit && price <= trade.takeProfit) {
-            await closeTrade(trade, price, 'TAKE_PROFIT');
-          }
-        }
-      }
-
-    } catch (err) {
-      console.error('❌ SLTP Engine Error:', err);
-    }
-  }, 1000); // every 1 second
-};
-
-// Start price updater
-const startPriceUpdater = () => {
-  console.log('📡 Price updater started');
-  setInterval(updatePrices, 3000);
-};
 // ========== CORS CONFIGURATION ==========
 app.use(cors({
   origin: [
@@ -3783,8 +3656,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
-  startPriceUpdater();   // ✅ NEW
-  startSLTPEngine();     // ✅ NEW
   console.log(`📱 WebSocket server running on ws://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📦 Storage: MongoDB (primary)`);
@@ -3793,7 +3664,6 @@ app.listen(PORT, () => {
  
   console.log('');
     console.log('👥 USER ENDPOINTS:');
-
   console.log('  POST /api/register             - User registration (with ref support)');
   console.log('  POST /api/login                - User login');
   console.log('  GET  /api/user/profile         - Get user profile');
