@@ -1,4 +1,4 @@
-// server.js - Paper2Real Trading Platform Backend (MongoDB backup, routes unchanged)
+// server.js - Paper2Real Trading Platform Backend
 const express = require('express');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -7,8 +7,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const mongoose = require('mongoose');
-const WebSocket = require('ws');          
-const http = require('http');
+const WebSocket = require('ws');
 const DOLLAR_RATE = 90;
 
 // ========== STARTUP VERIFICATION ==========
@@ -20,10 +19,6 @@ console.log('🌍 Node Version:', process.version);
 console.log('==========================================\n');
 
 const app = express();
-
-// ========== WEBSOCKET SETUP ==========
-const clients = new Map();
-let wss = null;
 
 // ========== MONGODB CONNECTION ==========
 let isMongoConnected = false;
@@ -198,36 +193,23 @@ WithdrawalModel = mongoose.model('Withdrawal', withdrawalSchema);
 ReferralModel = mongoose.model('Referral', referralSchema);
 SettingModel = mongoose.model('Setting', settingSchema);
 
-// ========== CORS CONFIGURATION (SINGLE VERSION) ==========
-app.use((req, res, next) => {
-  const allowedOrigins = [
+// ========== CORS CONFIGURATION ==========
+app.use(cors({
+  origin: [
     'https://paper2real.com',
     'https://www.paper2real.com',
     'https://admin.paper2real.com',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002'
-  ];
-  
-  const origin = req.headers.origin;
-  
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // ========== MIDDLEWARE ==========
 app.use(express.json());
@@ -549,17 +531,6 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
       return { success: false, error: 'Position already closed' };
     }
     
-    console.log(`📊 Closing trade:`, {
-      id: trade.id,
-      userId: trade.userId,
-      symbol: trade.symbol,
-      side: trade.side,
-      entry: trade.entryPrice,
-      exit: exitPrice,
-      size: trade.size,
-      leverage: trade.leverage
-    });
-    
     const priceDiff = exitPrice - trade.entryPrice;
     let pnl;
     if (trade.side === 'long') {
@@ -568,18 +539,12 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
       pnl = -priceDiff * trade.size * trade.leverage;
     }
     
-    console.log(`💰 Calculated PnL: $${pnl.toFixed(2)}`);
-    
     const userIndex = users.findIndex(u => u.id === trade.userId);
     if (userIndex !== -1) {
       const user = users[userIndex];
-      const oldBalance = user.paperBalance;
-      
       const marginINR = trade.marginUsed * DOLLAR_RATE;
       const pnlINR = pnl * DOLLAR_RATE;
       user.paperBalance += marginINR + pnlINR;
-      
-      console.log(`👤 User ${user.name}: ₹${oldBalance} → ₹${user.paperBalance}`);
       
       if (!user.challengeStats) user.challengeStats = {};
       
@@ -589,11 +554,6 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
       } else {
         user.challengeStats.totalLoss = (user.challengeStats.totalLoss || 0) + Math.abs(pnl);
       }
-      
-      const userTrades = trades.filter(t => t.userId === trade.userId);
-      const closedTrades = userTrades.filter(t => t.status === 'closed').length + 1;
-      const winningTrades = userTrades.filter(t => t.status === 'closed' && t.pnl > 0).length + (pnl > 0 ? 1 : 0);
-      user.challengeStats.winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
       
       user.updatedAt = new Date().toISOString();
     }
@@ -621,28 +581,6 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     
     console.log(`✅ Position ${positionId} closed successfully`);
     
-    // Send WebSocket notification
-    if (trade && trade.userId) {
-      const notification = {
-        type: 'POSITION_CLOSED',
-        data: {
-          positionId: trade.id,
-          symbol: trade.symbol,
-          side: trade.side,
-          entryPrice: trade.entryPrice,
-          exitPrice: exitPrice,
-          pnl: pnl,
-          reason: reason,
-          closedAt: new Date().toISOString()
-        }
-      };
-      
-      const sent = notifyUser(trade.userId, notification);
-      if (sent) {
-        console.log(`📱 WebSocket notification sent to user ${trade.userId}`);
-      }
-    }
-    
     return { success: true, pnl };
     
   } catch (error) {
@@ -651,7 +589,62 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
   }
 };
 
-// ========== WEBSOCKET NOTIFICATION HELPER ==========
+// ========== WEBSOCKET SETUP (NO MANUAL UPGRADE HANDLER) ==========
+// Create HTTP server from Express app
+const server = require('http').createServer(app);
+const wss = new WebSocket.Server({ server, path: '/ws' });
+const clients = new Map();
+
+console.log('🔧 WebSocket server configured on path: /ws');
+
+wss.on('connection', (ws, req) => {
+  console.log('📱 New WebSocket client connected');
+  
+  const url = req.url || '';
+  const urlParts = url.split('?');
+  let userId = null;
+  
+  if (urlParts.length > 1) {
+    const params = new URLSearchParams(urlParts[1]);
+    userId = params.get('userId');
+  }
+  
+  if (userId) {
+    clients.set(userId, ws);
+    console.log(`✅ User ${userId} registered for WebSocket`);
+    
+    ws.send(JSON.stringify({
+      type: 'CONNECTED',
+      message: 'WebSocket connected successfully',
+      userId: userId
+    }));
+  } else {
+    console.log('⚠️ WebSocket connected without userId');
+  }
+  
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message);
+      if (data.type === 'PING') {
+        ws.send(JSON.stringify({ type: 'PONG' }));
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+    }
+  });
+  
+  ws.on('close', () => {
+    if (userId) {
+      clients.delete(userId);
+      console.log(`📴 User ${userId} disconnected`);
+    }
+  });
+  
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
+});
+
 const notifyUser = (userId, data) => {
   const client = clients.get(userId);
   if (client && client.readyState === WebSocket.OPEN) {
@@ -661,13 +654,7 @@ const notifyUser = (userId, data) => {
   return false;
 };
 
-// ========== REST OF YOUR ROUTES ==========
-// [Keep all your existing routes here - they are unchanged]
-// ... (register, login, trades, payments, withdrawals, admin, etc.)
-
-// ========== SIMPLE SERVER-SIDE POSITION MONITORING ==========
-console.log('🔧 Setting up position monitoring...');
-
+// ========== POSITION MONITORING ==========
 let monitorInterval;
 
 const monitorPositions = async () => {
@@ -729,6 +716,22 @@ const monitorPositions = async () => {
       if (shouldClose) {
         console.log(`🎯 Closing ${position.id} - ${closeReason}`);
         await closePositionServerSide(position.id, currentPrice, closeReason);
+        
+        // Send WebSocket notification
+        const notification = {
+          type: 'POSITION_CLOSED',
+          data: {
+            positionId: position.id,
+            symbol: position.symbol,
+            side: position.side,
+            entryPrice: position.entryPrice,
+            exitPrice: currentPrice,
+            pnl: (currentPrice - position.entryPrice) * position.size * position.leverage * (position.side === 'long' ? 1 : -1),
+            reason: closeReason,
+            closedAt: new Date().toISOString()
+          }
+        };
+        notifyUser(position.userId, notification);
       }
     }
   } catch (error) {
@@ -757,71 +760,19 @@ process.on('SIGINT', () => {
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
+  console.log(`📱 WebSocket server running on ws://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📦 Storage: MongoDB (primary)`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log('==========================================\n');
-  
-  // Attach WebSocket server AFTER HTTP server is running
-  wss = new WebSocket.Server({ server, path: '/ws' });
-  console.log('🔧 WebSocket server attached on path: /ws');
-  
-  wss.on('connection', (ws, req) => {
-    console.log('📱 New WebSocket client connected');
-    
-    const url = req.url || '';
-    const urlParts = url.split('?');
-    let userId = null;
-    
-    if (urlParts.length > 1) {
-      const params = new URLSearchParams(urlParts[1]);
-      userId = params.get('userId');
-    }
-    
-    if (userId) {
-      clients.set(userId, ws);
-      console.log(`✅ User ${userId} registered for WebSocket`);
-      
-      ws.send(JSON.stringify({
-        type: 'CONNECTED',
-        message: 'WebSocket connected successfully',
-        userId: userId
-      }));
-    } else {
-      console.log('⚠️ WebSocket connected without userId');
-    }
-    
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message);
-        if (data.type === 'PING') {
-          ws.send(JSON.stringify({ type: 'PONG' }));
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-    
-    ws.on('close', () => {
-      if (userId) {
-        clients.delete(userId);
-        console.log(`📴 User ${userId} disconnected`);
-      }
-    });
-    
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
-  });
-  
   console.log('✅ WebSocket server ready - waiting for connections');
-  
+  console.log('✅ Position monitoring active');
   console.log('');
-  console.log('👥 USER ENDPOINTS:');
-   console.log('  POST /api/register             - User registration (with ref support)');
+    console.log('👥 USER ENDPOINTS:');
+  console.log('  POST /api/register             - User registration (with ref support)');
   console.log('  POST /api/login                - User login');
   console.log('  GET  /api/user/profile         - Get user profile');
   console.log('  GET  /api/user/referral        - Get user referral info (NEW)');
@@ -882,4 +833,3 @@ const server = app.listen(PORT, () => {
   console.log('  GET  /api/health               - Health check');
   console.log('==========================================');
 });
-
