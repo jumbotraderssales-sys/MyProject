@@ -10,8 +10,6 @@ const mongoose = require('mongoose');
 const WebSocket = require('ws');          
 const http = require('http');
 const DOLLAR_RATE = 90;
-// Global reference for notifyUser (will be set after server starts)
-let notifyUserGlobal = null;
 
 // ========== STARTUP VERIFICATION ==========
 console.log('\n==========================================');
@@ -22,19 +20,38 @@ console.log('🌍 Node Version:', process.version);
 console.log('==========================================\n');
 
 const app = express();
-
-// ========== CREATE WEBSOCKET SERVER (using Express server) ==========
-// Note: We'll attach WebSocket to the Express server after app.listen
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ 
+  server,
+  // Add path to avoid conflict with HTTP routes
+  path: '/ws'
+});
 const clients = new Map();
-let wss = null;
 
-console.log('🔧 WebSocket server will be attached after HTTP server starts');
+// Handle WebSocket upgrade specifically
+server.on('upgrade', (request, socket, head) => {
+  // Only handle WebSocket upgrades to our specific path
+  if (request.url && request.url.startsWith('/ws')) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
-// Simple connection handler - NO separate upgrade handler needed
+// Load environment variables
+dotenv.config();
+
+
+let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
+
+const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
+// ========== WEBSOCKET CONNECTION HANDLER ==========
 wss.on('connection', (ws, req) => {
   console.log('📱 New WebSocket client connected');
   
-  // Extract userId from query string
+  // Extract userId from query string more reliably
   const url = req.url || '';
   const urlParts = url.split('?');
   let userId = null;
@@ -48,6 +65,7 @@ wss.on('connection', (ws, req) => {
     clients.set(userId, ws);
     console.log(`✅ User ${userId} registered for WebSocket`);
     
+    // Send confirmation
     ws.send(JSON.stringify({
       type: 'CONNECTED',
       message: 'WebSocket connected successfully',
@@ -55,23 +73,31 @@ wss.on('connection', (ws, req) => {
     }));
   } else {
     console.log('⚠️ WebSocket connected without userId');
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'No userId provided'
+    }));
   }
   
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
+      console.log('📨 WebSocket message received:', data);
+      
+      // Handle ping messages to keep connection alive
       if (data.type === 'PING') {
-        ws.send(JSON.stringify({ type: 'PONG' }));
+        ws.send(JSON.stringify({ type: 'PONG', timestamp: Date.now() }));
       }
     } catch (error) {
       console.error('WebSocket message error:', error);
     }
   });
   
-  ws.on('close', () => {
+  ws.on('close', (code, reason) => {
+    console.log(`📴 WebSocket closed: ${code} - ${reason}`);
     if (userId) {
       clients.delete(userId);
-      console.log(`📴 User ${userId} disconnected`);
+      console.log(`User ${userId} removed from clients map`);
     }
   });
   
@@ -80,15 +106,30 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// Helper function to send notification
+// Helper function to send notification to specific user
 const notifyUser = (userId, data) => {
   const client = clients.get(userId);
   if (client && client.readyState === WebSocket.OPEN) {
-    client.send(JSON.stringify(data));
-    return true;
+    try {
+      client.send(JSON.stringify(data));
+      console.log(`📱 Notification sent to user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error(`Error sending to user ${userId}:`, error);
+      return false;
+    }
   }
   return false;
 };
+// Helper function to broadcast to all users (admin use)
+const broadcastToAll = (data) => {
+  clients.forEach((client, userId) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
+
 // Wait for MongoDB connection before starting server
 const connectWithRetry = async () => {
   try {
@@ -259,40 +300,23 @@ ReferralModel = mongoose.model('Referral', referralSchema);
 SettingModel = mongoose.model('Setting', settingSchema);
 
 // ========== CORS CONFIGURATION ==========
-// Enhanced CORS middleware
-app.use((req, res, next) => {
-  // Allow all origins - temporarily for debugging
-  const allowedOrigins = [
+app.use(cors({
+  origin: [
     'https://paper2real.com',
     'https://www.paper2real.com',
     'https://admin.paper2real.com',
     'http://localhost:3000',
-    'http://localhost:3001',
     'http://localhost:3002'
-  ];
-  
-  const origin = req.headers.origin;
-  
-  // For now, allow all origins to debug
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours cache for preflight
-  
-  // Handle preflight requests immediately
-  if (req.method === 'OPTIONS') {
-    console.log('🔧 OPTIONS request received for:', req.url);
-    return res.status(200).end();
-  }
-  
-  next();
-});
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type']
+}));
+
+// Handle preflight requests
+app.options('*', cors());
+
 // ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -1519,7 +1543,7 @@ if (trade && trade.userId) {
     }
   };
   
-  const sent = global.notifyUser ? global.notifyUser(trade.userId, notification) : false;
+  const sent = notifyUser(trade.userId, notification);
   if (sent) {
     console.log(`📱 WebSocket notification sent to user ${trade.userId}`);
   }
@@ -3629,7 +3653,7 @@ console.log('✅ Monitoring setup complete, about to start server...');
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
-const server = server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📱 WebSocket server running on ws://localhost:${PORT}`);
@@ -3637,67 +3661,6 @@ const server = server.listen(PORT, () => {
   console.log(`📦 Storage: MongoDB (primary)`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log('==========================================\n');
-    // Attach WebSocket server AFTER HTTP server is running
-  const WebSocket = require('ws');
-  wss = new WebSocket.Server({ 
-    server,
-    path: '/ws'
-  });
-  
-  console.log('🔧 WebSocket server attached on path: /ws');
-  
-  // Set up WebSocket handlers
-  wss.on('connection', (ws, req) => {
-    console.log('📱 New WebSocket client connected');
-    
-    const url = req.url || '';
-    const urlParts = url.split('?');
-    let userId = null;
-    
-    if (urlParts.length > 1) {
-      const params = new URLSearchParams(urlParts[1]);
-      userId = params.get('userId');
-    }
-    
-    if (userId) {
-      clients.set(userId, ws);
-      console.log(`✅ User ${userId} registered for WebSocket`);
-      
-      ws.send(JSON.stringify({
-        type: 'CONNECTED',
-        message: 'WebSocket connected successfully',
-        userId: userId
-      }));
-    }
-    
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message);
-        if (data.type === 'PING') {
-          ws.send(JSON.stringify({ type: 'PONG' }));
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-    
-    ws.on('close', () => {
-      if (userId) {
-        clients.delete(userId);
-        console.log(`📴 User ${userId} disconnected`);
-      }
-    });
-  });
-  
-  // Keep the notifyUser function accessible
-  global.notifyUser = (userId, data) => {
-    const client = clients.get(userId);
-    if (client && client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
-      return true;
-    }
-    return false;
-  };
  
   console.log('');
     console.log('👥 USER ENDPOINTS:');
