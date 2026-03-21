@@ -17,6 +17,7 @@ console.log('🚀 SERVER STARTING...');
 console.log('📅 Time:', new Date().toISOString());
 console.log('📂 Directory:', __dirname);
 console.log('🌍 Node Version:', process.version);
+console.log("BTC price:", priceCache["BTCUSDT"]);
 console.log('==========================================\n');
 
 const app = express();
