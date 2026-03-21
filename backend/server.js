@@ -7,7 +7,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const mongoose = require('mongoose');
-wss.handleUpgrade(request, socket, head, ...)
 const WebSocket = require('ws');          
 const http = require('http');
 const DOLLAR_RATE = 90;
@@ -22,38 +21,21 @@ console.log('🌍 Node Version:', process.version);
 console.log('==========================================\n');
 
 const app = express();
+// ========== CREATE HTTP SERVER FOR WEBSOCKET ==========
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ 
   server,
-  // Add path to avoid conflict with HTTP routes
   path: '/ws'
 });
 const clients = new Map();
 
-// Handle WebSocket upgrade specifically
-server.on('upgrade', (request, socket, head) => {
-  // Only handle WebSocket upgrades to our specific path
-  if (request.url && request.url.startsWith('/ws')) {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request);
-    });
-  } else {
-    socket.destroy();
-  }
-});
+console.log('🔧 WebSocket server configured on path: /ws');
 
-// Load environment variables
-dotenv.config();
-
-
-let UserModel, TradeModel, OrderModel, PaymentModel, WithdrawalModel, ReferralModel, SettingModel;
-
-const MONGO_URI = "mongodb+srv://jumbotraderssales_db_user:rnNATQD0EBxIL4Ax@paper2real0.dsopqy5.mongodb.net/paper2real?retryWrites=true&w=majority&appName=Paper2real0";
-// ========== WEBSOCKET CONNECTION HANDLER ==========
+// Simple connection handler - NO separate upgrade handler needed
 wss.on('connection', (ws, req) => {
   console.log('📱 New WebSocket client connected');
   
-  // Extract userId from query string more reliably
+  // Extract userId from query string
   const url = req.url || '';
   const urlParts = url.split('?');
   let userId = null;
@@ -67,7 +49,6 @@ wss.on('connection', (ws, req) => {
     clients.set(userId, ws);
     console.log(`✅ User ${userId} registered for WebSocket`);
     
-    // Send confirmation
     ws.send(JSON.stringify({
       type: 'CONNECTED',
       message: 'WebSocket connected successfully',
@@ -75,31 +56,23 @@ wss.on('connection', (ws, req) => {
     }));
   } else {
     console.log('⚠️ WebSocket connected without userId');
-    ws.send(JSON.stringify({
-      type: 'ERROR',
-      message: 'No userId provided'
-    }));
   }
   
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
-      console.log('📨 WebSocket message received:', data);
-      
-      // Handle ping messages to keep connection alive
       if (data.type === 'PING') {
-        ws.send(JSON.stringify({ type: 'PONG', timestamp: Date.now() }));
+        ws.send(JSON.stringify({ type: 'PONG' }));
       }
     } catch (error) {
       console.error('WebSocket message error:', error);
     }
   });
   
-  ws.on('close', (code, reason) => {
-    console.log(`📴 WebSocket closed: ${code} - ${reason}`);
+  ws.on('close', () => {
     if (userId) {
       clients.delete(userId);
-      console.log(`User ${userId} removed from clients map`);
+      console.log(`📴 User ${userId} disconnected`);
     }
   });
   
@@ -108,30 +81,15 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// Helper function to send notification to specific user
+// Helper function to send notification
 const notifyUser = (userId, data) => {
   const client = clients.get(userId);
   if (client && client.readyState === WebSocket.OPEN) {
-    try {
-      client.send(JSON.stringify(data));
-      console.log(`📱 Notification sent to user ${userId}`);
-      return true;
-    } catch (error) {
-      console.error(`Error sending to user ${userId}:`, error);
-      return false;
-    }
+    client.send(JSON.stringify(data));
+    return true;
   }
   return false;
 };
-// Helper function to broadcast to all users (admin use)
-const broadcastToAll = (data) => {
-  clients.forEach((client, userId) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
-    }
-  });
-};
-
 // Wait for MongoDB connection before starting server
 const connectWithRetry = async () => {
   try {
