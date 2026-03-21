@@ -10,7 +10,8 @@ const mongoose = require('mongoose');
 const WebSocket = require('ws');          
 const http = require('http');
 const DOLLAR_RATE = 90;
-
+// Global reference for notifyUser (will be set after server starts)
+let notifyUserGlobal = null;
 
 // ========== STARTUP VERIFICATION ==========
 console.log('\n==========================================');
@@ -21,15 +22,13 @@ console.log('🌍 Node Version:', process.version);
 console.log('==========================================\n');
 
 const app = express();
-// ========== CREATE HTTP SERVER FOR WEBSOCKET ==========
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ 
-  server,
-  path: '/ws'
-});
-const clients = new Map();
 
-console.log('🔧 WebSocket server configured on path: /ws');
+// ========== CREATE WEBSOCKET SERVER (using Express server) ==========
+// Note: We'll attach WebSocket to the Express server after app.listen
+const clients = new Map();
+let wss = null;
+
+console.log('🔧 WebSocket server will be attached after HTTP server starts');
 
 // Simple connection handler - NO separate upgrade handler needed
 wss.on('connection', (ws, req) => {
@@ -1547,7 +1546,7 @@ if (trade && trade.userId) {
     }
   };
   
-  const sent = notifyUser(trade.userId, notification);
+  const sent = global.notifyUser ? global.notifyUser(trade.userId, notification) : false;
   if (sent) {
     console.log(`📱 WebSocket notification sent to user ${trade.userId}`);
   }
@@ -3657,7 +3656,7 @@ console.log('✅ Monitoring setup complete, about to start server...');
 // ========== SERVER START ==========
 const PORT = process.env.PORT || 3001;
 
-server.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log('\n==========================================');
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📱 WebSocket server running on ws://localhost:${PORT}`);
@@ -3665,6 +3664,67 @@ server.listen(PORT, () => {
   console.log(`📦 Storage: MongoDB (primary)`);
   console.log(`🌐 API URL: https://myproject1-d097.onrender.com`);
   console.log('==========================================\n');
+    // Attach WebSocket server AFTER HTTP server is running
+  const WebSocket = require('ws');
+  wss = new WebSocket.Server({ 
+    server,
+    path: '/ws'
+  });
+  
+  console.log('🔧 WebSocket server attached on path: /ws');
+  
+  // Set up WebSocket handlers
+  wss.on('connection', (ws, req) => {
+    console.log('📱 New WebSocket client connected');
+    
+    const url = req.url || '';
+    const urlParts = url.split('?');
+    let userId = null;
+    
+    if (urlParts.length > 1) {
+      const params = new URLSearchParams(urlParts[1]);
+      userId = params.get('userId');
+    }
+    
+    if (userId) {
+      clients.set(userId, ws);
+      console.log(`✅ User ${userId} registered for WebSocket`);
+      
+      ws.send(JSON.stringify({
+        type: 'CONNECTED',
+        message: 'WebSocket connected successfully',
+        userId: userId
+      }));
+    }
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message);
+        if (data.type === 'PING') {
+          ws.send(JSON.stringify({ type: 'PONG' }));
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      if (userId) {
+        clients.delete(userId);
+        console.log(`📴 User ${userId} disconnected`);
+      }
+    });
+  });
+  
+  // Keep the notifyUser function accessible
+  global.notifyUser = (userId, data) => {
+    const client = clients.get(userId);
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+      return true;
+    }
+    return false;
+  };
  
   console.log('');
     console.log('👥 USER ENDPOINTS:');
