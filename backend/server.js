@@ -309,11 +309,18 @@ const updatePrices = async () => {
     const res = await fetch('https://api.binance.com/api/v3/ticker/price');
     const data = await res.json();
 
+    // ✅ Check if array
+    if (!Array.isArray(data)) {
+      console.error('❌ Invalid price data:', data);
+      return;
+    }
+
     data.forEach(item => {
       priceCache[item.symbol] = parseFloat(item.price);
     });
 
-    console.log('📊 Prices updated');
+    console.log('📊 Prices updated successfully');
+
   } catch (err) {
     console.error('❌ Price update error:', err.message);
   }
@@ -415,7 +422,7 @@ const startSLTPEngine = () => {
 // Start price updater
 const startPriceUpdater = () => {
   console.log('📡 Price updater started');
-  setInterval(updatePrices, 2000);
+  setInterval(updatePrices, 3000);
 };
 // ========== CORS CONFIGURATION ==========
 app.use(cors({
@@ -3784,6 +3791,8 @@ app.listen(PORT, () => {
  
   console.log('');
     console.log('👥 USER ENDPOINTS:');
+  console.log("API response type:", typeof data);
+console.log("Is array:", Array.isArray(data));
   console.log('  POST /api/register             - User registration (with ref support)');
   console.log('  POST /api/login                - User login');
   console.log('  GET  /api/user/profile         - Get user profile');
