@@ -7,6 +7,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const mongoose = require('mongoose');
+wss.handleUpgrade(request, socket, head, ...)
 const WebSocket = require('ws');          
 const http = require('http');
 const DOLLAR_RATE = 90;
