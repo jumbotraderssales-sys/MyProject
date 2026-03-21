@@ -318,27 +318,50 @@ app.use(cors({
 // Handle preflight requests
 app.options('*', cors());
 // Add this to ensure credentials are allowed
+// ========== CORS CONFIGURATION - ENHANCED ==========
+// Allow all origins during development (temporary fix)
 app.use((req, res, next) => {
+  // Allow all origins - temporarily for debugging
   const allowedOrigins = [
     'https://paper2real.com',
     'https://www.paper2real.com',
     'https://admin.paper2real.com',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:3002'
   ];
+  
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+  
+  // For now, allow all origins to debug
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours cache for preflight
+  
+  // Handle preflight requests immediately
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    console.log('🔧 OPTIONS request received for:', req.url);
+    return res.status(200).end();
   }
+  
   next();
 });
 
+// Keep the original cors middleware as backup
+const cors = require('cors');
+app.use(cors({
+  origin: true, // Allow all origins temporarily
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 // ========== MIDDLEWARE ==========
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
