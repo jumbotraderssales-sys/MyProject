@@ -3510,7 +3510,26 @@ app.get('/api/force-monitor', async (req, res) => {
   }
 });
 
-
+// ========== SERVE REACT APP (with WebSocket exclusion) ==========
+// Serve static files from the React build folder
+const frontendBuildPath = path.join(__dirname, '../frontend/build');
+if (fsSync.existsSync(frontendBuildPath)) {
+  app.use(express.static(frontendBuildPath));
+  
+  // For any request that doesn't match an API route, send index.html
+  // Exclude WebSocket endpoint
+  app.get('*', (req, res, next) => {
+    // Skip WebSocket endpoint - let it be handled by WebSocket server
+    if (req.path === '/ws' || req.path.startsWith('/ws?')) {
+      return next();
+    }
+    // For all other routes, serve index.html
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+} else {
+  console.log('⚠️ Frontend build folder not found at:', frontendBuildPath);
+  console.log('📱 WebSocket will still work, but React app may not load');
+}
 // ========== ERROR HANDLING ==========
 
 // Handle 404
