@@ -317,6 +317,27 @@ app.use(cors({
 
 // Handle preflight requests
 app.options('*', cors());
+// Add this to ensure credentials are allowed
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'https://paper2real.com',
+    'https://www.paper2real.com',
+    'https://admin.paper2real.com',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // ========== MIDDLEWARE ==========
 app.use(express.json());
