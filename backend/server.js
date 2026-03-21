@@ -11,6 +11,7 @@ const WebSocket = require('ws');
 const http = require('http');
 const DOLLAR_RATE = 90;
 
+
 // ========== STARTUP VERIFICATION ==========
 console.log('\n==========================================');
 console.log('🚀 SERVER STARTING...');
