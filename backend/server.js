@@ -3505,6 +3505,12 @@ app.get('/api/force-monitor', async (req, res) => {
     });
   }
 });
+// ========== ADD THIS NEW ENDPOINT HERE ==========
+app.post('/api/trades/sync', (req, res) => {
+  console.log('📤 Sync beacon received');
+  res.json({ success: true });
+});
+
 
 // ========== SERVE REACT APP (with WebSocket exclusion) ==========
 // Serve static files from the React build folder
