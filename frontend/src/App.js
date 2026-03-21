@@ -57,7 +57,7 @@ const CHALLENGES = [
     dailyLossLimit: 5,
     maxLossLimit: 15,
     maxOrderSize: 20,
-    maxLeverage: 5,
+    maxLeverage: 20,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
     feeRefund: 500,
