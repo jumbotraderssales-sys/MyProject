@@ -17,7 +17,7 @@ console.log('🚀 SERVER STARTING...');
 console.log('📅 Time:', new Date().toISOString());
 console.log('📂 Directory:', __dirname);
 console.log('🌍 Node Version:', process.version);
-console.log("BTC price:", priceCache["BTCUSDT"]);
+
 console.log('==========================================\n');
 
 const app = express();
@@ -303,6 +303,7 @@ SettingModel = mongoose.model('Setting', settingSchema);
 
 // Price cache
 const priceCache = {};
+console.log("BTC price:", priceCache["BTCUSDT"]);
 
 // Fetch ALL prices from Binance (single API call)
 const updatePrices = async () => {
