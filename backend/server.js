@@ -28,17 +28,6 @@ const wss = new WebSocket.Server({
 });
 const clients = new Map();
 
-// Handle WebSocket upgrade specifically
-server.on('upgrade', (request, socket, head) => {
-  // Only handle WebSocket upgrades to our specific path
-  if (request.url && request.url.startsWith('/ws')) {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request);
-    });
-  } else {
-    socket.destroy();
-  }
-});
 
 // Load environment variables
 dotenv.config();
