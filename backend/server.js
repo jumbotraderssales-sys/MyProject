@@ -3791,8 +3791,7 @@ app.listen(PORT, () => {
  
   console.log('');
     console.log('👥 USER ENDPOINTS:');
-  console.log("API response type:", typeof data);
-console.log("Is array:", Array.isArray(data));
+
   console.log('  POST /api/register             - User registration (with ref support)');
   console.log('  POST /api/login                - User login');
   console.log('  GET  /api/user/profile         - Get user profile');
