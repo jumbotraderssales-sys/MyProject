@@ -853,7 +853,7 @@ useEffect(() => {
   // Sync before user leaves/unloads (optional)
   const handleBeforeUnload = () => {
     // You could do a final sync here, but it's not guaranteed
-    navigator.sendBeacon('https://myproject1-d097.onrender.com/api/trades/sync', '');
+  
   };
   
   window.addEventListener('beforeunload', handleBeforeUnload);
