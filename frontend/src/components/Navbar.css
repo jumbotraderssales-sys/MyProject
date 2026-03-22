@@ -784,3 +784,44 @@
     display: none !important;
   }
 }
+/* ============================================================================
+   ENSURE PROPER NAVBAR DISPLAY
+   ============================================================================ */
+
+/* Desktop navbar */
+@media (min-width: 1025px) {
+  .desktop-nav {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    padding: 0 20px;
+    background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+    border-bottom: 2px solid #3949ab;
+  }
+  
+  .mobile-nav {
+    display: none !important;
+  }
+}
+
+/* Mobile navbar */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-nav {
+    display: block !important;
+  }
+  
+  .navbar-top-row {
+    padding: 8px 12px !important;
+    background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+  }
+  
+  .navbar-bottom-row {
+    background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
