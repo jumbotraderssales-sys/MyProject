@@ -1541,16 +1541,25 @@ return { success: true, pnl };
     return { success: false, error: error.message };
   }
 };
-// Test Binance API endpoint
-app.get('/api/test-binance', async (req, res) => {
+// Test CryptoCompare API endpoint
+app.get('/api/test-price', async (req, res) => {
   try {
-    const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const { symbol = 'BTC' } = req.query;
+    const response = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${symbol}&tsyms=USD`);
     const data = await response.json();
-    console.log('Binance test successful:', data.price);
-    res.json({ success: true, price: data.price });
+    console.log('CryptoCompare test successful:', data);
+    res.json({ 
+      success: true, 
+      symbol: symbol,
+      price: data.USD,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('Binance test failed:', error.message);
-    res.json({ success: false, error: error.message });
+    console.error('CryptoCompare test failed:', error.message);
+    res.json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 // ========== POSITION CLOSING ENDPOINTS ==========
@@ -3591,14 +3600,17 @@ const monitorPositions = async () => {
     const symbols = [...new Set(openPositions.map(p => p.symbol))];
     console.log(`🔄 Fetching prices for: ${symbols.join(', ')}`);
     
-    // Fetch prices
+    // Fetch prices using CryptoCompare API (works globally)
     const prices = {};
     for (const symbol of symbols) {
       try {
-        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+        // Convert BTCUSDT to BTC for CryptoCompare
+        const coin = symbol.replace('USDT', '');
+        const response = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${coin}&tsyms=USD`);
+        
         if (response.ok) {
           const data = await response.json();
-          prices[symbol] = parseFloat(data.price);
+          prices[symbol] = data.USD;
           console.log(`   ✅ ${symbol}: $${prices[symbol]}`);
         } else {
           console.log(`   ❌ Failed to fetch ${symbol}: ${response.status}`);
