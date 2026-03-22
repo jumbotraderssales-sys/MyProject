@@ -7800,31 +7800,44 @@ html, body {
     font-size: 0.8rem !important;
   }
 }
-/* Ensure Navbar doesn't create extra bars on mobile */
-@media (max-width: 768px) {
-  /* Hide desktop nav in Navbar on mobile */
-  .navbar-container .desktop-nav {
+/* ============================================================================
+   COMPLETELY HIDE OLD NAVIGATION
+   ============================================================================ */
+
+/* Hide the old top-static-user-bar - this is the duplicate you're seeing */
+.top-static-user-bar {
+  display: none !important;
+}
+
+/* Hide any other potential duplicate navigation elements */
+.top-horizontal-nav {
+  display: none !important;
+}
+
+/* Make sure the old navigation doesn't show on any screen size */
+@media (min-width: 1025px) {
+  .top-static-user-bar,
+  .top-horizontal-nav {
     display: none !important;
-  }
-  
-  /* Show mobile nav in Navbar on mobile */
-  .navbar-container .mobile-nav {
-    display: block !important;
   }
 }
 
-@media (min-width: 1025px) {
-  /* Show desktop nav in Navbar on desktop */
-  .navbar-container .desktop-nav {
-    display: flex !important;
-  }
-  
-  /* Hide mobile nav in Navbar on desktop */
-  .navbar-container .mobile-nav {
+@media (max-width: 768px) {
+  .top-static-user-bar,
+  .top-horizontal-nav {
     display: none !important;
   }
 }
-/* Show/Hide sections based on active tab */
+
+/* Ensure the new Navbar displays properly */
+.navbar-container {
+  position: sticky;
+  top: 0;
+  z-index: 1002;
+  width: 100%;
+}
+
+/* Show/hide advanced-header and below-price-alert-section */
 .advanced-header {
   display: none !important;
 }
@@ -7845,10 +7858,5 @@ html, body {
 
 [data-tab="trading"] .below-price-alert-section {
   display: flex !important;
-}
-
-/* Hide old top bar completely */
-.top-static-user-bar {
-  display: none !important;
 }
 /* End of CSS */
