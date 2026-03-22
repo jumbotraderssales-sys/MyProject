@@ -2619,8 +2619,8 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
     let sl = null;
     let tp = null;
 
-    const slAmount = marginRequired * 0.05;
-    const tpAmount = marginRequired * 0.01;
+    const slAmount = marginRequired * 0.1;
+    const tpAmount = marginRequired * 0.2;
     const priceMoveForSL = slAmount / (orderSize * leverage);
     const priceMoveForTP = tpAmount / (orderSize * leverage);
 
