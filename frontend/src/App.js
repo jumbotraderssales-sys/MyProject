@@ -490,16 +490,7 @@ useEffect(() => {
   }
 }, []); // Empty dependency array = runs once on mount
   
- // Check SL/TP conditions every 2 seconds
-useEffect(() => {
-  if (!isLoggedIn || positions.length === 0) return;
-  
-  const checkInterval = setInterval(() => {
-    checkSLTPHits();
-  }, 2000);
-  
-  return () => clearInterval(checkInterval);
-}, [isLoggedIn, positions, prices]);
+
   // ========== NEW REFERRAL STATE ==========
   const [referralInfo, setReferralInfo] = useState(null);
   const [referralSettings, setReferralSettings] = useState({ target: 20, rewardName: 'Beginner Challenge', rewardAmount: 20000 });
