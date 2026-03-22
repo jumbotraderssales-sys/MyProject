@@ -10,11 +10,10 @@ import Navbar from './components/Navbar';
 
 import './App.css';
 import img7 from './data/7.png';
-import img6 from './data/6.png';
 import img1 from './data/1.png';
 import img2 from './data/2.png';
 import img3 from './data/3.png';
-const carouselImages = [img7, img6, img1, img2, img3];
+const carouselImages = [img7, img1, img2, img3];
 /* eslint-disable no-unused-vars */
 
 const SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
@@ -2620,7 +2619,7 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
     let sl = null;
     let tp = null;
 
-    const slAmount = marginRequired * 0.01;
+    const slAmount = marginRequired * 0.05;
     const tpAmount = marginRequired * 0.01;
     const priceMoveForSL = slAmount / (orderSize * leverage);
     const priceMoveForTP = tpAmount / (orderSize * leverage);
