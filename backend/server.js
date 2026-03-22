@@ -358,44 +358,44 @@ const requireValidUser = async (req, res, next) => {
 const CHALLENGES = {
   "🚀 Beginner Challenge": {
     id: 1,
-    fee: "₹1,000",
-    paperBalance: 20000,
-    profitTarget: 10,
-    dailyLossLimit: 4,
-    maxLossLimit: 10,
+    fee: "₹500",
+    paperBalance: 100000,
+    profitTarget: 20,
+    dailyLossLimit: 5,
+    maxLossLimit: 15,
     maxOrderSize: 20,
-    maxLeverage: 10,
+    maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    reward: "Fee Refund ₹500 + Skill Reward ₹1000",
     color: "#22c55e"
   },
   "🟡 Intermediate Challenge": {
     id: 2,
-    fee: "₹2,500",
-    paperBalance: 50000,
-    profitTarget: 10,
-    dailyLossLimit: 4,
-    maxLossLimit: 10,
-    maxOrderSize: 20,
-    maxLeverage: 10,
+    fee: "₹1,000",
+    paperBalance: 100000,
+    profitTarget: 25,
+    dailyLossLimit: 5,
+    maxLossLimit: 15,
+    maxOrderSize: 15,
+    maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+    reward: "Fee Refund ₹1000 + Skill Reward ₹2500",
     color: "#eab308"
   },
   "🔴 PRO Challenge": {
     id: 3,
-    fee: "₹5,000",
+    fee: "₹2,000",
     paperBalance: 100000,
-    profitTarget: 10,
-    dailyLossLimit: 4,
+    profitTarget: 30,
+    dailyLossLimit: 5,
     maxLossLimit: 10,
-    maxOrderSize: 20,
-    maxLeverage: 10,
+    maxOrderSize: 10,
+    maxLeverage: 5,
     autoStopLossTarget: 10,
     oneTradeAtTime: true,
-    reward: "Fee Refund + Skill Reward (20% of paper profit)",
+   reward: "Fee Refund ₹2000 + Skill Reward ₹5000",
     color: "#ef4444"
   }
 };
@@ -567,7 +567,7 @@ const readSettings = async () => {
           merchantName: 'Paper2Real Trading',
           referralTarget: 20,
           referralRewardName: 'Beginner Challenge',
-          referralRewardAmount: 20000,
+          referralRewardAmount: 100000,
           updatedAt: new Date().toISOString()
         };
         await SettingModel.create(settings);
@@ -1041,7 +1041,7 @@ app.get('/api/user/referral', requireValidUser, async (req, res) => {
       rewardAwardedAt: user.referralReward?.awardedAt || null,
       target: settings.referralTarget || 20,
       rewardName: settings.referralRewardName || 'Beginner Challenge',
-      rewardAmount: settings.referralRewardAmount || 20000
+      rewardAmount: settings.referralRewardAmount || 100000
     });
     
   } catch (error) {
@@ -2571,7 +2571,7 @@ app.get('/api/user/referral-dashboard', async (req, res) => {
       settings: {
         target: settings.referralTarget || 20,
         rewardName: settings.referralRewardName || 'Beginner Challenge',
-        rewardAmount: settings.referralRewardAmount || 20000,
+        rewardAmount: settings.referralRewardAmount || 100000,
         commissionRate: 10
       }
     });
@@ -3403,7 +3403,7 @@ app.get('/api/admin/referral-settings', requireAdmin, async (req, res) => {
       settings: {
         referralTarget: settings.referralTarget || 20,
         referralRewardName: settings.referralRewardName || 'Beginner Challenge',
-        referralRewardAmount: settings.referralRewardAmount || 20000
+        referralRewardAmount: settings.referralRewardAmount || 100000
       }
     });
   } catch (error) {
@@ -3462,7 +3462,7 @@ app.post('/api/admin/referrals/approve/:userId', requireAdmin, async (req, res) 
     const settings = await readSettings();
     const target = settings.referralTarget || 20;
     const rewardName = settings.referralRewardName || 'Beginner Challenge';
-    const rewardAmount = settings.referralRewardAmount || 20000;
+    const rewardAmount = settings.referralRewardAmount || 100000;
     
     if ((user.referralCount || 0) < target) {
       return res.json({ 
