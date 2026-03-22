@@ -3883,112 +3883,114 @@ const calculatePositionPnL = (position) => {
 
 // ========== MAIN RETURN STARTS HERE ==========
 return (
-    <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
-      {!isFullScreen && (
-        <>
-          {/* Use the Navbar component instead of inline navigation */}
-<Navbar 
-  equity={equity}
-  dollarRate={dollarRate}
-  userAccount={userAccount}
-  onRefresh={syncUserWallet}
-  onLogout={handleLogout}
-  onLogin={() => setShowLogin(true)}
-  onRegister={() => setShowRegister(true)}
-  activeDashboard={activeDashboard}
-  onTabChange={setActiveDashboard}
-  isLoggedIn={isLoggedIn}
-/>
-
-          <header className="advanced-header">
-            <div className="connection-info">
-              <span className="api-status">Connection to API</span>
-              <div className="mode-toggle">
-                <button 
-                  className={`mode-btn ${mode === 'DEMO' ? 'active' : ''}`}
-                  onClick={() => setMode('DEMO')}
-                >
-                  DEMO MODE
-                </button>
-                <span className="separator">|</span>
-                <button 
-                  className={`mode-btn ${mode === 'LIVE' ? 'active' : ''}`}
-                  onClick={() => setMode('LIVE')}
-                >
-                  LIVE
-                </button>
-              </div>
-            </div>
-
-            <div className="symbol-info">
-              <h2 className="symbol-name">{selectedSymbol.replace('USDT', 'USD')}</h2>
-              <div className="indicators-info-below-price">
-                <span>Indicator ({activeIndicators.length})</span>
-                <div className="indicators-list">
-                  {activeIndicators.slice(0, 3).map(ind => (
-                    <span key={ind} className="indicator-tag">{ind}</span>
-                  ))}
-                  {activeIndicators.length > 3 && (
-                    <span className="indicator-tag">+{activeIndicators.length - 3}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-                      
-            <div className="news-indicator-below-alert">
+  <div className={`advanced-app ${isFullScreen ? 'fullscreen' : ''}`}>
+    {!isFullScreen && (
+      <>
+        {/* ONLY Navbar - No other navigation bars */}
+        <Navbar 
+          equity={equity}
+          dollarRate={dollarRate}
+          userAccount={userAccount}
+          onRefresh={syncUserWallet}
+          onLogout={handleLogout}
+          onLogin={() => setShowLogin(true)}
+          onRegister={() => setShowRegister(true)}
+          activeDashboard={activeDashboard}
+          onTabChange={setActiveDashboard}
+          isLoggedIn={isLoggedIn}
+        />
+        
+        {/* Keep advanced-header and below-price-alert-section 
+            They will be conditionally hidden by CSS */}
+        <header className="advanced-header">
+          <div className="connection-info">
+            <span className="api-status">Connection to API</span>
+            <div className="mode-toggle">
               <button 
-                className="news-btn"
-                onClick={() => setShowNews(!showNews)}
+                className={`mode-btn ${mode === 'DEMO' ? 'active' : ''}`}
+                onClick={() => setMode('DEMO')}
               >
-                📰 Market News
-                {marketNews.length > 0 && <span className="news-badge">{marketNews.length}</span>}
+                DEMO MODE
+              </button>
+              <span className="separator">|</span>
+              <button 
+                className={`mode-btn ${mode === 'LIVE' ? 'active' : ''}`}
+                onClick={() => setMode('LIVE')}
+              >
+                LIVE
               </button>
             </div>
-          </header>
+          </div>
 
-          {activeDashboard === 'Trading' && (
-            <div className="below-price-alert-section">
-              <div className="total-balance-section">
-                <div className="balance-header">
-                  <h3>Total Balance</h3>
-                  <span className={`pnl-badge ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
-                    {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
-                  </span>
-                </div>
-                <div className="balance-display">
-                  ${equity.toFixed(2)}
-                </div>
-                <div className="balance-details">
-                  <div>Available: ${balance.toFixed(2)}</div>
-                  <div>Used: ${(equity - balance).toFixed(2)}</div>
-                </div>
+          <div className="symbol-info">
+            <h2 className="symbol-name">{selectedSymbol.replace('USDT', 'USD')}</h2>
+            <div className="indicators-info-below-price">
+              <span>Indicator ({activeIndicators.length})</span>
+              <div className="indicators-list">
+                {activeIndicators.slice(0, 3).map(ind => (
+                  <span key={ind} className="indicator-tag">{ind}</span>
+                ))}
+                {activeIndicators.length > 3 && (
+                  <span className="indicator-tag">+{activeIndicators.length - 3}</span>
+                )}
               </div>
-              
-              {/* Challenge Progress Bar */}
-              {userAccount.currentChallenge && (
-                <div className="challenge-progress-bar">
-                  <div className="progress-bar-container">
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill profit"
-                        style={{ width: `${Math.min(challengeProgress.profit, 100)}%` }}
-                      ></div>
-                      <div 
-                        className="progress-fill loss"
-                        style={{ width: `${Math.min(challengeProgress.totalLoss, 100)}%` }}
-                      ></div>
-                    </div>
-                    <div className="progress-labels">
-                      <span>Profit: {challengeProgress.profit.toFixed(1)}%</span>
-                      <span>Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
-                    </div>
+            </div>
+          </div>
+                    
+          <div className="news-indicator-below-alert">
+            <button 
+              className="news-btn"
+              onClick={() => setShowNews(!showNews)}
+            >
+              📰 Market News
+              {marketNews.length > 0 && <span className="news-badge">{marketNews.length}</span>}
+            </button>
+          </div>
+        </header>
+
+        {activeDashboard === 'Trading' && (
+          <div className="below-price-alert-section">
+            <div className="total-balance-section">
+              <div className="balance-header">
+                <h3>Total Balance</h3>
+                <span className={`pnl-badge ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
+                  {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+                </span>
+              </div>
+              <div className="balance-display">
+                ${equity.toFixed(2)}
+              </div>
+              <div className="balance-details">
+                <div>Available: ${balance.toFixed(2)}</div>
+                <div>Used: ${(equity - balance).toFixed(2)}</div>
+              </div>
+            </div>
+            
+            {/* Challenge Progress Bar */}
+            {userAccount.currentChallenge && (
+              <div className="challenge-progress-bar">
+                <div className="progress-bar-container">
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill profit"
+                      style={{ width: `${Math.min(challengeProgress.profit, 100)}%` }}
+                    ></div>
+                    <div 
+                      className="progress-fill loss"
+                      style={{ width: `${Math.min(challengeProgress.totalLoss, 100)}%` }}
+                    ></div>
+                  </div>
+                  <div className="progress-labels">
+                    <span>Profit: {challengeProgress.profit.toFixed(1)}%</span>
+                    <span>Loss: {challengeProgress.totalLoss.toFixed(1)}%</span>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+              </div>
+            )}
+          </div>
+        )}
+      </>
+    )}
 
       <div className="advanced-main">
         {!isFullScreen && activeDashboard === 'Trading' && (
