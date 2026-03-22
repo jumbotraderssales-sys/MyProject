@@ -3587,62 +3587,7 @@ const calculatePositionPnL = (position) => {
   const currentPrice = prices[position.symbol] || position.entryPrice;
   return calculatePnL(position, currentPrice);
 };
-const checkSLTPHits = async () => {
-  if (!isLoggedIn || positions.length === 0 || closingPositionRef.current) return;
-  
-  for (const position of positions) {
-    const currentPrice = prices[position.symbol];
-    if (!currentPrice) continue;
-    
-    const side = (position.side || '').toLowerCase();
-    
-    // Check STOP LOSS
-    if (position.stopLoss) {
-      let slHit = false;
-      
-      if (side === 'long' && currentPrice <= position.stopLoss) {
-        slHit = true;
-        console.log(`🛑 SL HIT for LONG ${position.symbol} at $${currentPrice}`);
-      } else if (side === 'short' && currentPrice >= position.stopLoss) {
-        slHit = true;
-        console.log(`🛑 SL HIT for SHORT ${position.symbol} at $${currentPrice}`);
-      }
-      
-      if (slHit) {
-        // Check if already notified in this session
-        if (!shownNotifications.current.has(position.id)) {
-          shownNotifications.current.add(position.id);
-          // Ask backend to close instead of closing directly
-          await requestClosePosition(position.id, currentPrice, 'STOP_LOSS');
-        }
-        return;
-      }
-    }
-    
-    // Check TAKE PROFIT
-    if (position.takeProfit) {
-      let tpHit = false;
-      
-      if (side === 'long' && currentPrice >= position.takeProfit) {
-        tpHit = true;
-        console.log(`🎯 TP HIT for LONG ${position.symbol} at $${currentPrice}`);
-      } else if (side === 'short' && currentPrice <= position.takeProfit) {
-        tpHit = true;
-        console.log(`🎯 TP HIT for SHORT ${position.symbol} at $${currentPrice}`);
-      }
-      
-      if (tpHit) {
-        // Check if already notified in this session
-        if (!shownNotifications.current.has(position.id)) {
-          shownNotifications.current.add(position.id);
-          // Ask backend to close instead of closing directly
-          await requestClosePosition(position.id, currentPrice, 'TAKE_PROFIT');
-        }
-        return;
-      }
-    }
-  }
-};
+
   const calculateSLAmount = (order) => {
     if (!order.stopLoss) return 'N/A';
     const amount = Math.abs(order.entryPrice - order.stopLoss) * order.size * order.leverage;
