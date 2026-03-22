@@ -7824,5 +7824,31 @@ html, body {
     display: none !important;
   }
 }
+/* Show/Hide sections based on active tab */
+.advanced-header {
+  display: none !important;
+}
 
+.below-price-alert-section {
+  display: none !important;
+}
+
+/* Show on Profile page only */
+[data-tab="profile"] .advanced-header {
+  display: flex !important;
+}
+
+/* Show on Trading page only */
+[data-tab="trading"] .advanced-header {
+  display: flex !important;
+}
+
+[data-tab="trading"] .below-price-alert-section {
+  display: flex !important;
+}
+
+/* Hide old top bar completely */
+.top-static-user-bar {
+  display: none !important;
+}
 /* End of CSS */
