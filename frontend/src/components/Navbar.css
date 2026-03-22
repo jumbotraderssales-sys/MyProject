@@ -709,3 +709,54 @@
     white-space: nowrap;
   }
 }
+/* ============================================================================
+   FIX: HIDE OLD NAVIGATION - USE ONLY Navbar COMPONENT
+   ============================================================================ */
+
+/* Hide the old top-static-user-bar completely */
+.top-static-user-bar {
+  display: none !important;
+}
+
+/* Hide any other old navigation elements */
+.top-horizontal-nav {
+  display: none !important;
+}
+
+/* Ensure Navbar shows correctly on all pages */
+.navbar-container {
+  position: sticky;
+  top: 0;
+  z-index: 1002;
+  background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+  border-bottom: 2px solid #3949ab;
+}
+
+/* Make sure desktop nav shows correctly on desktop */
+@media (min-width: 1025px) {
+  .desktop-nav {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    height: 80px;
+    padding: 0 25px;
+    background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+    border-bottom: 2px solid #3949ab;
+    position: relative;
+  }
+  
+  .mobile-nav {
+    display: none !important;
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-nav {
+    display: block !important;
+  }
+}
