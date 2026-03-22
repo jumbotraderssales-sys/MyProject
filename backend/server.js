@@ -466,25 +466,32 @@ const writeUsers = async (users) => {
  
 
 const readTrades = async () => {
-    try {
-      const trades = await TradeModel.find().lean();
-      return trades;
-    } catch (error) {
-      console.error('Error reading trades from MongoDB:',  error.message);
-       throw error;
-    }
+  try {
+    const trades = await TradeModel.find().lean();
+    const openCount = trades.filter(t => t.status === 'open').length;
+    console.log(`📖 readTrades: Found ${trades.length} total, ${openCount} open`);
+    return trades;
+  } catch (error) {
+    console.error('❌ Error reading trades from MongoDB:', error.message);
+    throw error;
   }
+};
  
 const writeTrades = async (trades) => {
-     try {
-      await TradeModel.deleteMany({});
-      await TradeModel.insertMany(trades);
-      return true;
-    } catch (error) {
-      console.error('Error writing trades to MongoDB:',  error.message);
-        throw error;
-    }
+  try {
+    console.log(`📝 writeTrades called with ${trades.length} trades`);
+    console.log(`   Open trades: ${trades.filter(t => t.status === 'open').length}`);
+    
+    await TradeModel.deleteMany({});
+    const result = await TradeModel.insertMany(trades);
+    
+    console.log(`✅ Successfully wrote ${result.length} trades to MongoDB`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error writing trades to MongoDB:', error.message);
+    throw error;
   }
+};
   
 const readOrders = async () => {
      try {
@@ -1200,6 +1207,9 @@ app.post('/api/trades', requireValidUser, async (req, res) => {
     
     const userId = token.replace('token-', '');
     const { symbol, side, size, leverage, entryPrice, stopLoss, takeProfit } = req.body;
+    console.log('\n========== 📝 NEW TRADE REQUEST ==========');
+console.log('User ID:', userId);
+console.log('Trade Data:', { symbol, side, size, leverage, entryPrice, stopLoss, takeProfit });
     
     if (!symbol || !side || !size || !leverage || !entryPrice) {
       return res.status(400).json({ 
@@ -1291,6 +1301,14 @@ user.paperBalance -= marginINR;
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    console.log('✅ Created trade object:', {
+  id: newTrade.id,
+  userId: newTrade.userId,
+  symbol: newTrade.symbol,
+  status: newTrade.status,
+  stopLoss: newTrade.stopLoss,
+  takeProfit: newTrade.takeProfit
+});
     
     // Create order entry
     const newOrder = {
@@ -1504,9 +1522,18 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
       orders[orderIndex].closeReason = reason;
       orders[orderIndex].updatedAt = new Date().toISOString();
     }
-    
+    console.log(`📊 Before write: ${trades.length} total trades`);
+console.log(`   Open trades: ${trades.filter(t => t.status === 'open').length}`);
     // Save all changes
     await writeTrades(trades);
+    // Verify immediately after save
+const verifyTrades = await readTrades();
+const verifyOpen = verifyTrades.filter(t => t.status === 'open');
+console.log(`🔍 Verification: ${verifyOpen.length} open positions after save`);
+verifyOpen.forEach(t => {
+  console.log(`   - ${t.id}: ${t.symbol} ${t.side} SL:${t.stopLoss} TP:${t.takeProfit}`);
+});
+    console.log(`✅ Trade saved to database`);
     await writeUsers(users);
     await writeOrders(orders);
     
