@@ -2262,9 +2262,9 @@ const syncUserWallet = async () => {
       if (isApproved) {
         updatePaymentStatus(paymentId, 'approved', 'Payment verified successfully. Paper money added to account.');
         
-        const paperMoneyAmount = payment.challengeName.includes('Beginner') ? 20000 :
-                                payment.challengeName.includes('Intermediate') ? 50000 :
-                                payment.challengeName.includes('PRO') ? 100000 : 20000;
+        const paperMoneyAmount = payment.challengeName.includes('Beginner') ? 100000 :
+                                payment.challengeName.includes('Intermediate') ? 100000 :
+                                payment.challengeName.includes('PRO') ? 100000 : 100000;
         
         const token = localStorage.getItem('token');
         if (token) {
