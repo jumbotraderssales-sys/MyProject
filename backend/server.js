@@ -3634,7 +3634,7 @@ const monitorPositions = async () => {
 // Start monitoring
 const startMonitoring = () => {
   console.log('🚀 Starting position monitor...');
-  monitorInterval = setInterval(monitorPositions, 10000);
+  monitorInterval = setInterval(monitorPositions, 5000);
   setTimeout(monitorPositions, 2000);
 };
 
