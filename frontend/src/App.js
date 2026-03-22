@@ -492,7 +492,7 @@ useEffect(() => {
 
   // ========== NEW REFERRAL STATE ==========
   const [referralInfo, setReferralInfo] = useState(null);
-  const [referralSettings, setReferralSettings] = useState({ target: 20, rewardName: 'Beginner Challenge', rewardAmount: 20000 });
+  const [referralSettings, setReferralSettings] = useState({ target: 20, rewardName: 'Beginner Challenge', rewardAmount: 100000 });
   const [referralCodeFromUrl, setReferralCodeFromUrl] = useState('');
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 const [showInstallButton, setShowInstallButton] = useState(false);
@@ -2219,9 +2219,9 @@ const syncUserWallet = async () => {
     if (newStatus === 'approved' || newStatus === 'completed') {
       const approvedPayment = updatedPayments.find(p => p.id === paymentId);
       if (approvedPayment) {
-        const paperMoneyAmount = approvedPayment.challengeName.includes('Beginner') ? 20000 :
-                                approvedPayment.challengeName.includes('Intermediate') ? 50000 :
-                                approvedPayment.challengeName.includes('PRO') ? 100000 : 20000;
+        const paperMoneyAmount = approvedPayment.challengeName.includes('Beginner') ? 100000 :
+                                approvedPayment.challengeName.includes('Intermediate') ? 100000 :
+                                approvedPayment.challengeName.includes('PRO') ? 100000 : 100000;
         
         setUserAccount(prev => ({
           ...prev,
