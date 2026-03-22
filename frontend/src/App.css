@@ -8082,4 +8082,207 @@ html, body {
     font-size: 0.8rem;
   }
 }
+/* ============================================================================
+   PROFESSIONAL CHART HEADER - SINGLE LINE
+   ============================================================================ */
+
+.chart-header-pro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+}
+
+/* Symbol Buttons Group */
+.symbol-group {
+  display: flex;
+  gap: 8px;
+}
+
+.symbol-btn-pro {
+  padding: 6px 16px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.symbol-btn-pro:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.symbol-btn-pro.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #3b82f6;
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Controls Group */
+.controls-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-btn-pro {
+  width: 36px;
+  height: 36px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn-pro:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: #3b82f6;
+  color: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+/* Professional PnL Display */
+.pnl-pro {
+  padding: 6px 14px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.pnl-pro.positive {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.pnl-pro.negative {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+/* Remove old chart header styles */
+.chart-header-simplified,
+.chart-controls-left,
+.indicators-btn-shifted,
+.theme-toggle-btn,
+.fullscreen-btn {
+  /* These are now replaced */
+}
+
+/* ============================================================================
+   PROFESSIONAL CHART CONTAINER - MAXIMUM SPACE
+   ============================================================================ */
+
+.chart-container {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 180px); /* Dynamic height based on viewport */
+  min-height: 500px;
+  margin-bottom: 0;
+}
+
+/* Fullscreen chart adjustments */
+.advanced-app.fullscreen .chart-container {
+  height: calc(100vh - 100px);
+  border-radius: 0;
+}
+
+/* When in trading mode on mobile, maximize chart */
+@media (max-width: 768px) {
+  .chart-container {
+    height: calc(100vh - 160px);
+    min-height: 400px;
+  }
+  
+  .chart-header-pro {
+    padding: 6px 12px;
+    margin-bottom: 8px;
+  }
+  
+  .symbol-btn-pro {
+    padding: 4px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .control-btn-pro {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  
+  .pnl-pro {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .symbol-btn-pro {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+  }
+  
+  .control-btn-pro {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+  
+  .pnl-pro {
+    padding: 3px 8px;
+    font-size: 0.75rem;
+  }
+}
+
+/* For very large desktop screens */
+@media (min-width: 1920px) {
+  .chart-container {
+    height: calc(100vh - 200px);
+  }
+  
+  .symbol-btn-pro {
+    padding: 8px 20px;
+    font-size: 1rem;
+  }
+  
+  .control-btn-pro {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .pnl-pro {
+    padding: 8px 16px;
+    font-size: 1rem;
+  }
+}
 /* End of CSS */
