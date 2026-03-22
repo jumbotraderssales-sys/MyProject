@@ -7800,5 +7800,29 @@ html, body {
     font-size: 0.8rem !important;
   }
 }
+/* Ensure Navbar doesn't create extra bars on mobile */
+@media (max-width: 768px) {
+  /* Hide desktop nav in Navbar on mobile */
+  .navbar-container .desktop-nav {
+    display: none !important;
+  }
+  
+  /* Show mobile nav in Navbar on mobile */
+  .navbar-container .mobile-nav {
+    display: block !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Show desktop nav in Navbar on desktop */
+  .navbar-container .desktop-nav {
+    display: flex !important;
+  }
+  
+  /* Hide mobile nav in Navbar on desktop */
+  .navbar-container .mobile-nav {
+    display: none !important;
+  }
+}
 
 /* End of CSS */
