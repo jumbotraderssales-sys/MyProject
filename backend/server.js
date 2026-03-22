@@ -1541,7 +1541,18 @@ return { success: true, pnl };
     return { success: false, error: error.message };
   }
 };
-
+// Test Binance API endpoint
+app.get('/api/test-binance', async (req, res) => {
+  try {
+    const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const data = await response.json();
+    console.log('Binance test successful:', data.price);
+    res.json({ success: true, price: data.price });
+  } catch (error) {
+    console.error('Binance test failed:', error.message);
+    res.json({ success: false, error: error.message });
+  }
+});
 // ========== POSITION CLOSING ENDPOINTS ==========
 
 // NEW ENDPOINT: Check and close position (called by frontend when it detects SL/TP)
@@ -3562,20 +3573,23 @@ let monitorInterval;
 
 const monitorPositions = async () => {
   try {
+    console.log(`🔍 [${new Date().toISOString()}] Starting position monitoring...`);
+    
     const trades = await readTrades();
     const openPositions = trades.filter(t => t.status === 'open');
     
+    console.log(`📊 Found ${openPositions.length} open positions`);
+    
     if (openPositions.length === 0) return;
     
-    console.log(`🔍 Monitoring ${openPositions.length} positions...`);
+    // Log each position's SL/TP
+    openPositions.forEach(pos => {
+      console.log(`   Position ${pos.id}: ${pos.symbol} ${pos.side} Entry:${pos.entryPrice} SL:${pos.stopLoss} TP:${pos.takeProfit}`);
+    });
     
     // Get unique symbols
-    const symbols = [];
-    openPositions.forEach(p => {
-      if (!symbols.includes(p.symbol)) {
-        symbols.push(p.symbol);
-      }
-    });
+    const symbols = [...new Set(openPositions.map(p => p.symbol))];
+    console.log(`🔄 Fetching prices for: ${symbols.join(', ')}`);
     
     // Fetch prices
     const prices = {};
@@ -3585,16 +3599,24 @@ const monitorPositions = async () => {
         if (response.ok) {
           const data = await response.json();
           prices[symbol] = parseFloat(data.price);
+          console.log(`   ✅ ${symbol}: $${prices[symbol]}`);
+        } else {
+          console.log(`   ❌ Failed to fetch ${symbol}: ${response.status}`);
         }
       } catch (error) {
-        console.error(`Failed to fetch ${symbol}:`, error.message);
+        console.error(`   ❌ Error fetching ${symbol}:`, error.message);
       }
     }
     
     // Check each position
     for (const position of openPositions) {
       const currentPrice = prices[position.symbol];
-      if (!currentPrice) continue;
+      if (!currentPrice) {
+        console.log(`   ⚠️ No price for ${position.symbol}, skipping`);
+        continue;
+      }
+      
+      console.log(`   📍 Checking ${position.id}: Current=$${currentPrice}, SL=$${position.stopLoss}, TP=$${position.takeProfit}`);
       
       let shouldClose = false;
       let closeReason = '';
@@ -3604,9 +3626,11 @@ const monitorPositions = async () => {
         if (position.side === 'long' && currentPrice <= position.stopLoss) {
           shouldClose = true;
           closeReason = 'STOP_LOSS';
+          console.log(`   🛑 STOP LOSS triggered for ${position.id}! Current:$${currentPrice} <= SL:$${position.stopLoss}`);
         } else if (position.side === 'short' && currentPrice >= position.stopLoss) {
           shouldClose = true;
           closeReason = 'STOP_LOSS';
+          console.log(`   🛑 STOP LOSS triggered for ${position.id}! Current:$${currentPrice} >= SL:$${position.stopLoss}`);
         }
       }
       
@@ -3615,22 +3639,25 @@ const monitorPositions = async () => {
         if (position.side === 'long' && currentPrice >= position.takeProfit) {
           shouldClose = true;
           closeReason = 'TAKE_PROFIT';
+          console.log(`   🎯 TAKE PROFIT triggered for ${position.id}! Current:$${currentPrice} >= TP:$${position.takeProfit}`);
         } else if (position.side === 'short' && currentPrice <= position.takeProfit) {
           shouldClose = true;
           closeReason = 'TAKE_PROFIT';
+          console.log(`   🎯 TAKE PROFIT triggered for ${position.id}! Current:$${currentPrice} <= TP:$${position.takeProfit}`);
         }
       }
       
       if (shouldClose) {
-        console.log(`🎯 Closing ${position.id} - ${closeReason}`);
+        console.log(`   🔴 Closing position ${position.id} - ${closeReason}`);
         await closePositionServerSide(position.id, currentPrice, closeReason);
       }
     }
+    
   } catch (error) {
-    console.error('Monitor error:', error);
+    console.error('❌ Monitor error:', error);
+    console.error(error.stack);
   }
 };
-
 // Start monitoring
 const startMonitoring = () => {
   console.log('🚀 Starting position monitor...');
