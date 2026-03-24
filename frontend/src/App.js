@@ -2806,9 +2806,9 @@ const closePosition = async (positionId, reason = 'MANUAL') => {
   
   let pnl;
   if (side === 'long') {
-    pnl = priceDiff * position.size* position.leverage ;
+    pnl = priceDiff * position.size ;
   } else {
-    pnl = -priceDiff * position.size* position.leverage ;
+    pnl = -priceDiff * position.size ;
   }
 
 
@@ -6306,9 +6306,9 @@ return (
   
   let positionPnl;
   if (side === 'long') {
-    positionPnl = priceDiff * pos.size* pos.leverage ;
+    positionPnl = priceDiff * pos.size ;
   } else {
-    positionPnl = -priceDiff * pos.size* pos.leverage ;
+    positionPnl = -priceDiff * pos.size ;
   }
   
   return (
