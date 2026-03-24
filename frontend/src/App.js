@@ -153,7 +153,7 @@ const PriceLineOverlay = ({ position, currentPrice }) => {
   const pnl =
     (currentPrice - position.entryPrice) *
     position.size *
-    *
+
     (position.side === 'LONG' ? 1 : -1);
 
   return (
