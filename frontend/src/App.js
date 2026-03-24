@@ -3581,6 +3581,27 @@ const calculatePositionPnL = (position) => {
     const amount = Math.abs(order.takeProfit - order.entryPrice) * order.size ;
     return `$${amount.toFixed(2)}`;
   };
+  // 👇 ADD THE formatDateTime FUNCTION RIGHT HERE 👇
+const formatDateTime = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '-';
+  }
+};
 
   const currentSymbolPositions = positions.filter(pos => pos.symbol === selectedSymbol);
 
@@ -6147,6 +6168,9 @@ return (
                         <span>Margin</span>
                         <span>Lev</span>
                         <span>Entry</span>
+                <span>Entry Time</span>  {/* NEW */}
+  <span>Exit</span>         {/* NEW */}
+  <span>Exit Time</span>    {/* NEW */}
                         <span>SL</span>
                         <span>TP</span>
                         <span>Status</span>
@@ -6170,6 +6194,10 @@ return (
           <span className="leverage-badge">{order.leverage}x</span>
         </span>
         <span>${order.entryPrice?.toFixed(2)}</span>
+                <span>{formatDateTime(order.createdAt || order.timestamp)}</span>  {/* Entry Time */}
+  <span>{order.exitPrice ? `$${order.exitPrice.toFixed(2)}` : '-'}</span>  {/* Exit Price */}
+  <span>{order.exitTime ? formatDateTime(order.exitTime) : '-'}</span>  {/* Exit Time */}
+  
         <span>
           {isOpenOrder && editingOrderId === order.id ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
