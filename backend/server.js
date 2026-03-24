@@ -1329,6 +1329,9 @@ user.paperBalance -= marginINR;
       pnl: 0,
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString()
+        entryTime: new Date().toISOString(),
+  exitPrice: null,
+  exitTime: null
     };
     
     trades.push(newTrade);
@@ -1517,6 +1520,7 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     if (orderIndex !== -1) {
       orders[orderIndex].status = 'closed';
       orders[orderIndex].exitPrice = exitPrice;
+       orders[orderIndex].exitTime = new Date().toISOString();
       orders[orderIndex].pnl = pnl;
       orders[orderIndex].exitTime = new Date().toISOString();
       orders[orderIndex].closeReason = reason;
