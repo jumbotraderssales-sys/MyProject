@@ -3572,13 +3572,13 @@ const calculatePositionPnL = (position) => {
 
   const calculateSLAmount = (order) => {
     if (!order.stopLoss) return 'N/A';
-    const amount = Math.abs(order.entryPrice - order.stopLoss) * order.size * order.leverage;
+    const amount = Math.abs(order.entryPrice - order.stopLoss) * order.size ;
     return `$${amount.toFixed(2)}`;
   };
 
   const calculateTPAmount = (order) => {
     if (!order.takeProfit) return 'N/A';
-    const amount = Math.abs(order.takeProfit - order.entryPrice) * order.size * order.leverage;
+    const amount = Math.abs(order.takeProfit - order.entryPrice) * order.size ;
     return `$${amount.toFixed(2)}`;
   };
 
