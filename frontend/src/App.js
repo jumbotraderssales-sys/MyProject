@@ -1447,24 +1447,7 @@ const requestClosePosition = async (positionId, exitPrice, reason) => {
         setBalance(data.user.paperBalance);
       }
       
-      // Show appropriate message
-      const position = positions.find(p => p.id === positionId);
-      let title = '';
-      let message = '';
-      
-      if (reason === 'STOP_LOSS') {
-        title = '🛑 STOP LOSS HIT';
-        message = `Your ${position?.side} position for ${position?.symbol} was closed.\nLoss: $${Math.abs(data.pnl).toFixed(2)}`;
-      } else if (reason === 'TAKE_PROFIT') {
-        title = '🎯 TAKE PROFIT HIT!';
-        message = `Your ${position?.side} position for ${position?.symbol} hit target!\nProfit: $${data.pnl.toFixed(2)}`;
-      }
-      
-      if (title) {
-        setTimeout(() => {
-          alert(`${title}\n\n${message}`);
-        }, 100);
-      }
+   
       
       // Refresh order history
       const ordersResponse = await fetch('https://myproject1-d097.onrender.com/api/trades/history', {
