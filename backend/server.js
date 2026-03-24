@@ -1311,28 +1311,29 @@ user.paperBalance -= marginINR;
 });
     
     // Create order entry
-    const newOrder = {
-      id: newTrade.id,
-      userId,
-      userName: user.name,
-      symbol,
-      side: newTrade.side,
-      size: newTrade.size,
-      leverage: newTrade.leverage,
-      entryPrice: newTrade.entryPrice,
-      stopLoss: newTrade.stopLoss,
-      takeProfit: newTrade.takeProfit,
-      status: 'open',
-      currentPrice: newTrade.entryPrice,
-      positionValue: newTrade.positionValue,
-      marginUsed: marginRequired,
-      pnl: 0,
-      timestamp: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-        entryTime: new Date().toISOString(),
+  const newOrder = {
+  id: newTrade.id,
+  userId,
+  userName: user.name,
+  symbol,
+  side: newTrade.side,
+  size: newTrade.size,
+  leverage: newTrade.leverage,
+  entryPrice: newTrade.entryPrice,
+  stopLoss: newTrade.stopLoss,
+  takeProfit: newTrade.takeProfit,
+  status: 'open',
+  currentPrice: newTrade.entryPrice,
+  positionValue: newTrade.positionValue,
+  marginUsed: marginRequired,
+  pnl: 0,
+  timestamp: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+  // Add these if not present:
+  entryTime: new Date().toISOString(),
   exitPrice: null,
   exitTime: null
-    };
+};
     
     trades.push(newTrade);
     orders.push(newOrder);
