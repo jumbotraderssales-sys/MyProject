@@ -1462,13 +1462,13 @@ const closePositionServerSide = async (positionId, exitPrice, reason) => {
     });
     
     // Calculate PnL
-    const priceDiff = exitPrice - trade.entryPrice;
-    let pnl;
-    if (trade.side === 'long') {
-      pnl = priceDiff * trade.size * trade.leverage;
-    } else {
-      pnl = -priceDiff * trade.size * trade.leverage;
-    }
+ const priceDiff = exitPrice - trade.entryPrice;
+let pnl;
+if (trade.side === 'long') {
+  pnl = priceDiff * trade.size;  // Remove leverage multiplier
+} else {
+  pnl = -priceDiff * trade.size;  // Remove leverage multiplier
+}
     
     console.log(`💰 Calculated PnL: $${pnl.toFixed(2)}`);
     
