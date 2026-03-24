@@ -153,7 +153,7 @@ const PriceLineOverlay = ({ position, currentPrice }) => {
   const pnl =
     (currentPrice - position.entryPrice) *
     position.size *
-    position.leverage *
+    *
     (position.side === 'LONG' ? 1 : -1);
 
   return (
@@ -1786,9 +1786,9 @@ useEffect(() => {
     const side = (pos.side || '').toLowerCase();
     
     if (side === 'long') {
-      total += priceDiff * pos.size * pos.leverage;
+      total += priceDiff * pos.size;  // CORRECT - no leverage
     } else {
-      total += -priceDiff * pos.size * pos.leverage;
+      total += -priceDiff * pos.size;  // CORRECT - no leverage
     }
   });
   setTotalPnl(total);
@@ -2619,10 +2619,10 @@ if (userAccount.challengeStats?.dailyBlockDate === today) {
     let sl = null;
     let tp = null;
 
-    const slAmount = marginRequired * 0.1;
-    const tpAmount = marginRequired * 0.2;
-    const priceMoveForSL = slAmount / (orderSize * leverage);
-    const priceMoveForTP = tpAmount / (orderSize * leverage);
+const slAmount = marginRequired * 0.05;  // 5% SL
+const tpAmount = marginRequired * 0.10;  // 10% TP
+const priceMoveForSL = slAmount / orderSize;  // No leverage multiplication
+const priceMoveForTP = tpAmount / orderSize;
 
     if (side === 'LONG') {
       sl = parseFloat((currentPrice - priceMoveForSL).toFixed(2));
@@ -3566,13 +3566,13 @@ const calculatePnL = (position, currentPrice) => {
   const side = (position.side || '').toLowerCase();
   
   if (side === 'long') {
-    return priceDiff * position.size * position.leverage;
+    return priceDiff * position.size;  // REMOVED: * position.leverage
   } else {
-    return -priceDiff * position.size * position.leverage;
+    return -priceDiff * position.size;  // REMOVED: * position.leverage
   }
 };
 
-// Use this for both order and position calculations
+// calculateOrderPnL stays the same (it just calls calculatePnL)
 const calculateOrderPnL = (order) => {
   if (order.status?.toUpperCase() === 'CLOSED' || order.status?.toUpperCase() === 'CANCELLED') {
     return order.pnl || 0;
